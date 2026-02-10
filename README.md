@@ -1,5 +1,8 @@
 # GAHM2026 — Generalized Asymmetric Holland Model
 
+## amplified version of GAHM2026
+## 8 Feb 2026
+
 MATLAB codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). The pipeline reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with large-scale gridded environmental fields, and writes output to NetCDF.
 
 Developed by Rick Luettich, University of North Carolina.
@@ -39,6 +42,8 @@ All parameters are set in `config_GAHM2026.m`. The main sections are described b
 **Notes:**
 - `starttime` and `endtime` must correspond to times present in the track file. If using gridded environmental fields (`env_info.type = 3`), these times must also be present in the environmental data file.
 - Set `starttime = 0` and `endtime = 0` to process the entire track.
+- Download from https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/
+  - put into "input" directory
 
 ### Environmental Fields
 
