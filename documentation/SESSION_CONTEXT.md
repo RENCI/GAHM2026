@@ -24,18 +24,19 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | Driver | `run_GAHM2026.m` |
 | Configuration | `config/config_GAHM2026.m` |
 | Orchestrator | `GAHM2026.m` |
-| GAHM pipeline | `GAHM2026_prep.m`, `GAHM2026_consistency.m`, `GAHM2026_solve.m` |
-| Profile computation | `GAHM_VPradial.m`, `GAHM_VP.m` |
-| I/O | `read_ATCF_fort22.m`, `read_IBTrACS2.m`, `read_Env_and_Hurr_fields2.m`, `writeGAHM2026NetCdf.m` |
-| Grid operations | `VEnvreg2radial2.m`, `radial2regular.m`, `radial_taper2.m` |
-| Post-processing | `apply_WAF_from_raster.m` |
-| Extracted utilities | `computeRmaxTot.m`, `quadrantUnitVectors.m`, `thetaToQuadrantPair.m`, `turnAngleDeg.m`, `logMsg.m`, `GAHM_physical_constants.m` |
+| GAHM pipeline | `util/GAHM2026_prep.m`, `util/GAHM2026_consistency.m`, `util/GAHM2026_solve.m` |
+| Profile computation | `util/GAHM_VPradial.m`, `util/GAHM_VP.m` |
+| I/O | `util/read_ATCF_fort22.m`, `util/read_IBTrACS2.m`, `util/read_Env_and_Hurr_fields2.m`, `util/writeGAHM2026NetCdf.m` |
+| Grid operations | `util/VEnvreg2radial2.m`, `util/radial2regular.m`, `util/radial_taper2.m` |
+| Post-processing | `util/apply_WAF_from_raster.m` |
+| Extracted utilities | `util/computeRmaxTot.m`, `util/quadrantUnitVectors.m`, `util/thetaToQuadrantPair.m`, `util/turnAngleDeg.m`, `util/logMsg.m`, `util/GAHM_physical_constants.m` |
 
 ### Directory Structure
 
 | Directory | Contents |
 |-----------|----------|
 | `config/` | Configuration files (default: `config_GAHM2026.m`) |
+| `util/` | All supporting MATLAB functions (pipeline, I/O, grid ops, utilities) |
 | `input/` | Input data files (e.g., `ibtracs.NA.list.v04r01.csv`) |
 | `output/` | NetCDF output files (`stormname_year.nc`) |
 | `documentation/` | Call tree, data structure reference, refactoring notes, this file |

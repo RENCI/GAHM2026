@@ -29,6 +29,7 @@ fprintf('\n=== GAHM26 Regression Comparison ===\n\n')
 
 toolsdir = fileparts(mfilename('fullpath'));
 projdir  = fileparts(toolsdir);
+addpath(fullfile(projdir, 'util'))
 
 velocity_tol  = 1e-10;
 pressure_tol  = 1e-10;

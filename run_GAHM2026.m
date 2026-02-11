@@ -169,6 +169,8 @@ if nargin < 1
     config_name = 'config_GAHM2026';
 end
 
+addpath('util')
+
 warning off
 
 %% Load configuration parameters

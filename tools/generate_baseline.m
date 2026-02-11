@@ -27,6 +27,7 @@ fprintf('\n=== GAHM26 Baseline Generator ===\n\n')
 
 toolsdir = fileparts(mfilename('fullpath'));
 projdir  = fileparts(toolsdir);
+addpath(fullfile(projdir, 'util'))
 
 %% Common parameters (match run_GAHM2026.m)
 
