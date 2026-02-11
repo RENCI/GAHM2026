@@ -171,6 +171,9 @@ end
 
 addpath('util')
 
+if ~exist('input', 'dir'),  mkdir('input');  end
+if ~exist('output', 'dir'), mkdir('output'); end
+
 warning off
 
 %% Load configuration parameters
