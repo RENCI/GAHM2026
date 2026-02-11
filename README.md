@@ -12,7 +12,7 @@ Developed by Rick Luettich, University of North Carolina.
 ## Quick Start
 
 1. Open MATLAB and `cd` to this directory.
-2. Edit `config/config_GAHM2026.m` to set the storm and processing parameters (see below).
+2. Copy the file `config/config_GAHM2026.m` to `config/myconfig.m` and set the storm and processing parameters (see below).
 3. Run the driver:
 
 ```matlab
@@ -26,7 +26,9 @@ Output is written to a NetCDF file (for grid output) or returned as MATLAB struc
 
 ## Configuration
 
-All parameters are set in `config/config_GAHM2026.m`. The main sections are described below.
+All parameters are set in a config file.  Configuration files are in the `config` directory.  The repository contains `config/config_GAHM2026.m`, which can be used to run the Florence 2018 case and can be used as a template for other simulations.  It is recommended that the config file `config_GAHM2026.m` not be modified as subsequent pulls will overwrite the changes. 
+
+The main sections are described below.
 
 ### Storm / Track File
 
