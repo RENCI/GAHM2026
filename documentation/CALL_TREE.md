@@ -23,9 +23,9 @@
 
 ## Execution Trace
 
-### Step 1: `run_GAHM2026.m` (driver script)
+### Step 1: `run_GAHM2026.m` (driver function)
 
-Sets all configuration parameters and makes two calls:
+Loads configuration from `config/config_GAHM2026.m` (or a user-specified config) and makes two calls:
 
 1. **Line 236**: Calls `GAHM2026.m` (the orchestrator)
 2. **Line 241**: Calls `writeGAHM2026NetCdf.m` (if `output_info.type == "grid"`)

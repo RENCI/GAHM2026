@@ -9,7 +9,7 @@
 
 MATLAB codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). Developed by Rick Luettich at RENCI/UNC. The pipeline reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with gridded environmental fields, and writes output to NetCDF.
 
-**Entry point**: `run_GAHM2026.m` → loads `config_GAHM2026.m` → calls `GAHM2026.m`
+**Entry point**: `run_GAHM2026.m` → loads `config/config_GAHM2026.m` → calls `GAHM2026.m`
 
 ---
 
@@ -22,7 +22,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | Role | Files |
 |------|-------|
 | Driver | `run_GAHM2026.m` |
-| Configuration | `config_GAHM2026.m` |
+| Configuration | `config/config_GAHM2026.m` |
 | Orchestrator | `GAHM2026.m` |
 | GAHM pipeline | `GAHM2026_prep.m`, `GAHM2026_consistency.m`, `GAHM2026_solve.m` |
 | Profile computation | `GAHM_VPradial.m`, `GAHM_VP.m` |
@@ -35,6 +35,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 
 | Directory | Contents |
 |-----------|----------|
+| `config/` | Configuration files (default: `config_GAHM2026.m`) |
 | `input/` | Input data files (e.g., `ibtracs.NA.list.v04r01.csv`) |
 | `output/` | NetCDF output files (`stormname_year.nc`) |
 | `documentation/` | Call tree, data structure reference, refactoring notes, this file |
@@ -118,8 +119,8 @@ Created `documentation/GAHM_struct.md`. Replaced 50+ line duplicated GAHM struct
 ### Post-Refactoring: Naming and Organization (Feb 8, 2026)
 1. **Naming consistency**: Replaced all occurrences of `GAHM2024` → `GAHM2026` and `GAHM26_` → `GAHM2026_` across all files, function names, variable names, comments, and documentation. Renamed all affected files.
 2. **Removed `not_needed/` directory** and cleaned documentation references.
-3. **Created `input/` directory**: Moved `ibtracs.NA.list.v04r01.csv` into `input/`. Updated file paths in `config_GAHM2026.m`, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `README.md`.
-4. **Created `output/` directory**: Output NetCDF files use `stormname_year` naming (e.g., `output/Florence_2018.nc`). Updated `config_GAHM2026.m` and documentation.
+3. **Created `input/` directory**: Moved `ibtracs.NA.list.v04r01.csv` into `input/`. Updated file paths in `config/config_GAHM2026.m`, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `README.md`.
+4. **Created `output/` directory**: Output NetCDF files use `stormname_year` naming (e.g., `output/Florence_2018.nc`). Updated `config/config_GAHM2026.m` and documentation.
 5. **Early output file check**: Added check in `run_GAHM2026.m` (after config load, before computation) to error if the output NetCDF file already exists.
 6. **Added `VPrad` output**: Modified `GAHM2026.m` to return radial grid data as 7th output. Packages internal arrays (`VVel_VPrad_10_10`, `VPress_VPrad`, `VEnvrad_10_10`, `PEnvrad`) into a `VPrad` struct for use by plotting scripts.
 

@@ -12,11 +12,12 @@ Developed by Rick Luettich, University of North Carolina.
 ## Quick Start
 
 1. Open MATLAB and `cd` to this directory.
-2. Edit `config_GAHM2026.m` to set the storm and processing parameters (see below).
-3. Run the driver script:
+2. Edit `config/config_GAHM2026.m` to set the storm and processing parameters (see below).
+3. Run the driver:
 
 ```matlab
->> run_GAHM2026
+>> run_GAHM2026              % uses default config/config_GAHM2026.m
+>> run_GAHM2026('myconfig')  % uses config/myconfig.m
 ```
 
 Output is written to a NetCDF file (for grid output) or returned as MATLAB structs (for point output).
@@ -25,7 +26,7 @@ Output is written to a NetCDF file (for grid output) or returned as MATLAB struc
 
 ## Configuration
 
-All parameters are set in `config_GAHM2026.m`. The main sections are described below.
+All parameters are set in `config/config_GAHM2026.m`. The main sections are described below.
 
 ### Storm / Track File
 
@@ -53,7 +54,9 @@ All parameters are set in `config_GAHM2026.m`. The main sections are described b
 | `env_info.file_name` | Name of `.mat` file with gridded environmental/hurricane fields (without `.mat` extension). Required only for `type = 3`. |
 | `env_info.taper_flag` | `true`/`false` — apply taper function to blend GAHM vortex into environmental fields |
 
-For `env_info.type = 1` or `2`, no external environmental data file is needed. For `type = 3`, a `.mat` file (e.g., `Florence.mat`) containing gridded environmental and hurricane velocity/pressure fields is required.
+**Notes:**
+- For `env_info.type = 1` or `2`, no external environmental data file is needed. For `type = 3`, a `.mat` file (e.g., `Florence.mat`) containing gridded environmental and hurricane velocity/pressure fields is required.
+- The env_info.file_name 'mat' file is the output of the separator / scrubber code with variables BestTrack_lat, etc...
 
 ### Output
 
@@ -71,8 +74,8 @@ For `env_info.type = 1` or `2`, no external environmental data file is needed. F
 
 | Directory / File | Description |
 |------------------|-------------|
-| `run_GAHM2026.m` | Top-level driver script |
-| `config_GAHM2026.m` | Configuration parameters |
+| `run_GAHM2026.m` | Top-level driver function (accepts optional config name) |
+| `config/` | Configuration files (default: `config_GAHM2026.m`) |
 | `GAHM2026.m` | Master orchestrator |
 | `GAHM2026_prep.m` | Initialize GAHM data structure per timestep |
 | `GAHM2026_consistency.m` | Input consistency checks and flag setting |

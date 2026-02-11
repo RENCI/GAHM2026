@@ -34,14 +34,15 @@
 %
 %                 2/3/2026   - Rick Luettich
 %
-function [VEnv_10_10,VHur_10_10,Masks,PscaleEnv] = read_Env_and_Hurr_fields ...
+function [VEnv_10_10,VHur_10_10,Masks,PscaleEnv] = read_Env_and_Hurr_fields2 ...
                                               (env,starttime_dt,endtime_dt)
 
 % Read in and setup the Environmental field. Assumes env.type == 3
 
 load (env.file_name);     % assumed to be a Matlab '.mat' file
-%env_vals=eval(env.file_name(1:length(env.file_name)-4));  %rename the env data structure if included .mat on the end
-env_vals=eval(env.file_name);    %rename the env data structure
+% %env_vals=eval(env.file_name(1:length(env.file_name)-4));  %rename the env data structure if included .mat on the end
+%env_vals=eval(env.file_name);    %rename the env data structure
+% env_vals=load(env.file_name);
 [~, nEr, nEc]=size(env_vals.Lo);
 startline=find(starttime_dt==[env_vals.Time]);
 if isempty(startline)  % didn't find the specified time in the background Enviromental Velocity file
@@ -114,6 +115,4 @@ for nl=startline:endline
 %    PscaleEnv(i)=(env_vals.PcdefHur(nl)+env_vals.PcEnv(nl)-env_vals.Pc(nl))/(env_vals.Pc(nl)-PnEnvAvg); %use to scale the central pressure deficit in GAHM
     PscaleEnv(i)=1;
 end
-
-
 

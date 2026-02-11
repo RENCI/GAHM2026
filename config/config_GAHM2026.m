@@ -23,7 +23,7 @@ storm_info.designation = 'AL06';
 % otherwise, YYYYMMDDHH, must be in both the track & gridded input files (if used).
 %storm_info.starttime = 0;          
 %storm_info.endtime = 0;            
-storm_info.starttime='2018091312';  
+storm_info.starttime='2018091400';  
 storm_info.endtime='2018091500';   
 storm_info.outputfilename=sprintf('%s_%s',storm_info.name,storm_info.year);
 
@@ -48,7 +48,7 @@ GAHM_compute_info.delr=1000;
 
 %% specify info for using land roughness based Wind Adjustment Factor
 WAF_info.flag=true;    % Wind Adjustment Factor based on land roughness
-WAF_info.file_name='WAF_15deg_10km_6km_raster_test.tif'; % name of .tif file with gridded WAF values, ignored if WAF.flag=false
+WAF_info.file_name='input/WAF_15deg_10km_6km_raster_test.tif'; % name of .tif file with gridded WAF values, ignored if WAF.flag=false
 
 %% specify info for large scale gridded wind / pressure field
 env_info.type=3; % options are 1, 2 or 3.  If 1 or 2 are selected, the remainder of this section is ignored

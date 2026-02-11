@@ -1,5 +1,9 @@
 %--------------------------------------------------------------------------
-% script to execute GAHM2026.m
+% Function to execute GAHM2026.m
+%
+% Usage:
+%     run_GAHM2026              — uses default config/config_GAHM2026.m
+%     run_GAHM2026('myconfig')  — uses config/myconfig.m
 % 
 %% Required Matlab scripts:
 %     GAHM2026.m - master GAHM26 calc script and all scripts it calls
@@ -159,12 +163,34 @@
 %
 %%                        2/3/2026  Rick Luettich
 
+function run_GAHM2026(config_name)
+
+if nargin < 1
+    config_name = 'config_GAHM2026';
+end
+
 warning off
 
 %% Load configuration parameters
-%  Edit config_GAHM2026.m to change storm, GAHM constants,
-%  environmental field, WAF, and output settings.
-config_GAHM2026
+config_file = fullfile('config', config_name);
+if ~exist([config_file '.m'], 'file')
+    error('Config file not found: %s.m', config_file);
+end
+run(config_file)
+
+%% Download IBTrACS file if it does not exist
+if storm_info.file_type == "IBTrACS" && ~exist(storm_info.file_name,'file')
+    ibtracs_url = ['https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/' ...
+                   erase(storm_info.file_name,'input/')];
+    fprintf('IBTrACS file not found: %s\n', storm_info.file_name);
+    fprintf('Downloading from %s ...\n', ibtracs_url);
+    try
+        websave(storm_info.file_name, ibtracs_url);
+        fprintf('Download complete.\n');
+    catch ME
+        error('Failed to download IBTrACS file: %s', ME.message);
+    end
+end
 
 %% Check for existing output file before running
 if output_info.type == "grid"
@@ -202,4 +228,6 @@ elseif output_info.type == "points"
     end
 
     disp('Done computing values at output points')
+end
+
 end
