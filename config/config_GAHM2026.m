@@ -47,7 +47,7 @@ GAHM_compute_info.nr=800;
 GAHM_compute_info.delr=1000;
 
 %% specify info for using land roughness based Wind Adjustment Factor
-WAF_info.flag=true;    % Wind Adjustment Factor based on land roughness
+WAF_info.flag=false;    % Wind Adjustment Factor based on land roughness
 WAF_info.file_name='input/WAF_15deg_10km_6km_raster_test.tif'; % name of .tif file with gridded WAF values, ignored if WAF.flag=false
 
 %% specify info for large scale gridded wind / pressure field
