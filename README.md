@@ -1,4 +1,4 @@
-# GAHM2026 — Generalized Asymmetric Holland Model
+# GAHM2026 — Generalized Asymmetric Holland Model <img width="70" height="70" alt="gahm" src="https://github.com/user-attachments/assets/4c152a13-d5ee-423e-bd08-594bfd9de366" />
 
 ## amplified version of GAHM2026
 ## 8 Feb 2026
