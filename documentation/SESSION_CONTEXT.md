@@ -1,6 +1,6 @@
 # GAHM2026 Refactoring Session Context
 
-**Last updated**: February 8, 2026  
+**Last updated**: February 16, 2026  
 **Purpose**: Continuity document for resuming work in a new session.
 
 ---
@@ -15,7 +15,7 @@ MATLAB codebase for computing hurricane wind and pressure fields using the Gener
 
 ## Current State
 
-All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization scripts modernized (Phase 1 of plot/eval plan complete).
+All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization scripts modernized (Phase 1 of plot/eval plan complete). ScrubEra5 subproject updated to share the same IBTrACS file as GAHM2026.
 
 ### Active Files (22 .m files in project root)
 
@@ -41,6 +41,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | `output/` | NetCDF output files (`stormname_year.nc`) |
 | `documentation/` | Call tree, data structure reference, refactoring notes, this file |
 | `tools/` | Regression testing harness |
+| `ScrubEra5/` | ERA5 environmental field extraction subproject (20 MATLAB files + IBTrACS track data) |
 | `PlotEvalScripts/` | Plotting and evaluation scripts |
 
 ### Documentation
@@ -145,6 +146,10 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 - `GAHM2026_ASWIP_compare.m` — ~550 lines of repetitive scatter plots (Phase 3 candidate)
 - `Rmax_compare.m` — Hardcoded filenames for 13 storms (Phase 3 candidate)
 - `radial_find_maskedge.m` — Utility, no changes needed
+
+### ScrubEra5 Integration (Feb 16, 2026)
+- Updated `ScrubEra5/config.m` to reference the shared IBTrACS file at `input/ibtracs.NA.list.v04r01.csv` (via `fullfile('..', 'input', ...)`) instead of a local copy in `ScrubEra5/`.
+- Moved the IBTrACS CSV from `ScrubEra5/` to `input/` so both GAHM2026 and ScrubEra5 use the same file.
 
 ---
 

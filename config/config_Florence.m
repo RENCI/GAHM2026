@@ -38,7 +38,7 @@ scrub_info.output_dir         = 'output';
 % Populate shared fields into scrub_info for ScrubEra5 consumption
 scrub_info.storm_name  = storm_name;
 scrub_info.storm_year  = storm_year;
-scrub_info.track_file  = track_file;
+scrub_info.track_file  = fullfile('input', track_file);
 
 %% ===== GAHM2026 storm / track file info =====
 storm_info.file_name   = fullfile('input', track_file);
