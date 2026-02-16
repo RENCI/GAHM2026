@@ -1,0 +1,719 @@
+clearvars  
+close all
+clc
+
+%% pre
+
+data = readtable('ibtracs.NA.list.v04r01.csv');
+
+real_lat=table2array(data(118875:118972,9));
+real_lon=table2array(data(118875:118972,10))+360; 
+
+tt=table2array(data(118875:118972,7));
+
+t1 = datetime(2018,9,6,0,0,0);
+t2 = datetime(2018,9,18,0,0,0);
+time = t1:hours(1):t2;
+
+real_lon=interp1(tt,real_lon,time);
+real_lat=interp1(tt,real_lat,time);
+
+num=size(time,2);
+
+jing=round((real_lon)*4);
+wei=round((90-real_lat)*4);
+
+lat=ncread('Florence.nc','latitude');
+lon=ncread('Florence.nc','longitude');
+
+msl=ncread('Florence.nc','msl');
+u10=ncread('Florence.nc','u10');
+v10=ncread('Florence.nc','v10');
+
+latt=lat;
+lonn=lon;
+[lon,lat]=meshgrid(lon,lat);
+
+res=0.25;
+
+output_lon=zeros(num,81,81);
+output_lat=zeros(num,81,81);
+output_slp=zeros(num,81,81);
+output_u=zeros(num,81,81);
+output_v=zeros(num,81,81);
+mask=zeros(num,81,81);
+mask34=zeros(num,81,81);
+
+out_u=zeros(num,81,81);
+out_v=zeros(num,81,81);
+out_slp=zeros(num,81,81);
+
+cutline_10_lon=nan(num,25);
+cutline_10_lat=nan(num,25);
+
+cutline_34_lon=nan(num,25);
+cutline_34_lat=nan(num,25);
+
+%% loop
+
+for i=1:289
+
+    %% original field
+
+    psl=squeeze(msl(:,:,i))'/100;
+    u=squeeze(u10(:,:,i))';
+    v=squeeze(v10(:,:,i))';
+
+    % now psl/u/v is (latitude,longitude)
+    
+    wind=(u.^2+v.^2).^0.5; 
+    
+    % find lowest pressure center in original field
+
+    tem=psl(wei(i)-6:wei(i)+6,jing(i)-6:jing(i)+6);
+
+    lowest=min(tem,[],"all");
+
+    ind=find(tem==lowest);
+
+    temlon=lon(wei(i)-6:wei(i)+6,jing(i)-6:jing(i)+6);
+    temlat=lat(wei(i)-6:wei(i)+6,jing(i)-6:jing(i)+6);
+
+    era5_lon(i)=temlon(ind(1));
+    era5_lat(i)=temlat(ind(1));
+    
+    % Converting from Cartesian Coordinates to Polar Coordinates
+    
+    lon_dc=lon(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10)-era5_lon(i);
+    lat_dc=lat(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10)-era5_lat(i);
+    psl_dc=psl(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10);
+    u_dc=u(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10);
+    v_dc=v(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10);
+    wind_dc=wind(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10);
+
+    % the new Polar Coordinates has 400 radial unit and interval is
+    % 20/400=0.05 deg, and has 360 degree unit
+    
+    r=linspace(0,10,1000);
+    th=linspace(0,2*pi,360);
+    
+    [rho,theta]=meshgrid(r,th);
+    
+    [Xq, Yq] = pol2cart(theta, rho);
+    
+    % hr -- Polar Coordinates 
+    
+    hr_slp=griddata(lon_dc,lat_dc,psl_dc,Xq, Yq,'linear');
+    hr_u=griddata(lon_dc,lat_dc,u_dc,Xq, Yq,'linear');
+    hr_v=griddata(lon_dc,lat_dc,v_dc,Xq, Yq,'linear');
+    hr_wind=griddata(lon_dc,lat_dc,wind_dc,Xq, Yq,'linear');
+    
+    lon_newv_34=[];
+    lat_newv_34=[];
+    
+    count_34=zeros(24,1);
+    
+    % where to start find the cutline
+    
+    start_34=2*sqrt((era5_lon(i)-real_lon(i))^2+(era5_lat(i)-real_lat(i))^2);
+    
+            if (round(start_34/10*1000)<100)
+                start_34=100;
+            else
+                start_34=round(start_34/10*1000);
+            end
+    
+    for j=1:24
+    
+        flag=1;
+        count_34(j)=start_34;
+    
+        while flag==1 && count_34(j)<1000/10*6
+    
+            count_34(j)= count_34(j)+1;
+    
+            % Calculate the tangential wind 
+    
+            tan_wind_34=-hr_u(j*15,count_34(j))*sin(j*15/180*pi)+hr_v(j*15,count_34(j))*cos(j*15/180*pi);            
+    
+            if tan_wind_34<34/1.944
+
+                flag=0;
+
+            end     
+    
+        end
+    
+    end
+
+    tem_ave_r=mean(count_34,"all")*10/1000;
+    
+    tem_count_34=[count_34;count_34;count_34];
+    tem_count_34= movmean(tem_count_34,3);
+    count_34=tem_count_34(25:48);
+    
+    cutline_var_last_34=0;
+    cutline_var_now_34=var(count_34);      
+        
+    % Smoothing the cutline
+
+    while (abs(cutline_var_now_34-cutline_var_last_34)>100*20)
+
+           tem_count_34=[count_34;count_34;count_34];
+           tem_count_34= movmean(tem_count_34,3);
+           count_34=tem_count_34(25:48);
+    
+           cutline_var_last_34=cutline_var_now_34;
+           cutline_var_now_34=var(count_34);
+
+    end
+
+    new_count_34=count_34;
+
+    for j=1:24
+
+       lon_newv_34=[lon_newv_34,Xq(j*15,round(new_count_34(j)*1))];
+       lat_newv_34=[lat_newv_34,Yq(j*15,round(new_count_34(j)*1))];
+
+    end
+    
+    bearing_angle=zeros(length(lon_newv_34),1);
+    vector_lon=zeros(length(lon_newv_34),1);
+    vector_lat=zeros(length(lat_newv_34),1);
+
+    for j=1:length(lon_newv_34)-1
+
+        vector_lon(j)=lon_newv_34(j+1)-lon_newv_34(j);
+        vector_lat(j)=lat_newv_34(j+1)-lat_newv_34(j);
+
+    end
+
+    vector_lon(length(lon_newv_34))=lon_newv_34(1)-lon_newv_34(length(lon_newv_34));
+    vector_lat(length(lon_newv_34))=lat_newv_34(1)-lat_newv_34(length(lon_newv_34));
+
+    for j=1:length(lon_newv_34)-1
+
+        bearing_angle(j)=vector_lon(j)*vector_lat(j+1)-vector_lon(j+1)*vector_lat(j);
+
+    end
+
+    bearing_angle(length(lon_newv_34))=vector_lon(length(lon_newv_34))*vector_lat(1)-vector_lon(1)*vector_lat(length(lon_newv_34));
+
+    bearing_flag=0;
+
+    for j=1:length(lon_newv_34)
+
+        if bearing_angle(j)>0
+            bearing_flag=bearing_flag+1;
+        end
+
+        if bearing_angle(j)<0
+            bearing_flag=bearing_flag-1;
+        end
+
+    end
+
+    test_point=0;
+
+    while (bearing_flag<24 && bearing_flag>-24)
+
+        tem_count=[count_34;count_34;count_34];
+        tem_count= movmean(tem_count,3);
+        count_34=tem_count(25:48);
+
+        lon_newv_34=[];
+        lat_newv_34=[];
+
+        for j=1:24
+
+            lon_newv_34=[lon_newv_34,Xq(j*15,round(count_34(j)))];
+            lat_newv_34=[lat_newv_34,Yq(j*15,round(count_34(j)))];
+
+        end
+
+        for j=1:length(lon_newv_34)-1
+
+            vector_lon(j)=lon_newv_34(j+1)-lon_newv_34(j);
+            vector_lat(j)=lat_newv_34(j+1)-lat_newv_34(j);
+        
+        end
+
+        vector_lon(length(lon_newv_34))=lon_newv_34(1)-lon_newv_34(length(lon_newv_34));
+        vector_lat(length(lon_newv_34))=lat_newv_34(1)-lat_newv_34(length(lon_newv_34));
+
+        for j=1:length(lon_newv_34)-1
+
+            bearing_angle(j)=vector_lon(j)*vector_lat(j+1)-vector_lon(j+1)*vector_lat(j);
+
+        end
+
+        bearing_angle(length(lon_newv_34))=vector_lon(length(lon_newv_34))*vector_lat(1)-vector_lon(1)*vector_lat(length(lon_newv_34));
+
+        bearing_flag=0;
+
+        for j=1:length(lon_newv_34)
+
+            if bearing_angle(j)>0
+
+               bearing_flag=bearing_flag+1;
+
+            end
+
+            if bearing_angle(j)<0
+
+               bearing_flag=bearing_flag-1;
+            
+            end
+       
+        end
+
+    end
+
+    % lon_newv - lon of cutline 
+    % lat_newv - lat of cutline
+    
+    lon_newv_34=lon_newv_34+era5_lon(i);
+    lon_newv_34=[lon_newv_34 lon_newv_34(1)];
+    lat_newv_34=lat_newv_34+era5_lat(i);
+    lat_newv_34=[lat_newv_34 lat_newv_34(1)];
+
+    lon_newv_34=lon_newv_34';
+    lat_newv_34=lat_newv_34';
+
+    domain_lon=lonn(jing(i)-4*10:jing(i)+4*10);
+    domain_lat=latt(wei(i)-4*10:wei(i)+4*10);
+
+    [domain_lon,domain_lat]=meshgrid(domain_lon,domain_lat);
+
+    domain_lon=domain_lon(:);
+    domain_lat=domain_lat(:);
+
+    in_34 = inpolygon(domain_lon,domain_lat,lon_newv_34,lat_newv_34);
+
+    count_34=count_34*10/1000;
+
+    distance_34=zeros(1,24);
+
+    for dis_num=1:24
+
+        theta = 15 * dis_num;   
+
+        dx = count_34(dis_num) * cosd(theta) * 110.54;
+        dy = count_34(dis_num) * sind(theta) * 111.32 * cosd(real_lat(i));
+
+        distance_34(dis_num) = hypot(dx, dy);
+
+    end
+
+    %% 
+
+    % Converting from Cartesian Coordinates to Polar Coordinates
+    
+    lon_dc=lon(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10)-era5_lon(i);
+    lat_dc=lat(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10)-era5_lat(i);
+    psl_dc=psl(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10);
+    u_dc=u(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10);
+    v_dc=v(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10);
+    wind_dc=wind(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10);
+
+    % the new Polar Coordinates has 400 radial unit and interval is
+    % 20/400=0.05 deg, and has 360 degree unit
+    
+    r=linspace(0,10,1000);
+    th=linspace(0,2*pi,360);
+    
+    [rho,theta]=meshgrid(r,th);
+    
+    [Xq, Yq] = pol2cart(theta, rho);
+    
+    % hr -- Polar Coordinates 
+    
+    hr_slp=griddata(lon_dc,lat_dc,psl_dc,Xq, Yq,'linear');
+    hr_u=griddata(lon_dc,lat_dc,u_dc,Xq, Yq,'linear');
+    hr_v=griddata(lon_dc,lat_dc,v_dc,Xq, Yq,'linear');
+    hr_wind=griddata(lon_dc,lat_dc,wind_dc,Xq, Yq,'linear');
+    
+    lon_newv=[];
+    lat_newv=[];
+    
+    count=zeros(24,1);
+    
+    % where to start find the cutline
+    
+    start=2*sqrt((era5_lon(i)-real_lon(i))^2+(era5_lat(i)-real_lat(i))^2);
+    
+    if (round(start/10*1000)<100)
+
+          start=100;
+
+    else
+
+          start=round(start/10*1000);
+
+    end
+    
+    for j=1:24
+    
+        flag=1;
+        count(j)=start;
+    
+        while flag==1 && count(j)<1000/10*6
+    
+            count(j)= count(j)+1;
+    
+            % Calculate the tangential wind 
+    
+            tan_wind=-hr_u(j*15,count(j))*sin(j*15/180*pi)+hr_v(j*15,count(j))*cos(j*15/180*pi);            
+    
+            if tan_wind<10
+
+                flag=0;
+
+            end     
+    
+        end
+    
+    end
+    
+    tem_count=[count;count;count];
+    tem_count= movmean(tem_count,3);
+    count=tem_count(25:48);
+    
+    cutline_var_last=0;
+    cutline_var_now=var(count);      
+        
+    % Smoothing the cutline
+    
+    while (abs(cutline_var_now-cutline_var_last)>100*20)
+    
+           tem_count=[count;count;count];
+           tem_count= movmean(tem_count,3);
+           count=tem_count(25:48);
+    
+           cutline_var_last=cutline_var_now;
+           cutline_var_now=var(count);
+
+    end
+    
+
+    for j=1:24
+
+       lon_newv=[lon_newv,Xq(j*15,round(count(j)*1))];
+       lat_newv=[lat_newv,Yq(j*15,round(count(j)*1))];
+
+    end
+    
+    bearing_angle=zeros(length(lon_newv),1);
+    vector_lon=zeros(length(lon_newv),1);
+    vector_lat=zeros(length(lon_newv),1);
+
+    for j=1:length(lon_newv)-1
+
+        vector_lon(j)=lon_newv(j+1)-lon_newv(j);
+        vector_lat(j)=lat_newv(j+1)-lat_newv(j);
+
+    end
+
+    vector_lon(length(lon_newv))=lon_newv(1)-lon_newv(length(lon_newv));
+    vector_lat(length(lon_newv))=lat_newv(1)-lat_newv(length(lon_newv));
+
+    for j=1:length(lon_newv)-1
+
+        bearing_angle(j)=vector_lon(j)*vector_lat(j+1)-vector_lon(j+1)*vector_lat(j);
+
+    end
+
+    bearing_angle(length(lon_newv))=vector_lon(length(lon_newv))*vector_lat(1)-vector_lon(1)*vector_lat(length(lon_newv));
+
+    bearing_flag=0;
+
+    for j=1:length(lon_newv)
+
+        if bearing_angle(j)>0
+            bearing_flag=bearing_flag+1;
+        end
+
+        if bearing_angle(j)<0
+            bearing_flag=bearing_flag-1;
+        end
+
+    end
+
+    test_point=0;
+
+    while (bearing_flag<24 && bearing_flag>-24)
+
+           test_point=  test_point+1;
+
+           tem_count=[count;count;count];
+           tem_count= movmean(tem_count,3);
+           count=tem_count(25:48);
+
+        lon_newv=[];
+        lat_newv=[];
+
+        for j=1:24
+            lon_newv=[lon_newv,Xq(j*15,round(count(j)))];
+            lat_newv=[lat_newv,Yq(j*15,round(count(j)))];
+        end
+
+        for j=1:length(lon_newv)-1
+
+        vector_lon(j)=lon_newv(j+1)-lon_newv(j);
+        vector_lat(j)=lat_newv(j+1)-lat_newv(j);
+        
+        end
+
+    vector_lon(length(lon_newv))=lon_newv(1)-lon_newv(length(lon_newv));
+    vector_lat(length(lon_newv))=lat_newv(1)-lat_newv(length(lon_newv));
+
+    for j=1:length(lon_newv)-1
+
+        bearing_angle(j)=vector_lon(j)*vector_lat(j+1)-vector_lon(j+1)*vector_lat(j);
+
+    end
+
+    bearing_angle(length(lon_newv))=vector_lon(length(lon_newv))*vector_lat(1)-vector_lon(1)*vector_lat(length(lon_newv));
+
+    bearing_flag=0;
+
+    for j=1:length(lon_newv)
+
+        if bearing_angle(j)>0
+
+            bearing_flag=bearing_flag+1;
+
+        end
+
+        if bearing_angle(j)<0
+
+            bearing_flag=bearing_flag-1;
+            
+        end
+        
+
+    end
+
+
+    end
+
+    % lon_newv - lon of cutline 
+    % lat_newv - lat of cutline
+    
+    lon_newv=lon_newv+era5_lon(i);
+    lon_newv=[lon_newv lon_newv(1)];
+    lat_newv=lat_newv+era5_lat(i);
+    lat_newv=[lat_newv lat_newv(1)];
+
+    lon_newv=lon_newv';
+    lat_newv=lat_newv';
+
+    domain_lon=lonn(jing(i)-4*10:jing(i)+4*10);
+    domain_lat=latt(wei(i)-4*10:wei(i)+4*10);
+
+    [domain_lon,domain_lat]=meshgrid(domain_lon,domain_lat);
+
+    domain_lon=domain_lon(:);
+    domain_lat=domain_lat(:);
+
+    in = inpolygon(domain_lon,domain_lat,lon_newv,lat_newv);
+
+    distance=zeros(1,24);
+
+    count=count*10/1000;
+
+    for dis_num=1:24
+
+        theta = 15 * dis_num;   
+
+        dx = count(dis_num) * cosd(theta) * 110.54;
+        dy = count(dis_num) * sind(theta) * 111.32 * cosd(real_lat(i));
+
+        distance(dis_num) = hypot(dx, dy);
+
+    end
+
+
+    %% basic field
+
+    half_power_wavelength=tem_ave_r/0.04;
+
+    d1 = designfilt('lowpassiir', ...   
+       'FilterOrder',5, ...
+       'HalfPowerFrequency',1/half_power_wavelength, ...
+       'DesignMethod','butter', ...  
+       'SampleRate',4); 
+
+    basic_slp=psl;
+    basic_u=u;
+    basic_v=v;
+    
+    % Detrend before applying Butterworth filter
+
+    basic_slp_for=zeros(size(basic_slp, 1),size(basic_slp, 2));
+    basic_u_for=zeros(size(basic_u, 1),size(basic_u, 2));
+    basic_v_for=zeros(size(basic_v, 1),size(basic_v, 2)); 
+ 
+    basic_slp_rev=zeros(size(basic_slp, 1),size(basic_slp, 2));
+    basic_u_rev=zeros(size(basic_u, 1),size(basic_u, 2));
+    basic_v_rev=zeros(size(basic_v, 1),size(basic_v, 2)); 
+  
+    ave_slp=zeros(size(basic_slp, 1),size(basic_slp, 2));
+    ave_u=zeros(size(basic_u, 1),size(basic_u, 2));
+    ave_v=zeros(size(basic_u, 1),size(basic_u, 2));
+
+    ave_slp(:,:)=mean(basic_slp(wei(i)-30*4:wei(i)+30*4,jing(i)-30*4:jing(i)+30*4),'all');
+    ave_u(:,:)=mean(basic_u(wei(i)-30*4:wei(i)+30*4,jing(i)-30*4:jing(i)+30*4),'all');
+    ave_v(:,:)=mean(basic_v(wei(i)-30*4:wei(i)+30*4,jing(i)-30*4:jing(i)+30*4),'all');
+
+
+    %%
+
+    basic_slp=basic_slp-ave_slp;
+    basic_u=basic_u-ave_u;
+    basic_v=basic_v-ave_v;
+
+    %% Apply the filter both on lon and lat
+
+    for j = wei(i)-30*4:wei(i)+30*4
+
+        basic_slp_for(j, jing(i)-30*4:jing(i)+30*4) =filtfilt(d1, basic_slp(j, jing(i)-30*4:jing(i)+30*4));
+
+        basic_slp_rev(j, jing(i)-30*4:jing(i)+30*4)=flip(basic_slp(j, jing(i)-30*4:jing(i)+30*4));
+        basic_slp_rev(j, jing(i)-30*4:jing(i)+30*4) =filtfilt(d1, basic_slp_rev(j, jing(i)-30*4:jing(i)+30*4));
+        basic_slp_rev(j, jing(i)-30*4:jing(i)+30*4)=flip(basic_slp_rev(j, jing(i)-30*4:jing(i)+30*4));
+
+        basic_slp(j, jing(i)-30*4:jing(i)+30*4)=basic_slp_for(j, jing(i)-30*4:jing(i)+30*4)+basic_slp_rev(j, jing(i)-30*4:jing(i)+30*4);
+        basic_slp(j, jing(i)-30*4:jing(i)+30*4)=basic_slp(j, jing(i)-30*4:jing(i)+30*4)/2;
+
+    end
+
+    for j = wei(i)-30*4:wei(i)+30*4
+
+        basic_u_for(j, jing(i)-30*4:jing(i)+30*4) =filtfilt(d1, basic_u(j, jing(i)-30*4:jing(i)+30*4));
+
+        basic_u_rev(j, jing(i)-30*4:jing(i)+30*4)=flip(basic_u(j, jing(i)-30*4:jing(i)+30*4));
+        basic_u_rev(j, jing(i)-30*4:jing(i)+30*4) =filtfilt(d1, basic_u_rev(j, jing(i)-30*4:jing(i)+30*4));
+        basic_u_rev(j, jing(i)-30*4:jing(i)+30*4)=flip(basic_u_rev(j, jing(i)-30*4:jing(i)+30*4));
+
+        basic_u(j, jing(i)-30*4:jing(i)+30*4)=basic_u_for(j, jing(i)-30*4:jing(i)+30*4)+basic_u_rev(j, jing(i)-30*4:jing(i)+30*4);
+        basic_u(j, jing(i)-30*4:jing(i)+30*4)=basic_u(j, jing(i)-30*4:jing(i)+30*4)/2;
+
+    end
+
+    for j = wei(i)-30*4:wei(i)+30*4
+
+        basic_v_for(j, jing(i)-30*4:jing(i)+30*4) =filtfilt(d1, basic_v(j, jing(i)-30*4:jing(i)+30*4));
+
+        basic_v_rev(j, jing(i)-30*4:jing(i)+30*4)=flip(basic_v(j, jing(i)-30*4:jing(i)+30*4));
+        basic_v_rev(j, jing(i)-30*4:jing(i)+30*4)=filtfilt(d1, basic_v_rev(j, jing(i)-30*4:jing(i)+30*4));
+        basic_v_rev(j, jing(i)-30*4:jing(i)+30*4)=flip(basic_v_rev(j, jing(i)-30*4:jing(i)+30*4));
+
+        basic_v(j, jing(i)-30*4:jing(i)+30*4)=basic_v_for(j, jing(i)-30*4:jing(i)+30*4)+basic_v_rev(j, jing(i)-30*4:jing(i)+30*4);
+        basic_v(j, jing(i)-30*4:jing(i)+30*4)=basic_v(j, jing(i)-30*4:jing(i)+30*4)/2;
+
+    end
+
+
+    for j = jing(i)-30*4:jing(i)+30*4
+
+        basic_slp_for(wei(i)-30*4:wei(i)+30*4,j)=filtfilt(d1, basic_slp(wei(i)-30*4:wei(i)+30*4,j));
+
+        basic_slp_rev(wei(i)-30*4:wei(i)+30*4,j)=flip(basic_slp(wei(i)-30*4:wei(i)+30*4,j));
+        basic_slp_rev(wei(i)-30*4:wei(i)+30*4,j)=filtfilt(d1, basic_slp_rev(wei(i)-30*4:wei(i)+30*4,j));
+        basic_slp_rev(wei(i)-30*4:wei(i)+30*4,j)=flip(basic_slp_rev(wei(i)-30*4:wei(i)+30*4,j));
+
+        basic_slp(wei(i)-30*4:wei(i)+30*4,j)=basic_slp_for(wei(i)-30*4:wei(i)+30*4,j)+basic_slp_rev(wei(i)-30*4:wei(i)+30*4,j);
+        basic_slp(wei(i)-30*4:wei(i)+30*4,j)=basic_slp(wei(i)-30*4:wei(i)+30*4,j)/2;
+
+    end
+
+    for j = jing(i)-30*4:jing(i)+30*4
+
+        basic_u_for(wei(i)-30*4:wei(i)+30*4,j)=filtfilt(d1, basic_u(wei(i)-30*4:wei(i)+30*4,j));
+
+        basic_u_rev(wei(i)-30*4:wei(i)+30*4,j)=flip(basic_u(wei(i)-30*4:wei(i)+30*4,j));
+        basic_u_rev(wei(i)-30*4:wei(i)+30*4,j)=filtfilt(d1, basic_u_rev(wei(i)-30*4:wei(i)+30*4,j));
+        basic_u_rev(wei(i)-30*4:wei(i)+30*4,j)=flip(basic_u_rev(wei(i)-30*4:wei(i)+30*4,j));
+
+        basic_u(wei(i)-30*4:wei(i)+30*4,j)=basic_u_for(wei(i)-30*4:wei(i)+30*4,j)+basic_u_rev(wei(i)-30*4:wei(i)+30*4,j);
+        basic_u(wei(i)-30*4:wei(i)+30*4,j)=basic_u(wei(i)-30*4:wei(i)+30*4,j)/2;
+
+
+    end
+
+    for j = jing(i)-30*4:jing(i)+30*4
+
+        basic_v_for(wei(i)-30*4:wei(i)+30*4,j)=filtfilt(d1, basic_v(wei(i)-30*4:wei(i)+30*4,j));
+
+        basic_v_rev(wei(i)-30*4:wei(i)+30*4,j)=flip(basic_v(wei(i)-30*4:wei(i)+30*4,j));
+        basic_v_rev(wei(i)-30*4:wei(i)+30*4,j)=filtfilt(d1, basic_v_rev(wei(i)-30*4:wei(i)+30*4,j));
+        basic_v_rev(wei(i)-30*4:wei(i)+30*4,j)=flip(basic_v_rev(wei(i)-30*4:wei(i)+30*4,j));
+
+        basic_v(wei(i)-30*4:wei(i)+30*4,j)=basic_v_for(wei(i)-30*4:wei(i)+30*4,j)+basic_v_rev(wei(i)-30*4:wei(i)+30*4,j);
+        basic_v(wei(i)-30*4:wei(i)+30*4,j)=basic_v(wei(i)-30*4:wei(i)+30*4,j)/2;
+
+    end
+
+    %%
+    
+    basic_slp=basic_slp+ave_slp;
+    basic_u=basic_u+ave_u;
+    basic_v=basic_v+ave_v;
+
+    basic_wind=(basic_u.^2+basic_v.^2).^0.5;
+
+    mask_34(:,:)=reshape(in,[81,81]);
+
+    tem_ave_u=sum(basic_u(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10).* double(mask_34),"all")/ sum(mask_34,'all');
+    tem_ave_v=sum(basic_v(wei(i)-4*10:wei(i)+4*10,jing(i)-4*10:jing(i)+4*10).* double(mask_34),"all")/ sum(mask_34,'all');
+
+    tem_ave_vel=(tem_ave_u.^2+tem_ave_v.^2).^0.5;
+    tem_ave_dir=atan2d(tem_ave_v,tem_ave_u);
+
+    %% disturbance field
+
+    dis_slp=psl-basic_slp;
+    dis_u=u-basic_u;
+    dis_v=v-basic_v;
+    
+    dis_wind=(dis_u.^2+dis_v.^2).^0.5;
+
+    %% output
+
+    output_lon(i,:,:)=lon(wei(i)-10*4:wei(i)+10*4,jing(i)-10*4:jing(i)+10*4);
+    output_lat(i,:,:)=lat(wei(i)-10*4:wei(i)+10*4,jing(i)-10*4:jing(i)+10*4);
+    output_u(i,:,:)=basic_u(wei(i)-10*4:wei(i)+10*4,jing(i)-10*4:jing(i)+10*4);
+    output_v(i,:,:)=basic_v(wei(i)-10*4:wei(i)+10*4,jing(i)-10*4:jing(i)+10*4);
+    output_slp(i,:,:)=basic_slp(wei(i)-10*4:wei(i)+10*4,jing(i)-10*4:jing(i)+10*4);
+
+    mask(i,:,:)=reshape(in,[81,81]);
+    mask34(i,:,:)=reshape(in_34,[81,81]);
+
+    out_u(i,:,:)=dis_u(wei(i)-10*4:wei(i)+10*4,jing(i)-10*4:jing(i)+10*4);
+    out_v(i,:,:)=dis_v(wei(i)-10*4:wei(i)+10*4,jing(i)-10*4:jing(i)+10*4);
+    out_slp(i,:,:)=dis_slp(wei(i)-10*4:wei(i)+10*4,jing(i)-10*4:jing(i)+10*4);
+
+
+end
+
+%% output
+
+output_lon=output_lon-360;
+
+mask=1-mask;
+mask34=1-mask34;
+
+Florence=struct('Time',time,'Lo',output_lon,'La',output_lat,'Vortex_mask',mask, ...
+    'Vortex_mask34',mask34,'env_msl',output_slp,'env_u10',output_u,'env_v10',output_v, ...
+    'hur_msl',out_slp,'hur_u10',out_u,'hur_v10',out_v, ...
+    'BestTrack_lon',real_lon,'BestTrack_lat',real_lat, ...
+    'distance_10',distance,'distance_34',distance_34, ...
+    'min_pressure_center_lon',era5_lon,'min_pressure_center_lat',era5_lat);
+
+varnames=["env_msl","env_u10","env_v10","hur_msl","hur_u10","hur_v10"];
+varunits=["mb","m/s","m/s","mb","m/s","m/s"];
+
+Florence.units=dictionary(varnames,varunits);
+
+save("Florence.mat","Florence")

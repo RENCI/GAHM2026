@@ -156,7 +156,9 @@
 %
 function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
           Trackdata, GAHM_out, VPrad]=GAHM2026(storm,GAHM_param_info, ...
-                          GAHM_compute_info,WAF_info,env_info,output)
+                          GAHM_compute_info,WAF_info,env_info,output,debug)
+
+if nargin < 7, debug = false; end
 
 %% transfer / compute needed information
 
@@ -184,25 +186,35 @@ end
  
 fid=fopen(output.warnings,'wt');
 
+if debug, fprintf('[DEBUG:GAHM2026] GAHM version=%d, env_type=%d, taper=%d, WAF=%d\n', GAHM_version, env_type, taper_flag, WAF_flag); end
+if debug, fprintf('[DEBUG:GAHM2026] Radial grid: ntheta=%d, nr=%d, delr=%d m (max radius=%.0f km)\n', ntheta, nr, delr, nr*delr/1000); end
+
 %% Read in storm track information & find beginning and ending lines
 
 [ATCF_data_in, ATCF_startline, ATCF_endline, starttime_dt, endtime_dt] = ...
     readAndSliceTrack(storm);
 
+if debug, fprintf('[DEBUG:GAHM2026] Track loaded: %s, lines %d-%d (%s to %s)\n', ...
+    storm.name, ATCF_startline, ATCF_endline, string(starttime_dt), string(endtime_dt)); end
+
 %% Read gridded environmental/hurricane fields and WAF raster
 
+if debug, fprintf('[DEBUG:GAHM2026] Loading environmental fields ...\n'); end
 [VEnv_10_10, VHur_10_10, BlendingMasks, PscaleEnv] = ...
     loadEnvFields(env_type, env_info, starttime_dt, endtime_dt);
+if debug, fprintf('[DEBUG:GAHM2026] Environmental fields loaded.\n'); end
 
 WAF_data = [];
 WAF_metadata = [];
 if WAF_flag
+    if debug, fprintf('[DEBUG:GAHM2026] Loading WAF raster from %s\n', WAF_info.file_name); end
     [WAF_data,WAF_metadata]=readgeoraster(WAF_info.file_name);    
 end
 
 %% Master time loop
 
 nBTtime=ATCF_endline-ATCF_startline+1;
+if debug, fprintf('[DEBUG:GAHM2026] Beginning master time loop: %d track time steps\n', nBTtime); end
 i=0;
 otime=0;
 VEnvrad_10_10 = [];
@@ -234,16 +246,20 @@ for itime=1:nBTtime
 
 %% Compute GAHM parameters at current track time
 
+    if debug, fprintf('[DEBUG:GAHM2026]   Step %d/%d: %s (BTinterval=%d hrs)\n', itime, nBTtime, string(datetime_t2), BTinterval); end
+
     [GAHM_t_new, skipline] = computeGAHMAtTrackTime(GAHM_param_info, ...
         env_info, ATCF_data_in, VEnv_10_10, PscaleEnv, ATCF_line_t2, ...
         BTinterval, fid);
     if skipline
+        if debug, fprintf('[DEBUG:GAHM2026]   Step %d/%d: skipped\n', itime, nBTtime); end
         continue
     end
     GAHM_t2 = GAHM_t_new;
               
 %% Compute radial profiles of vortex velocity and pressure
 
+    if debug, fprintf('[DEBUG:GAHM2026]   Computing radial profiles ...\n'); end
     [VVel_VPrad_t2, VPress_VPrad_t2, RP1, RP2] = computeRadialProfiles( ...
         r, theta, ntheta, nr, GAHM_param_info, GAHM_t2);
 
@@ -338,12 +354,14 @@ for itime=1:nBTtime
 end  % end master time loop
 
 fprintf('%s \n',' Completed calculations on radial grid. Preparing output')
+if debug, fprintf('[DEBUG:GAHM2026] Master time loop complete: %d output time steps produced\n', i); end
 
 itot=i;
 fclose(fid);
 
 %% Interpolate from radial grid to regular output grid
 
+if debug, fprintf('[DEBUG:GAHM2026] Interpolating from radial grid to regular output grid (%s) ...\n', output.type); end
 [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out] = ...
     buildRegularGridOutputs(itot, env_type, ntheta, nr, r, theta, ...
         output, WAF_flag, ...
@@ -352,6 +370,7 @@ fclose(fid);
         VEnv_10_10, VHur_10_10, BlendingMasks, ...
         LonEW, LatNS, datetimeint, ...
         WAF_data, WAF_metadata);
+if debug, fprintf('[DEBUG:GAHM2026] Regular grid interpolation complete.\n'); end
 
 %% Package radial grid data for plotting
 
@@ -373,6 +392,8 @@ for ii = 1:itot
         VPrad.EnvVor(ii).Press = VPrad.VVor(ii).Press + VPrad.Env(ii).Press;
     end
 end
+
+if debug, fprintf('[DEBUG:GAHM2026] Done.\n'); end
 
 end  % end main function
 

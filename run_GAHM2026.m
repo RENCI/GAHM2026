@@ -183,6 +183,10 @@ if ~exist([config_file '.m'], 'file')
 end
 run(config_file)
 
+if ~exist('debug','var'), debug = false; end
+if debug, fprintf('[DEBUG:run_GAHM2026] Configuration loaded from %s\n', config_file); end
+if debug, fprintf('[DEBUG:run_GAHM2026] Storm: %s %s, env_type=%d\n', storm_info.name, storm_info.year, env_info.type); end
+
 %% Download IBTrACS file if it does not exist
 if storm_info.file_type == "IBTrACS" && ~exist(storm_info.file_name,'file')
     ibtracs_url = ['https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/' ...
@@ -197,6 +201,35 @@ if storm_info.file_type == "IBTrACS" && ~exist(storm_info.file_name,'file')
     end
 end
 
+%% Auto-run ScrubEra5 if env_info.type==3 and the .mat file does not exist
+if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
+    if ~exist('scrub_info', 'var')
+        error(['EnvFields file not found: %s.mat\n' ...
+               'Use a unified config (with scrub_info) to enable auto-generation, ' ...
+               'or run ScrubEra5 separately first.'], env_info.file_name);
+    end
+    fprintf('EnvFields file not found: %s.mat\n', env_info.file_name);
+    fprintf('Running ScrubEra5 to generate it ...\n');
+
+    % Locate ScrubEra5 — subdirectory of GAHM2026
+    scrub_dir = fullfile(pwd, 'ScrubEra5');
+    if ~exist(fullfile(scrub_dir, 'ScrubEra5.m'), 'file')
+        error('Cannot find ScrubEra5.m in %s.', scrub_dir);
+    end
+    addpath(scrub_dir);
+
+    % Run ScrubEra5 with the scrub_info struct from the unified config
+    ScrubEra5(scrub_info);
+
+    % ScrubEra5 saves its output as <storm_name>_<storm_year>.mat in its
+    % own working directory.  Move it here if needed.
+    expected_mat = [env_info.file_name '.mat'];
+    if ~exist(expected_mat, 'file')
+        error('ScrubEra5 completed but %s was not found.', expected_mat);
+    end
+    fprintf('ScrubEra5 complete. %s is ready.\n', expected_mat);
+end
+
 %% Check for existing output file before running
 if output_info.type == "grid"
     f_out = [output_info.NetCDFfilename '.nc'];
@@ -207,12 +240,15 @@ end
 
 %% compute and output final TC wind/pressure fields as well as additional diagnostic information
 
+if debug, fprintf('[DEBUG:run_GAHM2026] Calling GAHM2026 (version=%d, ntheta=%d, nr=%d, delr=%d) ...\n', ...
+    GAHM_param_info.version, GAHM_compute_info.ntheta, GAHM_compute_info.nr, GAHM_compute_info.delr); end
 
 [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
         Trackdata, GAHM_out, VPrad]= GAHM2026(storm_info,GAHM_param_info, ...
-                          GAHM_compute_info,WAF_info,env_info,output_info);
+                          GAHM_compute_info,WAF_info,env_info,output_info,debug);
 
 if output_info.type == "grid"
+    if debug, fprintf('[DEBUG:run_GAHM2026] Writing netCDF output to %s.nc\n', output_info.NetCDFfilename); end
     disp('Writing netCDF output')
     err=writeGAHM2026NetCdf(output_info.NetCDFfilename,Reggrid_out,Reggrid_TC_out);
 elseif output_info.type == "points"
@@ -234,5 +270,7 @@ elseif output_info.type == "points"
 
     disp('Done computing values at output points')
 end
+
+if debug, fprintf('[DEBUG:run_GAHM2026] Done.\n'); end
 
 end
