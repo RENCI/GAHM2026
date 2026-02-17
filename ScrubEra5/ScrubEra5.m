@@ -67,7 +67,7 @@ if CONFIG.debug, fprintf('[DEBUG:ScrubEra5] Beginning main processing loop over 
 
 for i = 1:num_times
     
-    fprintf('Analyzing %s\n',string(time(i)))
+    fprintf('[INFO:ScrubEra5] Analyzing %s\n',string(time(i)))
     if CONFIG.debug, tic; end
 
     % extract at time level i

@@ -82,7 +82,7 @@ elseif input_file_type == "ASWIP"
 elseif input_file_type == "GAHM2026"
     ft_GAHM2026=true;
 else
-    fprintf('\n Error in read_ATCF_fort22.m. input file type unrecogrnized. %s \n \n',input_file_type)
+    fprintf('\n [INFO:read_ATCF_fort22] Error: input file type unrecognized. %s \n \n',input_file_type)
 end
 
 ATCF_data=readtable(input_file);
@@ -111,7 +111,7 @@ if strcmp(runtype,'OFCL') || strcmp(runtype,'BEST') || ...
    strcmp(runtype,'IBTr') || strcmp(runtype,'fort22') || ...
    strcmp(runtype,'MAPP')
 else
-   fprintf('Error in read_ATCF_fort22.m. Unrecogrnized runtype %s.\n',runtype)
+   fprintf('[INFO:read_ATCF_fort22] Error: unrecognized runtype %s.\n',runtype)
 end
 
 % process date/time by summing run initiation time and offset time

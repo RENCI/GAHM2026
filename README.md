@@ -10,39 +10,23 @@ Developed by Rick Luettich, University of North Carolina.
 
 ## Quick Start
 
-### One-command pipeline (recommended)
-
-With the unified config, a single MATLAB call runs ScrubEra5 (if needed) and then GAHM2026:
-
 ```matlab
 >> cd GAHM2026
->> run_GAHM2026('config_Florence')
+>> run_GAHM2026                        % uses default config/config_GAHM2026.m
+>> run_GAHM2026('config_Florence')     % uses config/config_Florence.m
 ```
 
-If `FLORENCE_2018.mat` does not exist, `run_GAHM2026` will automatically locate the `ScrubEra5/` subdirectory, run the vortex scrubber to generate it, and then proceed with GAHM2026.
+If the ScrubEra5 `.mat` file does not exist (e.g., `output/FLORENCE_2018.mat`), `run_GAHM2026` will automatically locate the `ScrubEra5/` subdirectory, run the vortex scrubber to generate it, and then proceed with GAHM2026.
 
-### Running each step separately
+### Running ScrubEra5 separately
 
-You can still run each step independently:
+You can run ScrubEra5 standalone using the same config file:
 
 ```matlab
-% Step 1 — generate environmental fields
 >> cd GAHM2026
 >> addpath('ScrubEra5')
->> env_vals = ScrubEra5('ScrubEra5/config.m');          % original ScrubEra5 config
->> env_vals = ScrubEra5('config/config_Florence');       % or unified config
-
-% Step 2 — run GAHM2026 (the .mat file is already in the working directory)
->> run_GAHM2026('config_Florence')
-```
-
-### Using the legacy GAHM2026-only config
-
-The original config file still works for cases where the `.mat` file already exists:
-
-```matlab
->> run_GAHM2026                        % uses config/config_GAHM2026.m
->> run_GAHM2026('config_GAHM2026')     % equivalent
+>> env_vals = ScrubEra5('config/config_GAHM2026');      % default config
+>> env_vals = ScrubEra5('config/config_Florence');       % storm-specific config
 ```
 
 ---
@@ -56,8 +40,8 @@ GAHM2026/
 ├── run_GAHM2026.m          — top-level driver
 ├── GAHM2026.m              — master orchestrator
 ├── config/
-│   ├── config_Florence.m   — unified config (ScrubEra5 + GAHM2026)
-│   └── config_GAHM2026.m   — legacy GAHM2026-only config
+│   ├── config_GAHM2026.m   — default unified config (ScrubEra5 + GAHM2026)
+│   └── config_Florence.m   — example storm-specific config
 ├── util/                   — GAHM computation scripts
 ├── input/                  — track files (IBTrACS, ATCF, fort22)
 ├── output/                 — NetCDF output files
@@ -66,7 +50,6 @@ GAHM2026/
 │
 └── ScrubEra5/
     ├── ScrubEra5.m             — vortex scrubber entry point
-    ├── config.m                — original standalone config
     ├── getERA5Data.m           — ERA5 NetCDF reader
     ├── loadTrackData.m         — IBTrACS track loader
     ├── findCutline.m           — wind threshold contour detection
@@ -79,9 +62,9 @@ GAHM2026/
 
 ## Configuration
 
-### Unified config (`config/config_Florence.m`)
+### Config file layout (`config/config_GAHM2026.m`)
 
-The unified config has four sections. Storm identity parameters are defined once and shared by both projects.
+Every config file has four sections. Storm identity parameters are defined once and shared by both ScrubEra5 and GAHM2026.
 
 #### 1. Shared storm identity
 
@@ -115,7 +98,7 @@ These values are defined as plain workspace variables and automatically populate
 
 #### 3. GAHM2026 parameters
 
-These are identical to the legacy config. See the tables below and the comments in `config/config_GAHM2026.m` or `run_GAHM2026.m` for full documentation.
+See the comments in `config/config_GAHM2026.m` or `run_GAHM2026.m` for full documentation.
 
 | Struct | Key parameters |
 |--------|---------------|
@@ -140,19 +123,14 @@ This matches the output filename that ScrubEra5 produces (`FLORENCE_2018.mat`), 
 
 ## Auto-chaining: How It Works
 
-When `run_GAHM2026` is called with a unified config and `env_info.type == 3`:
+When `run_GAHM2026` is called and `env_info.type == 3`:
 
-1. It checks whether `<env_info.file_name>.mat` exists (e.g., `FLORENCE_2018.mat`).
+1. It checks whether `<env_info.file_name>.mat` exists (e.g., `output/FLORENCE_2018.mat`).
 2. If the file exists → proceeds directly to GAHM2026 computation.
-3. If the file is missing **and** `scrub_info` is available in the workspace:
-   - Locates `ScrubEra5/` as a subdirectory (i.e., `./ScrubEra5/`).
-   - Calls `ScrubEra5(scrub_info)`, passing the struct directly.
-   - ScrubEra5 runs, saves the `.mat` file, and control returns to GAHM2026.
-4. If the file is missing **and** `scrub_info` is not available (legacy config):
-   - An error is raised with instructions to run ScrubEra5 separately or use a unified config.
+3. If the file is missing → locates `ScrubEra5/`, calls `ScrubEra5(scrub_info)`, saves the `.mat` file, and continues to GAHM2026.
 
 ```
-run_GAHM2026('config_Florence')
+run_GAHM2026
   │
   ├── Load config → storm_info, scrub_info, env_info, ...
   ├── Download IBTrACS if missing
@@ -171,7 +149,7 @@ run_GAHM2026('config_Florence')
 
 ## Creating a Config for a New Storm
 
-1. Copy `config/config_Florence.m` to `config/config_<StormName>.m`.
+1. Copy `config/config_GAHM2026.m` (or any existing storm config) to `config/config_<StormName>.m`.
 2. Update the shared storm identity section:
    ```matlab
    storm_name        = 'MICHAEL';
@@ -231,9 +209,8 @@ The `.mat` file (e.g., `FLORENCE_2018.mat`) contains the `env_vals` struct with:
 
 | Scenario | What to do |
 |----------|------------|
-| Existing `EnvFields.mat` with legacy config | `run_GAHM2026` or `run_GAHM2026('config_GAHM2026')` — works unchanged |
-| Existing `config.m` in ScrubEra5 | `ScrubEra5('config.m')` — works unchanged |
-| New storm with auto-chaining | Create a unified config and call `run_GAHM2026('config_<Storm>')` |
+| Existing `.mat` file already generated | `run_GAHM2026` — skips ScrubEra5, runs GAHM2026 directly |
+| New storm with auto-chaining | Copy the default config, update storm identity, and call `run_GAHM2026('config_<Storm>')` |
 
 ---
 

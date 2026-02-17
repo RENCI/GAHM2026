@@ -1,9 +1,9 @@
 %.........................................................................
 % 
-%  Script to read in a TC track file and compute GAHM2026 wind and pressure
-%  fields on a lon,lat grid that is centered on the eye of the storm. This 
-%  version will skip extra track file entries that are not at the regular 
-%  track interval (e.g., 3 hrs or 6 hrs).
+%  Function to compute GAHM2026 wind and pressure fields on a lon,lat grid 
+%  that is centered on the eye of the storm. This version will skip extra 
+%  track file entries that are not at the regular track interval 
+% (e.g., 3 hrs or 6 hrs).
 % 
 %  If gridded environmental and hurricane field are specified, the 
 %  GAHM2026 fields can be blended into the hurricane field and then added
@@ -154,9 +154,10 @@
 %                  2/6/2026  -  Decomposed into local functions
 %--------------------------------------------------------------------------
 %
-function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
-          Trackdata, GAHM_out, VPrad]=GAHM2026(storm,GAHM_param_info, ...
-                          GAHM_compute_info,WAF_info,env_info,output,debug)
+function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, ...
+          Reggrid_VVor_invtapHur_out, Trackdata, GAHM_out, VPrad] = ...
+          GAHM2026(storm,GAHM_param_info,GAHM_compute_info,WAF_info,...
+          env_info,output,debug)
 
 if nargin < 7, debug = false; end
 
@@ -214,7 +215,7 @@ end
 %% Master time loop
 
 nBTtime=ATCF_endline-ATCF_startline+1;
-if debug, fprintf('[DEBUG:GAHM2026] Beginning master time loop: %d track time steps\n', nBTtime); end
+fprintf('[INFO:GAHM2026] Beginning master time loop: %d track time steps\n', nBTtime);
 i=0;
 otime=0;
 VEnvrad_10_10 = [];
@@ -244,7 +245,7 @@ for itime=1:nBTtime
         GAHM_t1=GAHM_t2;
     end
 
-%% Compute GAHM parameters at current track time
+    %% Compute GAHM parameters at current track time
 
     if debug, fprintf('[DEBUG:GAHM2026]   Step %d/%d: %s (BTinterval=%d hrs)\n', itime, nBTtime, string(datetime_t2), BTinterval); end
 
@@ -257,7 +258,7 @@ for itime=1:nBTtime
     end
     GAHM_t2 = GAHM_t_new;
               
-%% Compute radial profiles of vortex velocity and pressure
+    %% Compute radial profiles of vortex velocity and pressure
 
     if debug, fprintf('[DEBUG:GAHM2026]   Computing radial profiles ...\n'); end
     [VVel_VPrad_t2, VPress_VPrad_t2, RP1, RP2] = computeRadialProfiles( ...
@@ -271,7 +272,7 @@ for itime=1:nBTtime
         VPress_VPrad_t1=VPress_VPrad_t2;
     end
  
-%% Interpolate to desired output times
+    %% Interpolate to desired output times
 
     int=1;
     LonEW_t1=GAHM_t1.Eye(1);
@@ -294,7 +295,7 @@ for itime=1:nBTtime
             datetimeint(i,:)=datetime_t1+tfac2*duration(datetime_t2-datetime_t1);
         end
 
-% interpolate vortex fields on the radial grid at output times
+        % interpolate vortex fields on the radial grid at output times
 
         LatNS(i)=tfac1*LatNS_t1+tfac2*LatNS_t2;
         LonEW(i)=tfac1*LonEW_t1+tfac2*LonEW_t2;
@@ -307,7 +308,7 @@ for itime=1:nBTtime
             VPress_VPrad(i,it,1:nr+1)=VPress_VPrad_t1(it,1:nr+1)*tfac1 + VPress_VPrad_t2(it,1:nr+1)*tfac2;
         end
 
-% interpolate environmental field on radial grid at output times
+        % interpolate environmental field on radial grid at output times
 
         [VEnvrad_10_10, PEnvrad, VHurrad_10_10, PHurrad, BlendingMasksrad] = ...
             interpolateEnvOnRadialGrid(env_type, i, ntheta, nr, r, theta, ...
@@ -317,7 +318,7 @@ for itime=1:nBTtime
                 tfac1, tfac2, datetimeint, LonEW(i), LatNS(i), fid, ...
                 VEnvrad_10_10, PEnvrad, VHurrad_10_10, PHurrad, BlendingMasksrad);
 
-% apply taper function if enabled
+        % apply taper function if enabled
 
         if env_type==1 || env_type==2
             taper_flag_eff=false;
@@ -332,7 +333,7 @@ for itime=1:nBTtime
                     VVel_VPrad_10_10, VPress_VPrad, VHurrad_10_10, PHurrad);
         end
         
-% save track information
+        % save track information
 
         Trackdata(i).datetime=datetimeint(i,:);
         Trackdata(i).Lat=LatNS(i);
@@ -361,7 +362,7 @@ fclose(fid);
 
 %% Interpolate from radial grid to regular output grid
 
-if debug, fprintf('[DEBUG:GAHM2026] Interpolating from radial grid to regular output grid (%s) ...\n', output.type); end
+fprintf('[INFO:GAHM2026] Interpolating from radial grid to regular output grid (%s) ...\n', output.type);
 [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out] = ...
     buildRegularGridOutputs(itot, env_type, ntheta, nr, r, theta, ...
         output, WAF_flag, ...
@@ -370,7 +371,7 @@ if debug, fprintf('[DEBUG:GAHM2026] Interpolating from radial grid to regular ou
         VEnv_10_10, VHur_10_10, BlendingMasks, ...
         LonEW, LatNS, datetimeint, ...
         WAF_data, WAF_metadata);
-if debug, fprintf('[DEBUG:GAHM2026] Regular grid interpolation complete.\n'); end
+fprintf('[INFO:GAHM2026] Regular grid interpolation complete.\n');
 
 %% Package radial grid data for plotting
 

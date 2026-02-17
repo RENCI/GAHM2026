@@ -22,7 +22,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | Role | Files |
 |------|-------|
 | Driver | `run_GAHM2026.m` |
-| Configuration | `config/config_GAHM2026.m` |
+| Configuration | `config/config_GAHM2026.m` (unified: ScrubEra5 + GAHM2026) |
 | Orchestrator | `GAHM2026.m` |
 | GAHM pipeline | `util/GAHM2026_prep.m`, `util/GAHM2026_consistency.m`, `util/GAHM2026_solve.m` |
 | Profile computation | `util/GAHM_VPradial.m`, `util/GAHM_VP.m` |
@@ -41,7 +41,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | `output/` | NetCDF output files (`stormname_year.nc`) |
 | `documentation/` | Call tree, data structure reference, refactoring notes, this file |
 | `tools/` | Regression testing harness |
-| `ScrubEra5/` | ERA5 environmental field extraction subproject (20 MATLAB files + IBTrACS track data) |
+| `ScrubEra5/` | ERA5 environmental field extraction subproject (19 MATLAB files, uses shared config from `config/`) |
 | `PlotEvalScripts/` | Plotting and evaluation scripts |
 
 ### Documentation
@@ -148,8 +148,12 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 - `radial_find_maskedge.m` — Utility, no changes needed
 
 ### ScrubEra5 Integration (Feb 16, 2026)
-- Updated `ScrubEra5/config.m` to reference the shared IBTrACS file at `input/ibtracs.NA.list.v04r01.csv` (via `fullfile('..', 'input', ...)`) instead of a local copy in `ScrubEra5/`.
 - Moved the IBTrACS CSV from `ScrubEra5/` to `input/` so both GAHM2026 and ScrubEra5 use the same file.
+
+### Unified Config (Feb 16, 2026)
+- Promoted the unified config pattern (originally in `config_Florence.m`) to the default `config/config_GAHM2026.m`. Every config now includes both `scrub_info` (ScrubEra5 parameters) and the GAHM2026 parameter structs, with shared storm identity defined once at the top.
+- Deleted `ScrubEra5/config.m` — ScrubEra5 is now driven from `config/config_GAHM2026.m` (or any storm-specific config in `config/`), either via `run_GAHM2026` auto-invocation or standalone: `ScrubEra5('config/config_GAHM2026')`.
+- Updated `README.md`, `ScrubEra5/README.md`, and `SESSION_CONTEXT.md` to reflect the unified config as the standard approach.
 
 ---
 

@@ -27,25 +27,42 @@ The main function `ScrubEra5.m` processes ERA5 reanalysis data for a specified t
  
 ## Usage
 
-1. Create a configuration file (e.g., `config.m`) that defines a `CONFIG` struct:
-   ```matlab
-   CONFIG = struct( ...
-       'nc_file', 'Florence.nc', ...
-       'track_file', 'ibtracs.NA.list.v04r01.csv', ...
-       'storm_name', 'FLORENCE', ...
-       'storm_year', 2018, ...
-       'storm_start', datetime(2018,9,6,0,0,0), ...
-       'storm_end', datetime(2018,9,18,0,0,0), ...
-       ...
-   );
-   ```
+### Recommended: unified config (shared with GAHM2026)
 
-2. Call `ScrubEra5` with the path to the config file:
-   ```matlab
-   env_vals = ScrubEra5('config.m');
-   ```
+ScrubEra5 shares a configuration file with GAHM2026.  The default config is `config/config_GAHM2026.m` in the project root; storm-specific configs follow the same pattern (e.g., `config/config_Florence.m`).
 
-3. Output is also saved as `<STORM_NAME>_<YEAR>.mat` (e.g., `FLORENCE_2018.mat`).
+Running via `run_GAHM2026` is the simplest approach — it auto-runs ScrubEra5 when the `.mat` file is missing:
+
+```matlab
+>> cd GAHM2026
+>> run_GAHM2026                          % uses config/config_GAHM2026.m
+>> run_GAHM2026('config_Florence')       % uses config/config_Florence.m
+```
+
+To run ScrubEra5 standalone with a unified config:
+
+```matlab
+>> cd GAHM2026
+>> addpath('ScrubEra5')
+>> env_vals = ScrubEra5('config/config_GAHM2026');
+```
+
+You can also pass a struct directly:
+
+```matlab
+>> cfg = struct('nc_file','path/to/era5.nc', 'storm_name','FLORENCE', ...
+>>              'storm_year',2018, 'track_file','input/ibtracs.NA.list.v04r01.csv', ...
+>>              'storm_start',datetime(2018,9,10,0,0,0), ...
+>>              'storm_end',datetime(2018,9,18,0,0,0), ...
+>>              'grid_half_size',40, 'output_half_size',40, ...
+>>              'filter_domain_size',120, 'num_radial_points',1000, ...
+>>              'num_azimuth_points',360, 'max_radius_deg',10, ...
+>>              'wind_threshold_10',10, 'wind_threshold_34',34/1.944, ...
+>>              'debug',true);
+>> env_vals = ScrubEra5(cfg);
+```
+
+Output is saved as `<STORM_NAME>_<YEAR>.mat` (e.g., `FLORENCE_2018.mat`).  If `output_dir` is set in the config, the file is saved there (e.g., `output/FLORENCE_2018.mat`).
 
 ## Configuration Parameters
 
@@ -57,7 +74,6 @@ The main function `ScrubEra5.m` processes ERA5 reanalysis data for a specified t
 | `storm_year` | `2018` | Year of storm |
 | `storm_start` | `datetime(2018,9,6,0,0,0)` | Start time for processing |
 | `storm_end` | `datetime(2018,9,18,0,0,0)` | End time for processing |
-| `resolution` | `0.25` | Grid resolution in degrees (unused) |
 | `grid_half_size` | `40` | Half-size of extraction grid (grid points) |
 | `output_half_size` | `40` | Half-size of output grid (grid points) |
 | `filter_domain_size` | `120` | Domain size for filtering operations |

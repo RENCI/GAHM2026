@@ -184,20 +184,28 @@ end
 run(config_file)
 
 if ~exist('debug','var'), debug = false; end
-if debug, fprintf('[DEBUG:run_GAHM2026] Configuration loaded from %s\n', config_file); end
-if debug, fprintf('[DEBUG:run_GAHM2026] Storm: %s %s, env_type=%d\n', storm_info.name, storm_info.year, env_info.type); end
+fprintf('[INFO:run_GAHM2026] Configuration loaded from %s\n', config_file);
+fprintf('[INFO:run_GAHM2026] Storm: %s %s, env_type=%d\n', storm_info.name, storm_info.year, env_info.type);
 
 %% Download IBTrACS file if it does not exist
 if storm_info.file_type == "IBTrACS" && ~exist(storm_info.file_name,'file')
     ibtracs_url = ['https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/' ...
                    erase(storm_info.file_name,'input/')];
-    fprintf('IBTrACS file not found: %s\n', storm_info.file_name);
-    fprintf('Downloading from %s ...\n', ibtracs_url);
+    fprintf('[INFO:run_GAHM2026] IBTrACS file not found: %s\n', storm_info.file_name);
+    fprintf('[INFO:run_GAHM2026] Downloading from %s ...\n', ibtracs_url);
     try
         websave(storm_info.file_name, ibtracs_url);
-        fprintf('Download complete.\n');
+        fprintf('[INFO:run_GAHM2026] Download complete.\n');
     catch ME
         error('Failed to download IBTrACS file: %s', ME.message);
+    end
+end
+
+%% Check for existing output file before running
+if output_info.type == "grid"
+    f_out = [output_info.NetCDFfilename '.nc'];
+    if exist(f_out,'file')
+        error([f_out ' already exists. Delete or rename it before running.'])
     end
 end
 
@@ -208,8 +216,8 @@ if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
                'Use a unified config (with scrub_info) to enable auto-generation, ' ...
                'or run ScrubEra5 separately first.'], env_info.file_name);
     end
-    fprintf('EnvFields file not found: %s.mat\n', env_info.file_name);
-    fprintf('Running ScrubEra5 to generate it ...\n');
+    fprintf('[INFO:run_GAHM2026] EnvFields file not found: %s.mat\n', env_info.file_name);
+    fprintf('[INFO:run_GAHM2026] Running ScrubEra5 to generate it ...\n');
 
     % Locate ScrubEra5 — subdirectory of GAHM2026
     scrub_dir = fullfile(pwd, 'ScrubEra5');
@@ -227,15 +235,7 @@ if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
     if ~exist(expected_mat, 'file')
         error('ScrubEra5 completed but %s was not found.', expected_mat);
     end
-    fprintf('ScrubEra5 complete. %s is ready.\n', expected_mat);
-end
-
-%% Check for existing output file before running
-if output_info.type == "grid"
-    f_out = [output_info.NetCDFfilename '.nc'];
-    if exist(f_out,'file')
-        error([f_out ' already exists. Delete or rename it before running.'])
-    end
+    fprintf('[INFO:run_GAHM2026] ScrubEra5 complete. %s is ready.\n', expected_mat);
 end
 
 %% compute and output final TC wind/pressure fields as well as additional diagnostic information
@@ -249,7 +249,7 @@ if debug, fprintf('[DEBUG:run_GAHM2026] Calling GAHM2026 (version=%d, ntheta=%d,
 
 if output_info.type == "grid"
     if debug, fprintf('[DEBUG:run_GAHM2026] Writing netCDF output to %s.nc\n', output_info.NetCDFfilename); end
-    disp('Writing netCDF output')
+    fprintf('[INFO:run_GAHM2026] Writing netCDF output\n')
     err=writeGAHM2026NetCdf(output_info.NetCDFfilename,Reggrid_out,Reggrid_TC_out);
 elseif output_info.type == "points"
     nt=length(Reggrid_out);
@@ -268,9 +268,9 @@ elseif output_info.type == "points"
         Points_Env_out(i).Press=Reggrid_Env_out(i).Press;        
     end
 
-    disp('Done computing values at output points')
+    fprintf('[INFO:run_GAHM2026] Done computing values at output points\n')
 end
 
-if debug, fprintf('[DEBUG:run_GAHM2026] Done.\n'); end
+fprintf('[INFO:run_GAHM2026] Done.\n');
 
 end

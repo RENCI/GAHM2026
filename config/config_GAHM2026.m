@@ -1,63 +1,95 @@
 %--------------------------------------------------------------------------
-% Configuration for GAHM2026
+% Unified configuration for ScrubEra5 and GAHM2026
 %
-% This script defines all input parameters needed by run_GAHM2026.m.
-% Edit this file to change storm, GAHM constants, environmental field,
-% WAF, and output settings. Then run run_GAHM2026.m.
+% This script defines all input parameters needed by both ScrubEra5 and
+% run_GAHM2026.m.  Shared storm identity parameters are defined once at
+% the top and used to derive the project-specific structs.
 %
-% See run_GAHM2026.m header comments for full documentation of
-% each parameter.
+% Usage:
+%   run_GAHM2026                   — runs with this default config
+%   run_GAHM2026('config_GAHM2026') — equivalent
+%
+% To create a config for a new storm, copy this file and update the
+% shared storm identity and ScrubEra5 sections.
 %
 %                        2/7/2026  Rick Luettich, UNC/IMS/CNHR/EMES 
 %                                  Brian Blanton, UNC/RENCI
 %--------------------------------------------------------------------------
 
-%% storm / track file info
-storm_info.file_name = 'input/ibtracs.NA.list.v04r01.csv';
-storm_info.file_type = "IBTrACS";
-storm_info.name='FLORENCE';   %IBTrACS uses all caps for names
-storm_info.year = '2018';              
-storm_info.designation = 'AL06';  
+%% ===== Shared storm identity (used by both ScrubEra5 and GAHM2026) =====
+storm_name        = 'FLORENCE';       % IBTrACS uses all caps for names
+storm_year        = 2018;
+track_file        = 'ibtracs.NA.list.v04r01.csv';
+storm_designation = 'AL06';
+debug             = false;
+
+%% ===== ScrubEra5 parameters =====
+scrub_info.nc_file            = '/Users/bblanton/ees/TDS/ERA5/global/uvp/2018/2018.global.nc';  % replace with path to ERA5 NetCDF
+scrub_info.storm_start        = datetime(2018,9,10,0,0,0);
+scrub_info.storm_end          = datetime(2018,9,18,0,0,0);
+scrub_info.grid_half_size     = 40;
+scrub_info.output_half_size   = 40;
+scrub_info.filter_domain_size = 120;
+scrub_info.num_radial_points  = 1000;
+scrub_info.num_azimuth_points = 360;
+scrub_info.max_radius_deg     = 10;
+scrub_info.wind_threshold_10  = 10;       % m/s
+scrub_info.wind_threshold_34  = 34/1.944; % 34 kts -> m/s
+scrub_info.debug              = debug;
+scrub_info.output_dir         = 'output';
+% Populate shared fields into scrub_info for ScrubEra5 consumption
+scrub_info.storm_name  = storm_name;
+scrub_info.storm_year  = storm_year;
+scrub_info.track_file  = fullfile('input', track_file);
+
+%% ===== GAHM2026 storm / track file info =====
+storm_info.file_name   = fullfile('input', track_file);
+storm_info.file_type   = "IBTrACS";
+storm_info.name        = storm_name;
+storm_info.year        = num2str(storm_year);
+storm_info.designation = storm_designation;
 % start,end dates for processing
 % 0 for start,end of track in IBTrACS
 % otherwise, YYYYMMDDHH, must be in both the track & gridded input files (if used).
 %storm_info.starttime = 0;          
 %storm_info.endtime = 0;            
-storm_info.starttime='2018091400';  
-storm_info.endtime='2018091500';   
-storm_info.outputfilename=sprintf('%s_%s',storm_info.name,storm_info.year);
+storm_info.starttime   = '2018091400';  
+storm_info.endtime     = '2018091500';   
+storm_info.outputfilename = sprintf('%s_%s', storm_info.name, storm_info.year);
 
-%% GAHM2026 parameter values
-GAHM_param_info.Vmax_multiplier=1; % =1 use full Vmax, =0.9 use 90% Vmax...
-GAHM_param_info.one2tenF=0.89;
-GAHM_param_info.BLF=0.9;
-GAHM_param_info.Bmin=0.5;
-GAHM_param_info.Bmax=2.5;
-GAHM_param_info.SVorMax_10_tblmin=20;
-GAHM_param_info.SVorQuad_10_tblmin=5;
-GAHM_param_info.rhoa=1.204;
-GAHM_param_info.pback_def=1013; 
-GAHM_param_info.version=3;  
-GAHM_param_info.Bg0M=1;
-GAHM_param_info.c0=0;
+%% ===== GAHM2026 parameter values =====
+GAHM_param_info.Vmax_multiplier     = 1;    % =1 use full Vmax, =0.9 use 90% Vmax...
+GAHM_param_info.one2tenF            = 0.89;
+GAHM_param_info.BLF                 = 0.9;
+GAHM_param_info.Bmin                = 0.5;
+GAHM_param_info.Bmax                = 2.5;
+GAHM_param_info.SVorMax_10_tblmin   = 20;
+GAHM_param_info.SVorQuad_10_tblmin  = 5;
+GAHM_param_info.rhoa                = 1.204;
+GAHM_param_info.pback_def           = 1013;
+GAHM_param_info.version             = 3;
+GAHM_param_info.Bg0M                = 1;
+GAHM_param_info.c0                  = 0;
 
-%% specify constants for computing wind/pressure field using GAHM2026 
-GAHM_compute_info.ntheta=24;
-GAHM_compute_info.nr=800;
-GAHM_compute_info.delr=1000;
+%% ===== Constants for computing wind/pressure field =====
+GAHM_compute_info.ntheta = 24;
+GAHM_compute_info.nr     = 800;
+GAHM_compute_info.delr   = 1000;
 
-%% specify info for using land roughness based Wind Adjustment Factor
-WAF_info.flag=false;    % Wind Adjustment Factor based on land roughness
-WAF_info.file_name='input/WAF_15deg_10km_6km_raster_test.tif'; % name of .tif file with gridded WAF values, ignored if WAF.flag=false
+%% ===== Wind Adjustment Factor info =====
+WAF_info.flag      = false;    % Wind Adjustment Factor based on land roughness
+WAF_info.file_name = 'input/WAF_15deg_10km_6km_raster_test.tif'; % ignored if WAF.flag=false
 
-%% specify info for large scale gridded wind / pressure field
-env_info.type=3; % options are 1, 2 or 3.  If 1 or 2 are selected, the remainder of this section is ignored
-env_info.file_name='EnvFields';  % name of intermediate .mat file contining gridded environmental fields.
-env_info.taper_flag=true;
-env_info.taper_mindelr2r1=0.1; % minimum value of (r2-r1)/r2 if violated r1 is reduced.
-env_info.taper_a=2;   % adjusts steepness of hyperbolic tangent taper function (2 is suggested)
+%% ===== Environmental field info =====
+% env_info.file_name is derived from the shared storm identity so it
+% automatically matches the .mat file produced by ScrubEra5.
+env_info.type             = 3;  % options are 1, 2 or 3.  If 1 or 2 are selected, the remainder of this section is ignored
+env_info.file_name        = fullfile('output', sprintf('%s_%d', storm_name, storm_year));  % e.g. 'output/FLORENCE_2018'
+env_info.taper_flag       = true;
+env_info.taper_mindelr2r1 = 0.1; % minimum value of (r2-r1)/r2 if violated r1 is reduced.
+env_info.taper_a          = 2;   % adjusts steepness of hyperbolic tangent taper function (2 is suggested)
 
-%% Output information
+%% ===== Output information =====
 % for gridded output:
 %    if env_info.type =1 or 2, this will be centered on the eye of the storm at the 
 %    specified output time using nlon, nlat, dellon, dellat specified below
@@ -70,19 +102,19 @@ env_info.taper_a=2;   % adjusts steepness of hyperbolic tangent taper function (
 %   the number of longitude and latitude values much be equal and are fixed in time.  
 %   Output is computed a corresponding lon,lat pairs
 
-output_info.warnings=sprintf('%s_%s_GAHM2026_warnings.dat',storm_info.name,storm_info.year);
-output_info.NetCDFfilename=['output/' storm_info.outputfilename];
-output_info.timeinc=1;     % output time interval (hrs) must be <= time between BestTrack snaps
-output_info.type = "grid";
+output_info.warnings       = fullfile('output', sprintf('%s_%s_GAHM2026_warnings.dat', storm_info.name, storm_info.year));
+output_info.NetCDFfilename = ['output/' storm_info.outputfilename];
+output_info.timeinc        = 1;     % output time interval (hrs) must be <= time between BestTrack snaps
+output_info.type           = "grid";
 % output_info.type = "points";
 if output_info.type == "grid"
-    output_info.nlon=351;      % # lon values in regular output grid (best if an odd number) - ignored for env.type=3
-    output_info.nlat=351;      % # lat values in regular output grid (best if an odd number) - ignored for env.type=3
-    output_info.dellon=0.05;   % grid increment decimal degrees lon 
-    output_info.dellat=0.05;   % grid increment decimal degrees lat 
+    output_info.nlon   = 351;      % # lon values in regular output grid (best if an odd number) - ignored for env.type=3
+    output_info.nlat   = 351;      % # lat values in regular output grid (best if an odd number) - ignored for env.type=3
+    output_info.dellon = 0.05;     % grid increment decimal degrees lon 
+    output_info.dellat = 0.05;     % grid increment decimal degrees lat 
 elseif output_info.type == "points"
-    output_info.lon=x;
-    output_info.lat=y;
+    output_info.lon = x;
+    output_info.lat = y;
 %    output_info.lon=[  ];
 %    output_info.lat=[  ];    
 else

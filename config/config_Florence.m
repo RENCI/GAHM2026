@@ -22,7 +22,8 @@ storm_designation = 'AL06';
 debug             = true;
 
 %% ===== ScrubEra5 parameters =====
-scrub_info.nc_file            = '/Users/bblanton/ees/TDS/ERA5/global/uvp/2018/2018.global.nc';
+%scrub_info.nc_file            = '/Users/bblanton/ees/TDS/ERA5/global/uvp/2018/2018.global.nc';
+scrub_info.nc_file            = 'input/09.nc';
 scrub_info.storm_start        = datetime(2018,9,10,0,0,0);
 scrub_info.storm_end          = datetime(2018,9,18,0,0,0);
 scrub_info.grid_half_size     = 40;
