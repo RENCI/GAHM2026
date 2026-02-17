@@ -22,19 +22,21 @@ storm_year        = 2018;
 track_file        = 'ibtracs.NA.list.v04r01.csv';
 storm_designation = 'AL06';
 debug             = false;
+storm_start       = datetime(2018,9,10,0,0,0);
+storm_end         = datetime(2018,9,18,0,0,0);
 
 %% ===== ScrubEra5 parameters =====
 scrub_info.nc_file            = '/Users/bblanton/ees/TDS/ERA5/global/uvp/2018/2018.global.nc';  % replace with path to ERA5 NetCDF
-scrub_info.storm_start        = datetime(2018,9,10,0,0,0);
-scrub_info.storm_end          = datetime(2018,9,18,0,0,0);
+scrub_info.storm_start        = storm_start;
+scrub_info.storm_end          = storm_end;
 scrub_info.grid_half_size     = 40;
 scrub_info.output_half_size   = 40;
 scrub_info.filter_domain_size = 120;
 scrub_info.num_radial_points  = 1000;
 scrub_info.num_azimuth_points = 360;
 scrub_info.max_radius_deg     = 10;
-scrub_info.wind_threshold_10  = 10;       % m/s
-scrub_info.wind_threshold_34  = 34/1.944; % 34 kts -> m/s
+scrub_info.wind_threshold_outer  = 20/1.944; % 20 kts -> m/s
+scrub_info.wind_threshold_inner  = 34/1.944; % 34 kts -> m/s
 scrub_info.debug              = debug;
 scrub_info.output_dir         = 'output';
 % Populate shared fields into scrub_info for ScrubEra5 consumption
@@ -48,13 +50,8 @@ storm_info.file_type   = "IBTrACS";
 storm_info.name        = storm_name;
 storm_info.year        = num2str(storm_year);
 storm_info.designation = storm_designation;
-% start,end dates for processing
-% 0 for start,end of track in IBTrACS
-% otherwise, YYYYMMDDHH, must be in both the track & gridded input files (if used).
-%storm_info.starttime = 0;          
-%storm_info.endtime = 0;            
-storm_info.starttime   = '2018091400';  
-storm_info.endtime     = '2018091500';   
+storm_info.starttime   = storm_start;
+storm_info.endtime     = storm_end;   
 storm_info.outputfilename = sprintf('%s_%s', storm_info.name, storm_info.year);
 
 %% ===== GAHM2026 parameter values =====
@@ -120,3 +117,4 @@ elseif output_info.type == "points"
 else
     disp ('output_info.type must be either the string "grid" or "points" ')
 end
+

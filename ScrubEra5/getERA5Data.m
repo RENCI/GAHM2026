@@ -74,5 +74,6 @@ function era5 = getERA5Data(cfg,time)
     % era5.time = era5.time(idx);
 
     [era5.lon_grid, era5.lat_grid] = meshgrid(era5.lon, era5.lat);
-
+    era5.time=era5.time(idx);
+    
 end

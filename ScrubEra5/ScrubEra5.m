@@ -63,11 +63,11 @@ if CONFIG.debug
 end
 
 %% Main processing loop
-if CONFIG.debug, fprintf('[DEBUG:ScrubEra5] Beginning main processing loop over %d time steps\n', num_times); end
+fprintf('[INFO:ScrubEra5] Beginning main processing loop over %d time steps\n', num_times);
 
 for i = 1:num_times
     
-    fprintf('[INFO:ScrubEra5] Analyzing %s\n',string(time(i)))
+    fprintf('[INFO:ScrubEra5] Processing %s\n',string(time(i)))
     if CONFIG.debug, tic; end
 
     % extract at time level i
@@ -88,12 +88,12 @@ for i = 1:num_times
     
     [count_34, in_34, distance_34] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
-        lat_idx(i), lon_idx(i), CONFIG.wind_threshold_34, CONFIG);
+        lat_idx(i), lon_idx(i), CONFIG.wind_threshold_inner, CONFIG);
     if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   34-kt cutline found: mean radius=%.1f km, points inside=%d\n', mean(distance_34), sum(in_34)); end
     
     [count, in, distance] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
-        lat_idx(i), lon_idx(i), CONFIG.wind_threshold_10, CONFIG);
+        lat_idx(i), lon_idx(i), CONFIG.wind_threshold_outer, CONFIG);
     if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   10-m/s cutline found: mean radius=%.1f km, points inside=%d\n', mean(distance), sum(in)); end
     
     tem_ave_r = mean(count_34, "all") * 10 / 1000;
@@ -118,7 +118,8 @@ if isfield(CONFIG, 'output_dir')
     if ~exist(CONFIG.output_dir, 'dir'), mkdir(CONFIG.output_dir); end
     outfile = fullfile(CONFIG.output_dir, outfile);
 end
-if CONFIG.debug, fprintf('[DEBUG:ScrubEra5] Saving output to %s\n', outfile); end
+fprintf('[INFO:ScrubEra5] Saving output to %s\n', outfile);
 save(outfile, "env_vals")
-if CONFIG.debug, fprintf('[DEBUG:ScrubEra5] Done.\n'); end
+fprintf('[INFO:ScrubEra5] Done.\n');
+
 

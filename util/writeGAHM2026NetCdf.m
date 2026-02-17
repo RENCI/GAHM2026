@@ -1,11 +1,11 @@
 
-% Write GAHM26 (blended) wind velocity and pressure values on a grid in
+% Write GAHM2026 (blended) wind velocity and pressure values on a grid in
 % netCDF. This format is designed to be easily merged with parent large 
 % scale gridded met output (e.g., ERA5) for use with ADCIRC nws=13.  
 %
 % FileName should not include an extension.  .nc is appended
 % FileName is also used as the group name in the netCDF file
-% Reggrid_out and Reggrid_TC_out are data structures created by GAHM26
+% Reggrid_out and Reggrid_TC_out are data structures created by GAHM2026
 %
 %                     Rick Luettich 2/2/2026
 %

@@ -1,7 +1,7 @@
 # ScrubEra5
 
 ## amplified version of JC's AMS_env.m "code"
-## 3 Feb 2026
+## 17 Feb 2026
 
 Extracts and filters tropical cyclone fields from ERA5 reanalysis data. Separates storm-scale features from the background environmental flow using polar coordinate interpolation and spatial filtering techniques.
 
@@ -16,7 +16,7 @@ The main function `ScrubEra5.m` processes ERA5 reanalysis data for a specified t
 ## Requirements
 
 - MATLAB
-- ERA5 NetCDF data file (e.g., `Florence.nc`) containing:
+- ERA5 NetCDF data file containing:
   - `time` - time 
   - `msl` - Mean sea level pressure
   - `u10` - 10m U-component of wind
@@ -57,7 +57,7 @@ You can also pass a struct directly:
 >>              'grid_half_size',40, 'output_half_size',40, ...
 >>              'filter_domain_size',120, 'num_radial_points',1000, ...
 >>              'num_azimuth_points',360, 'max_radius_deg',10, ...
->>              'wind_threshold_10',10, 'wind_threshold_34',34/1.944, ...
+>>              'wind_threshold_outer',10, 'wind_threshold_inner',34/1.944, ...
 >>              'debug',true);
 >> env_vals = ScrubEra5(cfg);
 ```
@@ -80,8 +80,8 @@ Output is saved as `<STORM_NAME>_<YEAR>.mat` (e.g., `FLORENCE_2018.mat`).  If `o
 | `num_radial_points` | `1000` | Number of radial points for polar interpolation |
 | `num_azimuth_points` | `360` | Number of azimuthal points |
 | `max_radius_deg` | `10` | Maximum radius in degrees for polar grid |
-| `wind_threshold_10` | `10` | Wind threshold for outer cutline (m/s) |
-| `wind_threshold_34` | `34/1.944` (~17.5) | Wind threshold for inner cutline (34 kt in m/s) |
+| `wind_threshold_outer` | `10` | Wind threshold for outer cutline (m/s) |
+| `wind_threshold_inner` | `34/1.944` (~17.5) | Wind threshold for inner cutline (34 kt in m/s) |
 
 ## Module Structure
 

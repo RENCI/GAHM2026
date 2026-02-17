@@ -76,29 +76,29 @@ These values are defined as plain workspace variables and automatically populate
 | `storm_year` | 4-digit year (numeric) | `2018` |
 | `track_file` | IBTrACS CSV filename | `'ibtracs.NA.list.v04r01.csv'` |
 | `storm_designation` | Basin + number | `'AL06'` |
+| `storm_start` | Start time for processing (shared) | `datetime(2018,9,10,0,0,0)` |
+| `storm_end` | End time for processing (shared) | `datetime(2018,9,12,0,0,0)` |
 
 #### 2. ScrubEra5 parameters (`scrub_info.*`)
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `nc_file` | ERA5 NetCDF input file path | `'/path/to/2018.global.nc'` |
-| `storm_start` | Start time for ERA5 extraction | `datetime(2018,9,10,0,0,0)` |
-| `storm_end` | End time for ERA5 extraction | `datetime(2018,9,12,0,0,0)` |
 | `grid_half_size` | Half-size of extraction grid (grid points) | `40` |
 | `output_half_size` | Half-size of output grid (grid points) | `40` |
 | `filter_domain_size` | Domain size for Butterworth filter | `120` |
 | `num_radial_points` | Radial points for polar interpolation | `1000` |
 | `num_azimuth_points` | Azimuthal points | `360` |
 | `max_radius_deg` | Maximum polar grid radius (degrees) | `10` |
-| `wind_threshold_10` | Outer cutline threshold (m/s) | `10` |
-| `wind_threshold_34` | Inner cutline threshold (m/s, 34 kt) | `34/1.944` |
+| `wind_threshold_outer` | Outer cutline threshold (m/s) | `10` |
+| `wind_threshold_inner` | Inner cutline threshold (m/s, 34 kt) | `34/1.944` |
 | `debug` | Print debug messages | `true` |
 
-> **Note:** `scrub_info.storm_name`, `scrub_info.storm_year`, and `scrub_info.track_file` are automatically populated from the shared variables — do not set them separately.
+> **Note:** `scrub_info.storm_name`, `scrub_info.storm_year`, `scrub_info.track_file`, `scrub_info.storm_start`, and `scrub_info.storm_end` are automatically populated from the shared variables — do not set them separately. Likewise, `storm_info.starttime` and `storm_info.endtime` are derived from `storm_start` and `storm_end`.
 
 #### 3. GAHM2026 parameters
 
-See the comments in `config/config_GAHM2026.m` or `run_GAHM2026.m` for full documentation.
+See [`documentation/README.md`](documentation/README.md) for full parameter documentation.
 
 | Struct | Key parameters |
 |--------|---------------|
@@ -158,7 +158,7 @@ run_GAHM2026
    storm_designation = 'AL14';
    ```
 3. Update `scrub_info` with the path to the ERA5 data and the desired extraction time window.
-4. Update `storm_info.starttime` and `storm_info.endtime` to set the GAHM2026 processing window (must fall within the ScrubEra5 time range).
+4. Update `storm_start` and `storm_end` to set the processing time window (used by both ScrubEra5 and GAHM2026).
 5. Adjust any model parameters as needed.
 6. Run:
    ```matlab

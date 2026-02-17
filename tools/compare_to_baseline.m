@@ -46,8 +46,8 @@ storm_info.file_type   = "IBTrACS";
 storm_info.name        = 'FLORENCE';
 storm_info.year        = '2018';
 storm_info.designation = 'AL06';
-storm_info.starttime   = '2018091312';
-storm_info.endtime     = '2018091500';
+storm_info.starttime   = datetime(2018,9,13,12,0,0);
+storm_info.endtime     = datetime(2018,9,15,0,0,0);
 
 GAHM_param_info.Vmax_multiplier    = 1;
 GAHM_param_info.one2tenF           = 0.89;

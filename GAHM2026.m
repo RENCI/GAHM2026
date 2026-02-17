@@ -44,107 +44,7 @@
 %     radial2regular.m - interpolates wind velocity (u,v) and pressure from
 %                        a radial grid to a regular grid
 %
-% Required input:
-%    storm info - for track file
-%        storm.file_name = file name containing storm input
-%        storm.file_type 
-%                   = "ATCF" (string) for ATCF BestTrack (a/b deck) file
-%                   = "fort22" (string) for GAHM2026 fort22 file
-%                   = "IBTrACS" (string) for IBTrACS file
-%        storm.year = storm year (char 4digits) e.g., '2018'
-%                     ignored if single storm ATCF best track input file
-%        storm.designation = (char 4digits) basinnum, e.g., 'AL06'
-%                     ignored if single storm ATCF best track input file
-%        storm.name = storm name  (char) e.g., 'FLORENCE'
-%                     ignored if storm.designation specified
-%                     ignored if single storm ATCF best track input file
-%        storm.starttime = start time for processing as a string in the
-%                     format 'yyyymmddhh'  (e.g. '2018091412')
-%                     if = 0 (numeric input) use initial time
-%        storm.endtime = end time for processing as a string in the
-%                     format 'yyyymmddhh'  (e.g. '2018091412')
-%                     if = 0 (numeric input) use final time
-%
-%    GAHM_param_info - constants needed to compute GAHM parameters
-%        GAHM_param_info.Vmax_multiplier - modify Vmax in track file
-%        GAHM_param_info.one2tenF - convert from 1 min to 10 min wind speed
-%                                                       (ADCIRC/ASWIP=0.89)
-%        GAHM_param_info.BLF  - boundary layer factor (ADCIRC/ASWIP=0.9)
-%        GAHM_param_info.Bmin - lower limit on B
-%        GAHM_param_info.Bmax - upper limit on B
-%        GAHM_param_info.SVorMax_10_tblmin - (kts)
-%        GAHM_param_info.SVorQuad_10_tblmin - (kts)
-%        GAHM_param_info.rhoa - density of air (kg/m^3) (ADCIRC/ASWIP=1.204)
-%        GAHM_param_info.pback_def - (mb) default environmental pressure if 
-%                              not read in from track file
-%        GAHM_param_info.version  (3 or 4)
-%        GAHM_param_info.Bg0M - multiplies B to give initial condition for
-%                              iterative solver in GAHM2026v4a & GAHM2026v3e
-%                              (recom: 1)
-%        GAHM_param_info.c0 - initial condition for c (0<c<1) for iterative
-%                              solver in GAHM2026va (recom: 0), ignored
-%                              for GAHM2023v3e.
-% 
-%    GAHM_compute_info - information needed to compute GAHM wind and
-%                        pressure fields on radial grid using GAHM 
-%                        parameter values
-%        GAHM_compute_info.ntheta - number of radial lines to compute GAHM
-%                            along (e.g., 24 = every 15 deg)
-%        GAHM_compute_info.nr -  number of points along each radial line to
-%                               compute GAHM speed & pressure values
-%        GAHM_compute_info.delr - distance (meters) between points along
-%                               each radial line (radial length = nr*delr)
-%
-%    env_info - information needed to process the environmental field. All
-%            subsequent env_info entries are ignored unless env_info.type=3
-%        env_info.type - type of environmental velocity and pressure fields
-%                 = 1 ADCIRC/ASWIP scheme based on translation vel
-%                 = 2 0.6*tanslation vel & 20deg ccw rotation (Lin&Chavez 2012)
-%                 = 3 extract from gridded environmental file
-%        env_info.file_name = file name containing gridded environmental velocity 
-%                 and pressure input, ignored if env_type =1 or 2
-%                 if env_type=3, matlab.mat file with the data structure:
-%                     filename.Time(i) - datetime
-%                     filename.Lo(i,:,:)
-%                     filename.La(i,nEr:-1:1,:)
-%                     filename.Vortex_mask(i,nEr:-1:1,:) 0,1=inside,outside 
-%                                                            outer cut line
-%                     filename.Vortex_mask34(i,nEr:-1:1,:) 0,1=inside,outside
-%                                                            inner cut line
-%                     filename.env_msl(i,nEr:-1:1,:))  env mean sea level pressure (mb)
-%                     filename.env_u10(i,nEr:-1:1,:)   env E-W velocity (m/s)
-%                     filename.env_v10(i,nEr:-1:1,:)   env N-S velocity (m/s)
-%                     filename.hur_msl(i,nEr:-1:1,:))  hur mean sea level pressure (mb)
-%                     filename.hur_u10(i,nEr:-1:1,:)   hur E-W velocity (m/s)
-%                     filename.hur_v10(i,nEr:-1:1,:)   hur N-S velocity (m/s)
-%                     filename.BestTrack_lon(i)
-%                     filename.BestTrack_lat(i)
-%                     filename.min_pressure_center_lon(i)
-%                     filename.min_pressure_center_lat(i)
-%                     units - dictionary
-%                     must include times that match the track file times 
-%                     may include additional times, e.g., hourly values 
-%        env_info.taper_flag = true or false - apply a taper
-%                               function to GAHM speed and pressure values
-%        env_info.taper_mindelr2r1  % minimum value for (r2-r1)/r2
-%                               If violated r1 is reduced.
-%        env_info.taper_a - taper coefficient in hyperbolic tan function 
-%                               (e.g., 2)
-%
-%   output control variables
-%        output.timeinc - output time interval (hrs) must be <= time between track file snaps
-%        output.nlon  - # lon values in regular output grid (best if an odd
-%                                           number) ignored for env_type=3
-%        output.nlat -  # lat values in regular output grid (best if an odd
-%                                           number) ignored for env_type=3
-%        output.dellon -  grid increment decimal degrees lon
-%        output.dellat -  grid increment decimal degrees lat
-%        output.warnings - file name to write warning messages
-%        Note - if env_type=3 the output domain is the same as the ded 
-%               gridded input field using the resolution specified by 
-%               output.dellon, output.dellat
-%
-%   See documentation/GAHM_struct.md for full GAHM data structure definition.
+% See documentation/README.md for full configuration reference.
 %
 %                 7/12/2025   - Rick Luettich
 %                 11/4/2025   - Rick Luettich enables env_type=1 to work?
@@ -419,28 +319,26 @@ function [ATCF_data_in, ATCF_startline, ATCF_endline, starttime_dt, endtime_dt] 
         error('Storm %s not found in track file', storm.name)
     end
 
-    starttime_dtv=datevec(storm.starttime,'yyyymmddhh');
-    starttime_dt = datetime(0,0,0);
-    if sum(starttime_dtv) == 0
-        ATCF_startline=1; 
-    else
-        starttime_dt=datetime(starttime_dtv);
+    if isdatetime(storm.starttime)
+        starttime_dt = storm.starttime;
         ATCF_startline=find([ATCF_data_in.datetime] < starttime_dt,1,'last')+1;
         if isempty(ATCF_startline)
             ATCF_startline=1;
         end
+    else
+        starttime_dt = datetime(0,0,0);
+        ATCF_startline=1; 
     end
 
-    endtime_dtv=datevec(storm.endtime,'yyyymmddhh');
-    endtime_dt = datetime(0,0,0);
-    if sum(endtime_dtv) == 0
-        ATCF_endline=length([ATCF_data_in.datetime]);  
-    else
-        endtime_dt=datetime(endtime_dtv);
+    if isdatetime(storm.endtime)
+        endtime_dt = storm.endtime;
         ATCF_endline=find([ATCF_data_in.datetime] <= endtime_dt,1,'last');
         if isempty(ATCF_endline)
             ATCF_endline=length([ATCF_data_in.datetime]);
         end
+    else
+        endtime_dt = datetime(0,0,0);
+        ATCF_endline=length([ATCF_data_in.datetime]);  
     end
 end
 

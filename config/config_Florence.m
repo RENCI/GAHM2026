@@ -20,20 +20,22 @@ storm_year        = 2018;
 track_file        = 'ibtracs.NA.list.v04r01.csv';
 storm_designation = 'AL06';
 debug             = true;
+storm_start       = datetime(2018,9,14,0,0,0);
+storm_end         = datetime(2018,9,15,0,0,0);
 
 %% ===== ScrubEra5 parameters =====
 %scrub_info.nc_file            = '/Users/bblanton/ees/TDS/ERA5/global/uvp/2018/2018.global.nc';
 scrub_info.nc_file            = 'input/09.nc';
-scrub_info.storm_start        = datetime(2018,9,10,0,0,0);
-scrub_info.storm_end          = datetime(2018,9,18,0,0,0);
+scrub_info.storm_start        = storm_start;
+scrub_info.storm_end          = storm_end;
 scrub_info.grid_half_size     = 40;
 scrub_info.output_half_size   = 40;
 scrub_info.filter_domain_size = 120;
 scrub_info.num_radial_points  = 1000;
 scrub_info.num_azimuth_points = 360;
 scrub_info.max_radius_deg     = 10;
-scrub_info.wind_threshold_10  = 10;       % m/s
-scrub_info.wind_threshold_34  = 34/1.944; % 34 kts -> m/s
+scrub_info.wind_threshold_outer  = 20/1.944; % 20 kts -> m/s
+scrub_info.wind_threshold_inner  = 34/1.944; % 34 kts -> m/s
 scrub_info.debug              = true;
 scrub_info.output_dir         = 'output';
 % Populate shared fields into scrub_info for ScrubEra5 consumption
@@ -47,12 +49,12 @@ storm_info.file_type   = "IBTrACS";
 storm_info.name        = storm_name;
 storm_info.year        = num2str(storm_year);
 storm_info.designation = storm_designation;
-storm_info.starttime   = '2018091400';
-storm_info.endtime     = '2018091500';
+storm_info.starttime   = storm_start;
+storm_info.endtime     = storm_end;
 storm_info.outputfilename = sprintf('%s_%s', storm_info.name, storm_info.year);
 
 %% ===== GAHM2026 parameter values =====
-GAHM_param_info.Vmax_multiplier     = 1;
+GAHM_param_info.Vmax_multiplier     = 1;    % =1 use full Vmax, =0.9 use 90% Vmax...
 GAHM_param_info.one2tenF            = 0.89;
 GAHM_param_info.BLF                 = 0.9;
 GAHM_param_info.Bmin                = 0.5;
@@ -72,7 +74,7 @@ GAHM_compute_info.delr   = 1000;
 
 %% ===== Wind Adjustment Factor info =====
 WAF_info.flag      = false;
-WAF_info.file_name = 'input/WAF_15deg_10km_6km_raster_test.tif';
+WAF_info.file_name = 'input/WAF_15deg_10km_6km_raster_test.tif'; % ignored if WAF.flag=false
 
 %% ===== Environmental field info =====
 % env_info.file_name is derived from the shared storm identity so it
@@ -80,8 +82,8 @@ WAF_info.file_name = 'input/WAF_15deg_10km_6km_raster_test.tif';
 env_info.type             = 3;
 env_info.file_name        = fullfile('output', sprintf('%s_%d', storm_name, storm_year));  % e.g. 'output/FLORENCE_2018'
 env_info.taper_flag       = true;
-env_info.taper_mindelr2r1 = 0.1;
-env_info.taper_a          = 2;
+env_info.taper_mindelr2r1 = 0.1; % minimum value of (r2-r1)/r2 if violated r1 is reduced.
+env_info.taper_a          = 2;   % adjusts steepness of hyperbolic tangent taper function (2 is suggested)
 
 %% ===== Output information =====
 output_info.warnings       = fullfile('output', sprintf('%s_%s_GAHM2026_warnings.dat', storm_info.name, storm_info.year));
