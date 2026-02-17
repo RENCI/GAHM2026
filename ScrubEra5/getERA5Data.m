@@ -50,7 +50,7 @@ function era5 = getERA5Data(cfg,time)
 
     era5.time = datetime(double(era5.time) * fac, 'ConvertFrom', 'epochtime', 'Epoch', epochstart);
 
-    if cfg.debug, fprintf('[DEBUG:ScrubEra5] getERA5Data: time units="%s", epoch=%s, conversion factor=%.4g s\n', tunits_str, string(epochstart), fac); end
+    if cfg.debug, logMsg(-1, 'DEBUG', 'time units="%s", epoch=%s, conversion factor=%.4g s', tunits_str, string(epochstart), fac); end
 
     idx=(era5.time>=time(1) & era5.time<=time(end));
     if isempty(find(idx,1))

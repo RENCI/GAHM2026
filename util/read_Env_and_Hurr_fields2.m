@@ -46,17 +46,11 @@ load (env.file_name);     % assumed to be a Matlab '.mat' file
 [~, nEr, nEc]=size(env_vals.Lo);
 startline=find(starttime_dt==[env_vals.Time]);
 if isempty(startline)  % didn't find the specified time in the background Enviromental Velocity file
-    fprintf ('%s %s %s\n', ...
-            'Failed to find the starting time',starttime_dt, ...
-            'in the Environmental file. RUN TERMINATED');
-    return
+    logMsg(-1, 'ERROR', 'Failed to find the starting time %s in the Environmental file.', string(starttime_dt));
 end
 endline=find(endtime_dt==[env_vals.Time]);
 if isempty(endline)  % didn't find the specified time in the background Enviromental Velocity file
-    fprintf ('%s %s %s\n', ...
-            'Failed to find the ending time',endtime_dt, ...
-            'in the Environmental file. RUN TERMINATED');
-    return
+    logMsg(-1, 'ERROR', 'Failed to find the ending time %s in the Environmental file.', string(endtime_dt));
 end
 numline=endline-startline+1;
 VEnv_10_10(numline).lon=0;

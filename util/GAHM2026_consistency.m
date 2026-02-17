@@ -163,22 +163,12 @@ rotation_matrix_ccw10d=[cosd(-ra10) -sind(-ra10); sind(-ra10) cosd(-ra10)];  % r
 GAHM_out.flag_B=1;
 
 if B<Bmin
-    fprintf (' %s %s %s %.3f %s %.3f\n', ...
-        'WARNING: Function GAHM2026_consistency: @ time =',GAHM_datetime, ...
-        'initial B =',B,'reset = Bmin =',Bmin);  
-    fprintf (fid,' %s %s %s %.3f %s %.3f\n', ...
-        'WARNING: Function GAHM2026_consistency: @ time =',GAHM_datetime, ...
-        'initial B =',B,'reset = Bmin =',Bmin);      
+    logMsg(fid, 'WARNING', '@ time = %s initial B = %.3f reset = Bmin = %.3f', GAHM_datetime, B, Bmin);
     B=Bmin;
     GAHM_out.B=B;
     GAHM_out.flag_B=0;
 elseif B>Bmax
-    fprintf (' %s %s %s %.3f %s %.3f\n', ...
-        'WARNING: Function GAHM2026_consistency: @ time =',GAHM_datetime, ...
-        'initial B =',B,'reset = Bmax =',Bmax);
-    fprintf (fid,' %s %s %s %.3f %s %.3f\n', ...
-        'WARNING: Function GAHM2026_consistency: @ time =',GAHM_datetime, ...
-        'initial B =',B,'reset = Bmax =',Bmax);      
+    logMsg(fid, 'WARNING', '@ time = %s initial B = %.3f reset = Bmax = %.3f', GAHM_datetime, B, Bmax);
     B=Bmax;
     GAHM_out.B=B;
     GAHM_out.flag_B=2;
@@ -193,8 +183,7 @@ GAHM_out.turnangle(1:4,1:4)=25;    %default value
 
 if all(RQuad(:)==0) || all(isnan(RQuad(:))) || all(ismissing(RQuad(:))) 
     GAHM_out.flag(1:4,1:4)=0;
-    fprintf('[WARN:GAHM2026_consistency] @ time = %s No valid isotachs were found in any quadrant. Alternative Rmw required, e.g., = Rmw read in from track file\n', GAHM_datetime);    
-    fprintf(fid,'[WARN:GAHM2026_consistency] @ time = %s No valid isotachs were found in any quadrant. Alternative Rmw required, e.g., = Rmw read in from track file\n', GAHM_datetime); 
+    logMsg(fid, 'WARNING', '@ time = %s No valid isotachs were found in any quadrant. Alternative Rmw required, e.g., = Rmw read in from track file', GAHM_datetime);
     return
 end
 
@@ -203,9 +192,7 @@ end
 if SVorMax_10_tbl < SVorMax_10_tblmin
     GAHM_out.flag(1:4,1:3)=2;
     GAHM_out.flag(1:4,4)=0;
-    fprintf('[WARN:GAHM2026_consistency] @ time = %s Maximum Vortex Speed @ tbl = %.1f (kt) < minimum allowable value = %.1f (kt) Alternative Rmw required, e.g., = Rmw read in from track file\n', ...
-        GAHM_datetime, SVorMax_10_tbl*0.51444, SVorMax_10_tblmin*0.51444);
-    fprintf(fid,'[WARN:GAHM2026_consistency] @ time = %s Maximum Vortex Speed @ tbl = %.1f (kt) < minimum allowable value = %.1f (kt) Alternative Rmw required, e.g., = Rmw read in from track file\n', ...
+    logMsg(fid, 'WARNING', '@ time = %s Maximum Vortex Speed @ tbl = %.1f (kt) < minimum allowable value = %.1f (kt) Alternative Rmw required, e.g., = Rmw read in from track file', ...
         GAHM_datetime, SVorMax_10_tbl*0.51444, SVorMax_10_tblmin*0.51444);
     return
 end
@@ -232,10 +219,8 @@ for i=1:3      % loop through the 3 isotachs
         SQuad_10_10min=vecnorm(VVorQuad_10_10min+VEnvQuad_10_10_check);
         if SQuad_10_10(i) < SQuad_10_10min
             GAHM_out.flag(q,i) = 3;   
-            fprintf('[WARN:GAHM2026_consistency] @ time = %s Vortex Isotach Speed @ tbl < minimum allowable value isotach=%i quadrant=%i flag(q,i)=3\n', ...
-                GAHM_datetime, i, q); 
-            fprintf(fid,'[WARN:GAHM2026_consistency] @ time = %s Vortex Isotach Speed @ tbl < minimum allowable value isotach=%i quadrant=%i flag(q,i)=3\n', ...
-                GAHM_datetime, i, q); 
+            logMsg(fid, 'WARNING', '@ time = %s Vortex Isotach Speed @ tbl < minimum allowable value isotach=%i quadrant=%i flag(q,i)=3', ...
+                GAHM_datetime, i, q);
             continue
         end
 
@@ -252,26 +237,20 @@ for i=1:3      % loop through the 3 isotachs
         VVorQuad_10_10max(1:2)=VVorQuaduv_10_10(1:2)*SVorMax_10_10;         
         SQuad_10_10max_25deg=vecnorm(VVorQuad_10_10max+VEnvQuad_10_10_check);
         if SQuad_10_10(i) > SQuad_10_10max_10deg && SQuad_10_10(i) > SQuad_10_10max_25deg
-            fprintf('[WARN:GAHM2026_consistency] @ time = %s Vortex Isotach Speed @ 10 & 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=4\n', ...
-                GAHM_datetime, i, q); 
-            fprintf(fid,'[WARN:GAHM2026_consistency] @ time = %s Vortex Isotach Speed @ 10 & 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=4, Vor Iso Spd = Max Vor Spd\n', ...
-                GAHM_datetime, i, q); 
+            logMsg(fid, 'WARNING', '@ time = %s Vortex Isotach Speed @ 10 & 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=4, Vor Iso Spd = Max Vor Spd', ...
+                GAHM_datetime, i, q);
             GAHM_out.flag(q,i)=4;
         elseif SQuad_10_10(i) > SQuad_10_10max_25deg
             delturnangle=15*(SQuad_10_10max_10deg-SQuad_10_10(i))/(SQuad_10_10max_10deg-SQuad_10_10max_25deg);
             GAHM_out.turnangle(q,i)=10+delturnangle/2;  %estimate of an intermediate turning angle
-            fprintf('[WARN:GAHM2026_consistency] @ time = %s Vortex Isotach Speed @ 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg\n', ...
-                GAHM_datetime, i, q, GAHM_out.turnangle(q,i)); 
-            fprintf(fid,'[WARN:GAHM2026_consistency] @ time = %s Vortex Isotach Speed @ 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg\n', ...
-                GAHM_datetime, i, q, GAHM_out.turnangle(q,i)); 
+            logMsg(fid, 'WARNING', '@ time = %s Vortex Isotach Speed @ 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg', ...
+                GAHM_datetime, i, q, GAHM_out.turnangle(q,i));
             GAHM_out.flag(q,i)=5;            
         elseif SQuad_10_10(i) > SQuad_10_10max_10deg
             delturnangle=15*(SQuad_10_10max_25deg-SQuad_10_10(i))/(SQuad_10_10max_25deg-SQuad_10_10max_10deg);
             GAHM_out.turnangle(q,i)=25-delturnangle/2;  %estimate of an intermediate turning angle
-            fprintf('[WARN:GAHM2026_consistency] @ time = %s Vortex Isotach Speed @ 10 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg\n', ...
-                GAHM_datetime, i, q, GAHM_out.turnangle(q,i)); 
-            fprintf(fid,'[WARN:GAHM2026_consistency] @ time = %s Vortex Isotach Speed @ 10 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg\n', ...
-                GAHM_datetime, i, q, GAHM_out.turnangle(q,i)); 
+            logMsg(fid, 'WARNING', '@ time = %s Vortex Isotach Speed @ 10 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg', ...
+                GAHM_datetime, i, q, GAHM_out.turnangle(q,i));
             GAHM_out.flag(q,i)=5;            
         end        
         if GAHM_out.flag(q,i)==4 ||  GAHM_out.flag(q,i)==5

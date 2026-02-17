@@ -1,15 +1,15 @@
-% Script to read in and parse IBTrACS format TC track files
+% Function to read in and parse IBTrACS format TC track files
 % Data is sent back to calling program in the ATCF2 data structure which
 % should match the structure that comes back from the script 
 % read_ATCF_fort22.m
 %
 % The input data file must be in IBTrACS delimited text format and end in 
-% .csv, .txt or .dat
-% Because the IBTrACS file has many empty cells, particularly for earlier 
-% years, Matlab can have difficulty reading it.  It is advisable to "seed" 
-% columns 22 and 23 in the file by putting "" in each on the first line of 
-% data in the file (e.g., using excell or a text editor) if they are 
-% otherwise empty.  If they have values, there is no need to modify further.  
+% .csv, .txt or .dat.  Because the IBTrACS file has many empty cells, 
+% particularly for earlier years, Matlab can have difficulty reading it.  
+% It is advisable to "seed" columns 22 and 23 in the file by putting "" in 
+% each on the first line of data in the file (e.g., using excell or a text 
+% editor) if they are otherwise empty.  If they have values, there is no 
+% need to modify further.  
 %
 % time is returned in datetime formats
 % eye location returned in deg lon,lat (S,W = - lon,lat)

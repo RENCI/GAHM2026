@@ -1,5 +1,5 @@
 %.........................................................................
-%  Script to initialize the single time step GAHM datastructure which 
+%  Function to initialize the single time step GAHM datastructure which 
 %  is then used / modified in GAHM2026_consistency_scan.m and finalized in 
 %  GAHM2026.m.
 %
@@ -83,16 +83,10 @@ numiso=ATCF_data_in(ATCF_line).numiso;
 
 skip_GAHM=false;
 if isnan(MSLP)
-    fprintf (fid,'%s %s\n','track file is missing Central Pressure, skipping this time ', ...
-                 ATCF_data_in(ATCF_line).datetime);                 
-    fprintf ('%s %s\n','track file is missing Central Pressure, skipping this time ', ...
-                 ATCF_data_in(ATCF_line).datetime);         
+    logMsg(fid, 'WARNING', 'track file is missing Central Pressure, skipping this time %s', string(ATCF_data_in(ATCF_line).datetime));
     skip_GAHM=true;
 elseif isnan(Vmax)
-    fprintf (fid,'%s %s\n','track file is missing Vmax, skipping this time ', ...
-                 ATCF_data_in(ATCF_line).datetime);                 
-    fprintf ('%s %s\n','track files is missing Vmax, skipping this time ', ...
-                 ATCF_data_in(ATCF_line).datetime);        
+    logMsg(fid, 'WARNING', 'track file is missing Vmax, skipping this time %s', string(ATCF_data_in(ATCF_line).datetime));
     skip_GAHM=true;
 end
 GAHM.skipline=skip_GAHM;
@@ -136,7 +130,7 @@ if env.type == 1  % ADCIRC/ASWIP approach  (NOAA TR NWS 23 1979) need to include
     VEnvQuad_10_10(1:4,1:3,1)=NaN;  % not used for this case
     VEnvQuad_10_10(1:4,1:3,2)=NaN;  % not used for this case     
     Pscale=1;
-elseif env.type == 2    %Lin and Chavez (2012)
+elseif env.type == 2    % Lin and Chavez (2012)
     Gcase=2;            % environmental velocity specified  at isotach locations
     rotation_matrix_ccw20d=[cosd(-20) -sind(-20); sind(-20) cosd(-20)];  % rotate 20deg ccw in N hemi        
     SEnv_10_10=0.6*VTspeed_10_10;        
@@ -148,15 +142,13 @@ elseif env.type == 3    % from gridded env velociy file
     Gcase=2;            % environmental velocity specified  at isotach locations
     itime=find(datetime_ATCF_line==[VEnv_10_10.datetime]);
     if isempty(itime)  % didn't find the specified time in the background Enviromental Velocity file
-        fprintf ('%s %s %s\n', ...
-            'Failed to find ',datetime_ATCF_line, ...
-            'in the Environmental file. Skipping this trackfile time')
+        logMsg(fid, 'WARNING', 'Failed to find %s in the Environmental file. Skipping this trackfile time', string(datetime_ATCF_line));
         skip_GAHM=true;
         GAHM.skipline=skip_GAHM;
         return
     end
-    VEnvStar_10_10=VEnvAvg(datetime_ATCF_line,LonEW,LatNS,VEnv_10_10,Rmax_in);  %compute avg VEnv within Rmax of eye to determine SVMax
-    VEnvQuad_10_10=VEnvRQuad(datetime_ATCF_line,LonEW,LatNS,VEnv_10_10,RQuad);   %pull Environmental velocity @ RQuad locations from gridded VEnv input
+    VEnvStar_10_10=VEnvAvg(datetime_ATCF_line,LonEW,LatNS,VEnv_10_10,Rmax_in);  % compute avg VEnv within Rmax of eye to determine SVMax
+    VEnvQuad_10_10=VEnvRQuad(datetime_ATCF_line,LonEW,LatNS,VEnv_10_10,RQuad);  % pull Environmental velocity @ RQuad locations from gridded VEnv input
     Pscale=PscaleEnv(itime);
 end
 
@@ -216,8 +208,7 @@ function VEnvAvg_out=VEnvAvg(datetime,eyeLon,eyeLat,VEnv,rad)
 itime=find(datetime==[VEnv.datetime]);
 
 if isempty(itime)  % didn't find the specified time in the background Enviromental Velocity file
-    fprintf (1,'%s %s %s\n','Failed to find ',datetime,' in the background Environmental Velocity file')
-    fprintf (1,'%s\n','VEnvAvg_out set = NaN')
+    logMsg(-1, 'WARNING', 'Failed to find %s in the background Environmental Velocity file. VEnvAvg_out set = NaN', string(datetime));
     VEnvAvg_out(1:2)=NaN;
 else
     rad_arc=nm2deg(rad/1852);  %convert rad to nautical miles and then arclength (deg)
@@ -265,8 +256,7 @@ theta=[45 315 225 135];
 itime=find(datetime==[VEnv.datetime]);
 
 if isempty(itime)  % didn't find the specified time in the background Enviromental Velocity file
-    fprintf (1,'%s %s %s\n','Failed to find ',datetime,' in the background Environmental Velocity file')
-    fprintf (1,'%s\n','VEnvQuad set = NaN')
+    logMsg(-1, 'WARNING', 'Failed to find %s in the background Environmental Velocity file. VEnvQuad set = NaN', string(datetime));
     VEnvQuad(1:4,1:3,1:2)=NaN;
 else
     longrid=VEnv(itime).lon;

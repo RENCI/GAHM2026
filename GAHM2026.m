@@ -87,35 +87,35 @@ end
  
 fid=fopen(output.warnings,'wt');
 
-if debug, fprintf('[DEBUG:GAHM2026] GAHM version=%d, env_type=%d, taper=%d, WAF=%d\n', GAHM_version, env_type, taper_flag, WAF_flag); end
-if debug, fprintf('[DEBUG:GAHM2026] Radial grid: ntheta=%d, nr=%d, delr=%d m (max radius=%.0f km)\n', ntheta, nr, delr, nr*delr/1000); end
+if debug, logMsg(fid, 'DEBUG', 'GAHM version=%d, env_type=%d, taper=%d, WAF=%d', GAHM_version, env_type, taper_flag, WAF_flag); end
+if debug, logMsg(fid, 'DEBUG', 'Radial grid: ntheta=%d, nr=%d, delr=%d m (max radius=%.0f km)', ntheta, nr, delr, nr*delr/1000); end
 
 %% Read in storm track information & find beginning and ending lines
 
 [ATCF_data_in, ATCF_startline, ATCF_endline, starttime_dt, endtime_dt] = ...
     readAndSliceTrack(storm);
 
-if debug, fprintf('[DEBUG:GAHM2026] Track loaded: %s, lines %d-%d (%s to %s)\n', ...
+if debug, logMsg(fid, 'DEBUG', 'Track loaded: %s, lines %d-%d (%s to %s)', ...
     storm.name, ATCF_startline, ATCF_endline, string(starttime_dt), string(endtime_dt)); end
 
 %% Read gridded environmental/hurricane fields and WAF raster
 
-if debug, fprintf('[DEBUG:GAHM2026] Loading environmental fields ...\n'); end
+if debug, logMsg(fid, 'DEBUG', 'Loading environmental fields ...'); end
 [VEnv_10_10, VHur_10_10, BlendingMasks, PscaleEnv] = ...
     loadEnvFields(env_type, env_info, starttime_dt, endtime_dt);
-if debug, fprintf('[DEBUG:GAHM2026] Environmental fields loaded.\n'); end
+if debug, logMsg(fid, 'DEBUG', 'Environmental fields loaded.'); end
 
 WAF_data = [];
 WAF_metadata = [];
 if WAF_flag
-    if debug, fprintf('[DEBUG:GAHM2026] Loading WAF raster from %s\n', WAF_info.file_name); end
+    if debug, logMsg(fid, 'DEBUG', 'Loading WAF raster from %s', WAF_info.file_name); end
     [WAF_data,WAF_metadata]=readgeoraster(WAF_info.file_name);    
 end
 
 %% Master time loop
 
 nBTtime=ATCF_endline-ATCF_startline+1;
-fprintf('[INFO:GAHM2026] Beginning master time loop: %d track time steps\n', nBTtime);
+logMsg(fid, 'INFO', 'Beginning master time loop: %d track time steps', nBTtime);
 i=0;
 otime=0;
 VEnvrad_10_10 = [];
@@ -147,20 +147,20 @@ for itime=1:nBTtime
 
     %% Compute GAHM parameters at current track time
 
-    if debug, fprintf('[DEBUG:GAHM2026]   Step %d/%d: %s (BTinterval=%d hrs)\n', itime, nBTtime, string(datetime_t2), BTinterval); end
+    if debug, logMsg(fid, 'DEBUG', 'Step %d/%d: %s (BTinterval=%d hrs)', itime, nBTtime, string(datetime_t2), BTinterval); end
 
     [GAHM_t_new, skipline] = computeGAHMAtTrackTime(GAHM_param_info, ...
         env_info, ATCF_data_in, VEnv_10_10, PscaleEnv, ATCF_line_t2, ...
         BTinterval, fid);
     if skipline
-        if debug, fprintf('[DEBUG:GAHM2026]   Step %d/%d: skipped\n', itime, nBTtime); end
+        if debug, logMsg(fid, 'DEBUG', 'Step %d/%d: skipped', itime, nBTtime); end
         continue
     end
     GAHM_t2 = GAHM_t_new;
               
     %% Compute radial profiles of vortex velocity and pressure
 
-    if debug, fprintf('[DEBUG:GAHM2026]   Computing radial profiles ...\n'); end
+    if debug, logMsg(fid, 'DEBUG', 'Computing radial profiles ...'); end
     [VVel_VPrad_t2, VPress_VPrad_t2, RP1, RP2] = computeRadialProfiles( ...
         r, theta, ntheta, nr, GAHM_param_info, GAHM_t2);
 
@@ -254,15 +254,15 @@ for itime=1:nBTtime
 
 end  % end master time loop
 
-fprintf('%s \n',' Completed calculations on radial grid. Preparing output')
-if debug, fprintf('[DEBUG:GAHM2026] Master time loop complete: %d output time steps produced\n', i); end
+logMsg(fid, 'INFO', 'Completed calculations on radial grid. Preparing output');
+if debug, logMsg(fid, 'DEBUG', 'Master time loop complete: %d output time steps produced', i); end
 
 itot=i;
 fclose(fid);
 
 %% Interpolate from radial grid to regular output grid
 
-fprintf('[INFO:GAHM2026] Interpolating from radial grid to regular output grid (%s) ...\n', output.type);
+logMsg(-1, 'INFO', 'Interpolating from radial grid to regular output grid (%s) ...', output.type);
 [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out] = ...
     buildRegularGridOutputs(itot, env_type, ntheta, nr, r, theta, ...
         output, WAF_flag, ...
@@ -271,7 +271,7 @@ fprintf('[INFO:GAHM2026] Interpolating from radial grid to regular output grid (
         VEnv_10_10, VHur_10_10, BlendingMasks, ...
         LonEW, LatNS, datetimeint, ...
         WAF_data, WAF_metadata);
-fprintf('[INFO:GAHM2026] Regular grid interpolation complete.\n');
+logMsg(-1, 'INFO', 'Regular grid interpolation complete.');
 
 %% Package radial grid data for plotting
 
@@ -294,7 +294,7 @@ for ii = 1:itot
     end
 end
 
-if debug, fprintf('[DEBUG:GAHM2026] Done.\n'); end
+if debug, logMsg(-1, 'DEBUG', 'Done.'); end
 
 end  % end main function
 
@@ -313,10 +313,9 @@ function [ATCF_data_in, ATCF_startline, ATCF_endline, starttime_dt, endtime_dt] 
     end
 
     if convertCharsToStrings(ATCF_data_in(1).sname_cha) == convertCharsToStrings(storm.name)
-        fprintf('%s %s %s %s\n',storm.designation,storm.year,storm.name,' found in track file' )
+        logMsg(-1, 'INFO', '%s %s %s found in track file', storm.designation, storm.year, storm.name)
     else
-        fprintf('%s %s %s %s\n',storm.designation,storm.year,storm.name,' not found in track file. RUN TERMINATED' )
-        error('Storm %s not found in track file', storm.name)
+        logMsg(-1, 'ERROR', '%s %s %s not found in track file', storm.designation, storm.year, storm.name)
     end
 
     if isdatetime(storm.starttime)
@@ -406,18 +405,14 @@ function [VEnvrad_10_10, PEnvrad, VHurrad_10_10, PHurrad, BlendingMasksrad] = ..
         VEnvrad_10_10(i,1:ntheta,1:nr+1,2)=SEnvScaleFactor(1:ntheta,1:nr+1)* ...
                                (VEnvAvg_10_10_t1(2)*tfac1+VEnvAvg_10_10_t2(2)*tfac2);            
         PEnvrad(i,1:ntheta,1:nr+1)=Pback_t2;
-    elseif env_type == 2
+    elseif env_type == 2.
         VEnvrad_10_10(i,1:ntheta,1:nr+1,1)=VEnvAvg_10_10_t1(1)*tfac1+VEnvAvg_10_10_t2(1)*tfac2;
         VEnvrad_10_10(i,1:ntheta,1:nr+1,2)=VEnvAvg_10_10_t1(2)*tfac1+VEnvAvg_10_10_t2(2)*tfac2;               
         PEnvrad(i,1:ntheta,1:nr+1)=Pback_t2;
     elseif env_type == 3    
         gtime=find(datetimeint(i,:)==[VEnv_10_10.datetime]);
         if isempty(gtime)
-            fprintf ('%s %s %s\n','Failed to find ',datetime,[' in the' ...
-                     ' Environmental file. RUN TERMINATED'])        
-            fprintf (fid,'%s %s %s\n','Failed to find ',datetime,[' in' ...
-                     'the Environmental file. RUN TERMINATED']);
-            return            
+            logMsg(fid, 'ERROR', 'Failed to find %s in the Environmental file.', string(datetimeint(i,:)));
         end
         [VEnvrad_10_10(i,1:ntheta,1:nr+1,1:2), PEnvrad(i,1:ntheta,1:nr+1)]= ...
                        VEnvreg2radial2(gtime,VEnv_10_10,LonEW_i,LatNS_i, ...
@@ -470,7 +465,7 @@ function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_o
 
 for i=1:itot
     if output.type == "grid"
-        fprintf(' %s %s \n','Interpolating to regular grid',datetimeint(i))
+        logMsg(-1, 'DEBUG', 'Interpolating to regular grid %s', datetimeint(i))
         if env_type == 3
             env_nlon=length(VEnv_10_10(i).lon(1,:));
             env_nlat=length(VEnv_10_10(i).lat(:,1));
@@ -486,7 +481,7 @@ for i=1:itot
         end
         [longrid,latgrid]=meshgrid(longrid1:output.dellon:longridn, latgrid1:output.dellat:latgridn);
     elseif output.type == "points"
-        fprintf(' %s %s \n','Interpolating to output points',datetimeint(i))        
+        logMsg(-1, 'INFO', 'Interpolating to output points %s', datetimeint(i))
         longrid=output.lon;
         latgrid=output.lat;
     end

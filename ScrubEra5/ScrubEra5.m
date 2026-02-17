@@ -20,13 +20,13 @@ else
     end
 end
 
-if CONFIG.debug, fprintf('[DEBUG:ScrubEra5] Configuration loaded: storm=%s, year=%d\n', CONFIG.storm_name, CONFIG.storm_year); end
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'Configuration loaded: storm=%s, year=%d', CONFIG.storm_name, CONFIG.storm_year); end
 
 %% Load and preprocess data
-if CONFIG.debug, fprintf('[DEBUG:ScrubEra5] Loading track data from %s ...\n', CONFIG.track_file); end
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'Loading track data from %s ...', CONFIG.track_file); end
 [time, real_lon, real_lat, start_time, end_time] = loadTrackData(CONFIG);
 num_times = length(time);
-if CONFIG.debug, fprintf('[DEBUG:ScrubEra5] Track loaded: %d hourly times from %s to %s\n', num_times, string(start_time), string(end_time)); end
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'Track loaded: %d hourly times from %s to %s', num_times, string(start_time), string(end_time)); end
 
 % lon_idx, lat_idx are the indices into the ERA5 grid for the track positions.  
 % TODO: Note that this ("*4") depends on the resolution of .25 deg, which 
@@ -37,9 +37,9 @@ lat_idx = round((90 - real_lat) * 4);
 
 % TODO: Replace loadERA5Data with something that gets any time period for a 
 % specific storm, and preferably not the entire global grid
-if CONFIG.debug, fprintf('[DEBUG:ScrubEra5] Loading ERA5 data from %s ...\n', CONFIG.nc_file); end
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'Loading ERA5 data from %s ...', CONFIG.nc_file); end
 era5 = getERA5Data(CONFIG,time);
-if CONFIG.debug, fprintf('[DEBUG:ScrubEra5] ERA5 data loaded: grid=%dx%d, %d time steps\n', length(era5.lon), length(era5.lat), length(era5.time)); end
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'ERA5 data loaded: grid=%dx%d, %d time steps', length(era5.lon), length(era5.lat), length(era5.time)); end
 
 % era5 = 
 %   struct with fields:
@@ -59,15 +59,15 @@ era5_lon = zeros(1, num_times);
 era5_lat = zeros(1, num_times);
 if CONFIG.debug
     grid_size = 2 * CONFIG.output_half_size + 1;
-    fprintf('[DEBUG:ScrubEra5] Output arrays initialized: %d times, %dx%d grid\n', num_times, grid_size, grid_size);
+    logMsg(-1, 'DEBUG', 'Output arrays initialized: %d times, %dx%d grid', num_times, grid_size, grid_size);
 end
 
 %% Main processing loop
-fprintf('[INFO:ScrubEra5] Beginning main processing loop over %d time steps\n', num_times);
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'Beginning main processing loop over %d time steps', num_times); end
 
 for i = 1:num_times
     
-    fprintf('[INFO:ScrubEra5] Processing %s\n',string(time(i)))
+    logMsg(-1, 'INFO', 'Analyzing %s',string(time(i)))
     if CONFIG.debug, tic; end
 
     % extract at time level i
@@ -75,38 +75,38 @@ for i = 1:num_times
     ThisU = squeeze(era5.u10(:,:,i))';
     ThisV = squeeze(era5.v10(:,:,i))';
     ThisWind = abs(ThisU+1i*ThisV);
-    if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   Step %d/%d: field extraction done (SLP range=%.1f-%.1f mb, max wind=%.1f m/s)\n', i, num_times, min(ThisMsl(:)), max(ThisMsl(:)), max(ThisWind(:))); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Step %d/%d: field extraction done (SLP range=%.1f-%.1f mb, max wind=%.1f m/s)', i, num_times, min(ThisMsl(:)), max(ThisMsl(:)), max(ThisWind(:))); end
 
     [era5_lon(i), era5_lat(i)] = findPressureCenter(ThisMsl, era5.lon_grid, ...
         era5.lat_grid, lat_idx(i), lon_idx(i));
-    if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   Pressure center found at (%.4f, %.4f), track position (%.4f, %.4f)\n', era5_lon(i), era5_lat(i), real_lon(i), real_lat(i)); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Pressure center found at (%.4f, %.4f), track position (%.4f, %.4f)', era5_lon(i), era5_lat(i), real_lon(i), real_lat(i)); end
     
     [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5.lon_grid, era5.lat_grid, ...
         ThisU, ThisV, ThisMsl, ThisWind, ...
         lat_idx(i), lon_idx(i), era5_lon(i), era5_lat(i), CONFIG);
-    if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   Polar coordinate interpolation done (grid size=%dx%d)\n', size(Xq,1), size(Xq,2)); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Polar coordinate interpolation done (grid size=%dx%d)', size(Xq,1), size(Xq,2)); end
     
     [count_34, in_34, distance_34] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
         lat_idx(i), lon_idx(i), CONFIG.wind_threshold_inner, CONFIG);
-    if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   34-kt cutline found: mean radius=%.1f km, points inside=%d\n', mean(distance_34), sum(in_34)); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', '34-kt cutline found: mean radius=%.1f km, points inside=%d', mean(distance_34), sum(in_34)); end
     
     [count, in, distance] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
         lat_idx(i), lon_idx(i), CONFIG.wind_threshold_outer, CONFIG);
-    if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   10-m/s cutline found: mean radius=%.1f km, points inside=%d\n', mean(distance), sum(in)); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', '10-m/s cutline found: mean radius=%.1f km, points inside=%d', mean(distance), sum(in)); end
     
     tem_ave_r = mean(count_34, "all") * 10 / 1000;
-    if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   Mean 34-kt vortex radius=%.4f deg\n', tem_ave_r); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Mean 34-kt vortex radius=%.4f deg', tem_ave_r); end
     
     [basic_slp, basic_u, basic_v] = computeBasicField(ThisMsl, ThisU, ThisV, ...
         lat_idx(i), lon_idx(i), tem_ave_r, CONFIG);
-    if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   Basic field computed (filter half-power wavelength=%.2f)\n', tem_ave_r / 0.04); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Basic field computed (filter half-power wavelength=%.2f)', tem_ave_r / 0.04); end
     
     OUTPUT = storeResults(OUTPUT, i, era5.lon_grid, era5.lat_grid, basic_slp, ...
         basic_u, basic_v, ThisMsl, ThisU, ThisV, in, in_34,  ...
         distance, distance_34, lat_idx(i), lon_idx(i), CONFIG);
-    if CONFIG.debug, fprintf('[DEBUG:ScrubEra5]   Results stored for step %d (elapsed=%.2f s)\n', i, toc); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Results stored for step %d (elapsed=%.2f s)', i, toc); end
 
 end
 
@@ -118,8 +118,7 @@ if isfield(CONFIG, 'output_dir')
     if ~exist(CONFIG.output_dir, 'dir'), mkdir(CONFIG.output_dir); end
     outfile = fullfile(CONFIG.output_dir, outfile);
 end
-fprintf('[INFO:ScrubEra5] Saving output to %s\n', outfile);
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'Saving output to %s', outfile); end
 save(outfile, "env_vals")
-fprintf('[INFO:ScrubEra5] Done.\n');
-
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'Done.'); end
 
