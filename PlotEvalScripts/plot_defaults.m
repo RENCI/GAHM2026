@@ -6,13 +6,19 @@ function opts = plot_defaults()
 
 %% Domain
 opts.domain.mode = 'fixed';       % 'moving' or 'fixed'
-opts.domain.padDeg = 0;            % extra padding in degrees (for moving mode)
-opts.domain.fixedLimits = [-85 -60 20 45];  % [minLon maxLon minLat maxLat] for fixed mode
+opts.domain.padDeg = 2;            % extra padding in degrees (for moving mode)
+% [minLon maxLon minLat maxLat] for fixed mode
+% if mode is fixed, set the limits explicitly here, or leave empty to use the 
+% lon,lat limits for the entire analysis
+
+%opts.domain.fixedLimits = [-85 -60 20 45];          
+% or                                             
+opts.domain.fixedLimits = [];
 
 %% Wind velocity contour plots
 opts.wind.clims = [0 80];          % color limits (kts)
 opts.wind.alpha = 0.8;             % transparency
-opts.wind.colormap = 'rdbu';        % colormap name
+opts.wind.colormap = 'burd';        % colormap name
 
 %% Pressure contour plots  
 opts.pres.clims = [980 1020];      % color limits (mb)

@@ -8,10 +8,23 @@ function [minX, maxX, minY, maxY] = getDomain(obj, datagrid, ip)
         maxY = max(datagrid(ip).Lat(:));
     else
         lims = obj.Opts.domain.fixedLimits;
-        minX = lims(1);
-        maxX = lims(2);
-        minY = lims(3);
-        maxY = lims(4);
-    end
+        if isempty(lims)
+            minX=NaN;
+            maxX=NaN;
+            minY=NaN;
+            maxY=NaN;
+            for i=1:length(datagrid)
+                minX=min(min(datagrid(i).Lon(:)),minX);
+                maxX=max(max(datagrid(i).Lon(:)),maxX);
+                minY=min(min(datagrid(i).Lat(:)),minY);
+                maxY=max(max(datagrid(i).Lat(:)),maxY);
+            end
 
+        else
+            minX = lims(1);
+            maxX = lims(2);
+            minY = lims(3);
+            maxY = lims(4);
+        end
+    end
 end

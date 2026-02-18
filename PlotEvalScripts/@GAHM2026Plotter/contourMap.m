@@ -1,9 +1,9 @@
-function fig = contourMap(obj, ptype, nplot, time, plotdata)
+function fig = contourMap(obj, ptype, fign, time, plotdata)
 % contourMap  Contour plot of a gridded wind or pressure field at one time.
 %
-%   fig = obj.contourMap(ptype, nplot)            — plots first timestep
-%   fig = obj.contourMap(ptype, nplot, time)      — plots specified time
-%   fig = obj.contourMap(ptype, nplot, time, plotdata)
+%   fig = obj.contourMap(ptype, fign)            — plots first timestep
+%   fig = obj.contourMap(ptype, fign, time)      — plots specified time
+%   fig = obj.contourMap(ptype, fign, time, plotdata)
 %
 %   time can be:
 %     integer index   — e.g. 5  (5th timestep)
@@ -16,7 +16,7 @@ function fig = contourMap(obj, ptype, nplot, time, plotdata)
 %     'mvelcon' - wind speed contours with mask boundary lines
 %     'mprecon' - pressure contours with mask boundary lines
 %
-%   nplot    - figure number
+%   fign    - figure number
 %   plotdata - (optional) gridded field struct array to plot instead of
 %              the default Result.Reggrid_TC_out
 %
@@ -38,7 +38,11 @@ function fig = contourMap(obj, ptype, nplot, time, plotdata)
 
     [minX, maxX, minY, maxY] = getDomain(obj, datagrid, ip);
 
-    fig = figure(nplot);
+    if isempty(fign)
+        fig = figure(gcf);
+    else
+        fig = figure(fign);
+    end
     clf(fig);
     hold on
 
@@ -48,7 +52,7 @@ function fig = contourMap(obj, ptype, nplot, time, plotdata)
         Speed = hypot(plotdata(ip).VelU, plotdata(ip).VelV);
         pcolor(datagrid(ip).Lon, datagrid(ip).Lat, 1.944*Speed);
         shading interp
-        colormap(gca, sky);
+        colormap(gca, opts.wind.colormap);
         colorbar
         clim(opts.wind.clims)
         alpha(opts.wind.alpha);
@@ -64,7 +68,7 @@ function fig = contourMap(obj, ptype, nplot, time, plotdata)
     if con_Pplot
         pcolor(datagrid(ip).Lon, datagrid(ip).Lat, plotdata(ip).Press);
         shading interp
-        colormap(gca, sky);
+        colormap(gca, opts.pres.colormap);
         colorbar
         clim(opts.pres.clims)
         alpha(opts.pres.alpha);
@@ -83,6 +87,7 @@ function fig = contourMap(obj, ptype, nplot, time, plotdata)
 
     title(titleStr)
     axis('equal')
+    gm
     axis([minX maxX minY maxY]);
     plot_coastline(opts);
 
