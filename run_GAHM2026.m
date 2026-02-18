@@ -9,7 +9,7 @@
 %
 %%                        2/3/2026  Rick Luettich
 
-function run_GAHM2026(config_name)
+function Result = run_GAHM2026(config_name)
 
 if nargin < 1
     config_name = 'config_GAHM2026_default';
@@ -123,6 +123,23 @@ elseif output_info.type == "points"
     end
 
     logMsg(-1, 'INFO', 'Done computing values at output points')
+end
+
+%% Package results for return
+
+Result.Reggrid_out     = Reggrid_out;
+Result.Reggrid_TC_out  = Reggrid_TC_out;
+Result.Reggrid_Env_out = Reggrid_Env_out;
+Result.Reggrid_VVor_invtapHur_out = Reggrid_VVor_invtapHur_out;
+Result.Trackdata       = Trackdata;
+Result.GAHM_out        = GAHM_out;
+Result.VPrad           = VPrad;
+Result.storm_info      = storm_info;
+Result.env_info        = env_info;
+
+if output_info.type == "points"
+    Result.Points_TC_out  = Points_TC_out;
+    Result.Points_Env_out = Points_Env_out;
 end
 
 logMsg(-1, 'INFO', 'Done.');
