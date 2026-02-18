@@ -1,28 +1,29 @@
 # GAHM2026 Refactoring Session Context
 
-**Last updated**: February 16, 2026  
+**Last updated**: February 17, 2026  
 **Purpose**: Continuity document for resuming work in a new session.
 
 ---
 
 ## Project Overview
 
-MATLAB codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). Developed by Rick Luettich at RENCI/UNC. The pipeline reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with gridded environmental fields, and writes output to NetCDF.
+MATLAB codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). Developed by Rick Luettich at UNC/IMS/CNHR/EMES and Brian Blanton at UNC/RENCI. The pipeline reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with gridded environmental fields, and writes output to NetCDF.
 
-**Entry point**: `run_GAHM2026.m` → loads `config/config_GAHM2026.m` → calls `GAHM2026.m`
+**Entry point**: `run_GAHM2026.m` → loads config from `config/` → calls `GAHM2026.m` → returns `Result` struct
 
 ---
 
 ## Current State
 
-All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization scripts modernized (Phase 1 of plot/eval plan complete). ScrubEra5 subproject updated to share the same IBTrACS file as GAHM2026.
+All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization fully modernized with the `GAHM2026Plotter` class (7 build phases complete). ScrubEra5 subproject updated to share the same IBTrACS file as GAHM2026.
 
-### Active Files (22 .m files in project root)
+### Active Files
 
 | Role | Files |
 |------|-------|
-| Driver | `run_GAHM2026.m` |
-| Configuration | `config/config_GAHM2026.m` (unified: ScrubEra5 + GAHM2026) |
+| Driver | `run_GAHM2026.m` (returns `Result` struct) |
+| Configuration | `config/config_GAHM2026_default.m` (Florence 2018, unified: ScrubEra5 + GAHM2026) |
+| Configuration | `config/config_Florence.m` (short Florence run for testing) |
 | Orchestrator | `GAHM2026.m` |
 | GAHM pipeline | `util/GAHM2026_prep.m`, `util/GAHM2026_consistency.m`, `util/GAHM2026_solve.m` |
 | Profile computation | `util/GAHM_VPradial.m`, `util/GAHM_VP.m` |
@@ -30,19 +31,22 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | Grid operations | `util/VEnvreg2radial2.m`, `util/radial2regular.m`, `util/radial_taper2.m` |
 | Post-processing | `util/apply_WAF_from_raster.m` |
 | Extracted utilities | `util/computeRmaxTot.m`, `util/quadrantUnitVectors.m`, `util/thetaToQuadrantPair.m`, `util/turnAngleDeg.m`, `util/logMsg.m`, `util/GAHM_physical_constants.m` |
+| Plotting class | `PlotEvalScripts/@GAHM2026Plotter/` (15 .m files) |
+| Plotting helpers | `PlotEvalScripts/plot_defaults.m`, `plot_coastline.m`, `plot_quiver_scaled.m` |
+| Legacy plot scripts | `PlotEvalScripts/conplot_blend_GAHM2026.m`, `radplot_blend_GAHM2026.m`, etc. |
 
 ### Directory Structure
 
 | Directory | Contents |
 |-----------|----------|
-| `config/` | Configuration files (default: `config_GAHM2026.m`) |
+| `config/` | Configuration files (default: `config_GAHM2026_default.m`) |
 | `util/` | All supporting MATLAB functions (pipeline, I/O, grid ops, utilities) |
 | `input/` | Input data files (e.g., `ibtracs.NA.list.v04r01.csv`) |
 | `output/` | NetCDF output files (`stormname_year.nc`) |
 | `documentation/` | Call tree, data structure reference, refactoring notes, this file |
 | `tools/` | Regression testing harness |
-| `ScrubEra5/` | ERA5 environmental field extraction subproject (19 MATLAB files, uses shared config from `config/`) |
-| `PlotEvalScripts/` | Plotting and evaluation scripts |
+| `ScrubEra5/` | ERA5 environmental field extraction subproject (uses shared config from `config/`) |
+| `PlotEvalScripts/` | Plotting class, legacy scripts, helpers |
 
 ### Documentation
 
@@ -54,7 +58,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | `documentation/REFACTORING_PLAN.md` | Original 5-phase refactoring plan (all phases complete) |
 | `documentation/phase3context.md` | Detailed Phase 3 decomposition context |
 | `documentation/SESSION_CONTEXT.md` | This file |
-| `PlotEvalScripts/README.md` | Graphics/visualization guide with opts reference |
+| `PlotEvalScripts/README.md` | GAHM2026Plotter class guide with Florence 2018 demo |
 
 ### Regression Testing
 
@@ -73,15 +77,21 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 
 ### Output Variables from `run_GAHM2026.m`
 
-| Variable | Contents |
-|----------|----------|
-| `Reggrid_out` | Grid coordinates (`.Lon`, `.Lat`), `.datetime`, `.Mask1`, `.Mask2` |
-| `Reggrid_TC_out` | Final blended TC fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
-| `Reggrid_Env_out` | Environmental fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
-| `Reggrid_VVor_invtapHur_out` | GAHM vortex + inverse-tapered hurricane (env_type=3 only; 0 for env_type 1,2) |
-| `Trackdata` | Storm track data with `.Rmax_t1`, `.Vmax_t1`, `.RQuad_t1`, quadrant info |
-| `GAHM_out` | Per-timestep GAHM parameters |
-| `VPrad` | Radial grid data: `.r`, `.theta`, `.VVor(i)`, `.Env(i)`, `.EnvVor(i)` |
+`run_GAHM2026` returns a `Result` struct containing:
+
+| Field | Contents |
+|-------|----------|
+| `Result.Reggrid_out` | Grid coordinates (`.Lon`, `.Lat`), `.datetime`, `.Mask1`, `.Mask2` |
+| `Result.Reggrid_TC_out` | Final blended TC fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
+| `Result.Reggrid_Env_out` | Environmental fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
+| `Result.Reggrid_VVor_invtapHur_out` | GAHM vortex + inverse-tapered hurricane (env_type=3 only; 0 for env_type 1,2) |
+| `Result.Trackdata` | Storm track data with `.Rmax_t1`, `.Vmax_t1`, `.RQuad_t1`, quadrant info |
+| `Result.GAHM_out` | Per-timestep GAHM parameters |
+| `Result.VPrad` | Radial grid data: `.r`, `.theta`, `.VVor(i)`, `.Env(i)`, `.EnvVor(i)` |
+| `Result.storm_info` | Storm identity (name, year, designation) |
+| `Result.env_info` | Environmental field configuration |
+| `Result.Points_TC_out` | (if output_type="points") Point TC output |
+| `Result.Points_Env_out` | (if output_type="points") Point environmental output |
 
 The `VPrad` struct packages radial-grid data for plotting. `.Env` and `.EnvVor` sub-structs are populated only when `env_info.type = 3`.
 
@@ -121,39 +131,109 @@ Created `documentation/GAHM_struct.md`. Replaced 50+ line duplicated GAHM struct
 ### Post-Refactoring: Naming and Organization (Feb 8, 2026)
 1. **Naming consistency**: Replaced all occurrences of `GAHM2024` → `GAHM2026` and `GAHM26_` → `GAHM2026_` across all files, function names, variable names, comments, and documentation. Renamed all affected files.
 2. **Removed `not_needed/` directory** and cleaned documentation references.
-3. **Created `input/` directory**: Moved `ibtracs.NA.list.v04r01.csv` into `input/`. Updated file paths in `config/config_GAHM2026.m`, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `README.md`.
-4. **Created `output/` directory**: Output NetCDF files use `stormname_year` naming (e.g., `output/Florence_2018.nc`). Updated `config/config_GAHM2026.m` and documentation.
-5. **Early output file check**: Added check in `run_GAHM2026.m` (after config load, before computation) to error if the output NetCDF file already exists.
-6. **Added `VPrad` output**: Modified `GAHM2026.m` to return radial grid data as 7th output. Packages internal arrays (`VVel_VPrad_10_10`, `VPress_VPrad`, `VEnvrad_10_10`, `PEnvrad`) into a `VPrad` struct for use by plotting scripts.
+3. **Created `input/` directory**: Moved `ibtracs.NA.list.v04r01.csv` into `input/`. Updated file paths.
+4. **Created `output/` directory**: Output NetCDF files use `stormname_year` naming.
+5. **Early output file check**: Added check in `run_GAHM2026.m` to error if the output NetCDF file already exists.
+6. **Added `VPrad` output**: Modified `GAHM2026.m` to return radial grid data as 7th output.
 
-### Graphics Modernization: Phase 1 (Feb 8, 2026)
+### Graphics Modernization: Standalone Scripts (Feb 8, 2026)
 
 Created a standardized plotting framework in `PlotEvalScripts/`:
 
 **New files:**
-- `plot_defaults.m` — Central `opts` struct with all configurable settings (domain, wind/pressure limits, quiver, coastline, animation, export, track, radial, masks)
+- `plot_defaults.m` — Central `opts` struct with all configurable settings
 - `plot_quiver_scaled.m` — Built-in `quiver` wrapper replacing external `vecplot`
 - `plot_coastline.m` — Built-in coastline overlay replacing external `plotcoast`
-- `PlotEvalScripts/README.md` — Full documentation with opts reference table
 
 **Modernized files:**
-- `conplot_blend_GAHM2026.m` — Accepts optional `opts` struct; removed all external dependencies (`vecplot`, `plotcoast`, `plot_google_map`); fixed `colormap=sky` bug; computes `Speed = hypot(VelU, VelV)` internally; standardized mask references to `Mask1`/`Mask2`
-- `radplot_blend_GAHM2026.m` — Rewritten to accept `VPrad` struct as single input; handles env_type 1/2 (no environmental fields) gracefully; accepts optional `opts`
-- `run_conplot_blend_GAHM2026.m` — Updated with correct output variable names and opts pattern
-- `run_radplot_blend_GAHM2026.m` — Updated to use `VPrad` struct
-
-**Remaining comparison scripts** (not yet modernized):
-- `GAHM2026_ASWIP_compare.m` — ~550 lines of repetitive scatter plots (Phase 3 candidate)
-- `Rmax_compare.m` — Hardcoded filenames for 13 storms (Phase 3 candidate)
-- `radial_find_maskedge.m` — Utility, no changes needed
+- `conplot_blend_GAHM2026.m` — Accepts optional `opts` struct; removed all external dependencies
+- `radplot_blend_GAHM2026.m` — Rewritten to accept `VPrad` struct; accepts optional `opts`
+- `run_conplot_blend_GAHM2026.m`, `run_radplot_blend_GAHM2026.m` — Updated
 
 ### ScrubEra5 Integration (Feb 16, 2026)
 - Moved the IBTrACS CSV from `ScrubEra5/` to `input/` so both GAHM2026 and ScrubEra5 use the same file.
 
 ### Unified Config (Feb 16, 2026)
-- Promoted the unified config pattern (originally in `config_Florence.m`) to the default `config/config_GAHM2026.m`. Every config now includes both `scrub_info` (ScrubEra5 parameters) and the GAHM2026 parameter structs, with shared storm identity defined once at the top.
-- Deleted `ScrubEra5/config.m` — ScrubEra5 is now driven from `config/config_GAHM2026.m` (or any storm-specific config in `config/`), either via `run_GAHM2026` auto-invocation or standalone: `ScrubEra5('config/config_GAHM2026')`.
-- Updated `README.md`, `ScrubEra5/README.md`, and `SESSION_CONTEXT.md` to reflect the unified config as the standard approach.
+- Promoted the unified config pattern to the default `config/config_GAHM2026_default.m`. Every config now includes both `scrub_info` (ScrubEra5 parameters) and the GAHM2026 parameter structs, with shared storm identity defined once at the top.
+- Deleted `ScrubEra5/config.m` — ScrubEra5 is now driven from config files in `config/`.
+
+### GAHM2026Plotter Class (Feb 17, 2026)
+
+Built an object-oriented plotting and evaluation class in 7 phases. The class lives in `PlotEvalScripts/@GAHM2026Plotter/` (15 .m files).
+
+#### `run_GAHM2026.m` change
+- Changed signature to `function Result = run_GAHM2026(config_name)`.
+- Added `Result` struct packaging all output variables at the end.
+- Backward compatible: calling without capturing the return value still works.
+
+#### GAHM2026Plotter class (new)
+
+`GAHM2026Plotter.m` — `handle` class, stores `Result` struct + `Opts`. Dependent properties (`PlotData`, `DataGrid`, `Trackdata`, `VPrad`) provide shortcuts. Constructor accepts `Result` and optional `opts` struct.
+
+**Public methods:**
+
+| File | Method | Phase | Description |
+|------|--------|-------|-------------|
+| `contourMap.m` | `contourMap(ptype, nplot, time, plotdata)` | 2 | Single-timestep pcolor map (wind or pressure) |
+| `addQuiver.m` | `addQuiver(time, plotdata)` | 3 | Standalone velocity vector overlay |
+| `radialProfile.m` | `radialProfile(ptype, nplot, time, theta_inc)` | 4 | Radial wind/pressure profiles in subplots |
+| `scatterCompare.m` | `scatterCompare(X, Y, nplot, ...)` | 5 | 1:1 scatter (by-quadrant N×4 or by-series N×K) |
+| `syncDatetime.m` | `syncDatetime(A, B)` | 5 | Match two struct arrays by `.datetime` field |
+| `animate.m` | `animate(ptype, nplot, plotdata, filename)` | 6 | GIF/MP4 animation loop over all timesteps |
+| `exportFigure.m` | `exportFigure(fig, filename)` | 7 | Save figure to PNG or PDF via `opts.export` |
+
+**Private helpers:**
+
+| File | Purpose |
+|------|---------|
+| `resolveTime.m` | Convert index or datetime → gridded timestep index |
+| `resolveRadialTime.m` | Convert index or datetime → VPrad timestep index |
+| `getDomain.m` | Compute axis limits (moving or fixed mode) |
+| `plotTrack.m` | Storm track line overlay |
+| `plotMaskContours.m` | Inner/outer mask boundary contours |
+| `captureGifFrame.m` | Append figure frame to GIF file |
+| `openMp4.m` | Create and open VideoWriter for MP4 |
+
+#### Key design decisions
+
+1. **Single-timestep plotting** — `contourMap` and `radialProfile` plot one timestep per call (specified by integer index or datetime). This decouples frame rendering from animation, making it easy to inspect individual times or build custom loops.
+2. **`Result` struct pattern** — `run_GAHM2026` returns all outputs in one struct. The plotter constructor takes this struct, avoiding scattered workspace variables.
+3. **`plot_defaults()` shared** — Both the class and legacy standalone scripts use the same `plot_defaults.m` options struct.
+4. **Separate method files** — Each public and private method is in its own `.m` file inside `@GAHM2026Plotter/`, following MATLAB `@folder` class conventions.
+5. **`plotdata` override** — `contourMap`, `addQuiver`, and `animate` accept an optional `plotdata` argument to plot any field struct (e.g., `Reggrid_Env_out`, `Reggrid_VVor_invtapHur_out`) instead of the default `Reggrid_TC_out`.
+
+#### PlotEvalScripts file tree
+
+```
+PlotEvalScripts/
+├── @GAHM2026Plotter/
+│   ├── GAHM2026Plotter.m        (classdef)
+│   ├── contourMap.m              (public)
+│   ├── addQuiver.m               (public)
+│   ├── radialProfile.m           (public)
+│   ├── scatterCompare.m          (public)
+│   ├── syncDatetime.m            (public)
+│   ├── animate.m                 (public)
+│   ├── exportFigure.m            (public)
+│   ├── resolveTime.m             (private)
+│   ├── resolveRadialTime.m       (private)
+│   ├── getDomain.m               (private)
+│   ├── plotTrack.m               (private)
+│   ├── plotMaskContours.m        (private)
+│   ├── captureGifFrame.m         (private)
+│   └── openMp4.m                 (private)
+├── README.md                     (rewritten — Florence 2018 demo)
+├── conplot_blend_GAHM2026.m      (legacy, unchanged)
+├── radplot_blend_GAHM2026.m      (legacy, unchanged)
+├── GAHM2026_ASWIP_compare.m      (legacy, unchanged)
+├── Rmax_compare.m                 (legacy, unchanged)
+├── plot_defaults.m                (shared options)
+├── plot_coastline.m               (shared helper)
+├── plot_quiver_scaled.m           (shared helper)
+├── radial_find_maskedge.m         (utility)
+├── run_conplot_blend_GAHM2026.m   (legacy driver)
+└── run_radplot_blend_GAHM2026.m   (legacy driver)
+```
 
 ---
 
@@ -161,21 +241,10 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 
 - Gradually adopt `logMsg.m` to replace duplicated `fprintf` pairs throughout codebase
 - Gradually adopt `GAHM_physical_constants.m` to replace magic number literals
-- `GAHM2026a` / `GAHM2026b` local functions inside `GAHM2026_solve.m` implement GAHM equations (mathematical names, not version labels) — could be renamed if desired
-
-### Graphics/Evaluation Plan (Phases 2-4)
-
-**Phase 2: New evaluation capabilities**
 - Time-series diagnostics: Vmax, central pressure, Rmax, isotach radii vs time
 - Difference maps between field pairs (diverging colormap)
 - Objective metrics: bias, RMSE, MAE, correlation → CSV summary
-
-**Phase 3: Refactor comparison scripts**
-- Replace `GAHM2026_ASWIP_compare.m` with parameterized loop + `scatter_quadrants` helper
-- Replace `Rmax_compare.m` with batch file discovery (`dir('GAHM2026_*_fort22.dat')`)
-- Add bias/RMSE annotations on scatter plots
-
-**Phase 4: Automation (optional)**
+- Bias/RMSE annotations on scatter plots
 - Driver script producing complete evaluation for one storm
 - MATLAB Live Script template for publishable storm reports
 
@@ -193,4 +262,17 @@ Additional context files if needed:
 - `documentation/phase3context.md` — Phase 3 decomposition details
 - `documentation/GAHM_struct.md` — data structure reference
 - `README.md` — user-facing documentation
-- `PlotEvalScripts/README.md` — graphics/visualization guide
+- `PlotEvalScripts/README.md` — GAHM2026Plotter class guide with Florence 2018 demo
+
+### Quick Test
+
+```matlab
+R   = run_GAHM2026('config_GAHM2026_default');
+addpath('PlotEvalScripts')
+obj = GAHM2026Plotter(R);
+obj.setOpts('anim', 'gif', false);
+obj.setOpts('anim', 'mp4', false);
+fig = obj.contourMap('mvelcon', 1, 20);
+obj.exportFigure(fig, 'Florence_test');
+obj.radialProfile('velrad', 10, 5);
+```
