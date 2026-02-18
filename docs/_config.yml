@@ -1,0 +1,5 @@
+title: GAHM2026
+description: Generalized Asymmetric Holland Model for tropical cyclone wind and pressure fields
+remote_theme: pages-themes/minimal@v0.2.0
+plugins:
+  - jekyll-remote-theme
