@@ -1,8 +1,9 @@
-%% GAHM2026 Project Workflow
-%% Generated: 2026-02-17
-%%
-%% Render with: mmdc -i GAHM2026_workflow.mmd -o GAHM2026_workflow.png
-%% Or view in any Mermaid-compatible viewer (GitHub, VS Code, etc.)
+# GAHM2026 Project Workflow
+## Generated: 2026-02-17
+```
+Render with: mmdc -i GAHM2026_workflow.mmd -o GAHM2026_workflow.png
+Or view in any Mermaid-compatible viewer (GitHub, VS Code, etc.)
+```
 
 ```mermaid
 
