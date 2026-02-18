@@ -307,9 +307,9 @@ function [ATCF_data_in, ATCF_startline, ATCF_endline, starttime_dt, endtime_dt] 
     readAndSliceTrack(storm)
 
     if storm.file_type == "ATCF" || storm.file_type == "fort22"
-        ATCF_data_in=read_ATCF_fort22(storm.file_name,storm.file_type);
+        ATCF_data_in=read_ATCF_fort22(storm.track_file,storm.file_type);
     elseif storm.file_type == "IBTrACS"
-        ATCF_data_in=read_IBTrACS2(storm);
+        ATCF_data_in=read_IBTrACS(storm);
     end
 
     if convertCharsToStrings(ATCF_data_in(1).sname_cha) == convertCharsToStrings(storm.name)
@@ -405,7 +405,7 @@ function [VEnvrad_10_10, PEnvrad, VHurrad_10_10, PHurrad, BlendingMasksrad] = ..
         VEnvrad_10_10(i,1:ntheta,1:nr+1,2)=SEnvScaleFactor(1:ntheta,1:nr+1)* ...
                                (VEnvAvg_10_10_t1(2)*tfac1+VEnvAvg_10_10_t2(2)*tfac2);            
         PEnvrad(i,1:ntheta,1:nr+1)=Pback_t2;
-    elseif env_type == 2.
+    elseif env_type == 2
         VEnvrad_10_10(i,1:ntheta,1:nr+1,1)=VEnvAvg_10_10_t1(1)*tfac1+VEnvAvg_10_10_t2(1)*tfac2;
         VEnvrad_10_10(i,1:ntheta,1:nr+1,2)=VEnvAvg_10_10_t1(2)*tfac1+VEnvAvg_10_10_t2(2)*tfac2;               
         PEnvrad(i,1:ntheta,1:nr+1)=Pback_t2;
@@ -465,7 +465,7 @@ function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_o
 
 for i=1:itot
     if output.type == "grid"
-        logMsg(-1, 'DEBUG', 'Interpolating to regular grid %s', datetimeint(i))
+        logMsg(-1, 'INFO', 'Interpolating to regular grid %s', datetimeint(i))
         if env_type == 3
             env_nlon=length(VEnv_10_10(i).lon(1,:));
             env_nlat=length(VEnv_10_10(i).lat(:,1));

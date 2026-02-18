@@ -11,7 +11,7 @@
 %                 1/29/2026   - Rick Luettich
 %                 2/7/2026    - modernized (opts pattern, built-in helpers)
 
-function []=conplot_blend_GAHM2026(plotdata,datagrid,Trackdata,ptype,nplot,opts)
+function []=conplot_blend_GAHM2026(plotdata,datagrid,Trackdata,ptype,fign,opts)
 
 if nargin < 6
     opts = plot_defaults();
@@ -39,8 +39,8 @@ if con_Vplot
             minY = opts.domain.fixedLimits(3);
             maxY = opts.domain.fixedLimits(4);
         end
-        nplot = nplot + 1;
-        fig = figure(nplot);
+        fign = fign + 1;
+        fig = figure(fign);
         Speed = hypot(plotdata(ip).VelU, plotdata(ip).VelV);
         hs = pcolor(datagrid(ip).Lon, datagrid(ip).Lat, 1.944*Speed);
         hold on
@@ -115,8 +115,8 @@ if con_Pplot
             minY = opts.domain.fixedLimits(3);
             maxY = opts.domain.fixedLimits(4);
         end
-        nplot = nplot + 1;
-        fig = figure(nplot);
+        fign = fign + 1;
+        fig = figure(fign);
         hs = pcolor(datagrid(ip).Lon, datagrid(ip).Lat, plotdata(ip).Press);
         hold on
         shading interp

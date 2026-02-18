@@ -51,7 +51,6 @@ GAHM2026/
 └── ScrubEra5/
     ├── ScrubEra5.m             — vortex scrubber entry point
     ├── getERA5Data.m           — ERA5 NetCDF reader
-    ├── loadTrackData.m         — IBTrACS track loader
     ├── findCutline.m           — wind threshold contour detection
     ├── computeBasicField.m     — environmental field separation
     ├── createOutputStruct.m    — package output .mat structure
@@ -83,7 +82,7 @@ These values are defined as plain workspace variables and automatically populate
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| `nc_file` | ERA5 NetCDF input file path | `'/path/to/2018.global.nc'` |
+| `background_file` | ERA5 NetCDF input file path (`<year>` replaced at runtime) | `'/path/to/<year>/<year>.global.nc'` |
 | `grid_half_size` | Half-size of extraction grid (grid points) | `40` |
 | `output_half_size` | Half-size of output grid (grid points) | `40` |
 | `filter_domain_size` | Domain size for Butterworth filter | `120` |
@@ -94,7 +93,7 @@ These values are defined as plain workspace variables and automatically populate
 | `wind_threshold_inner` | Inner cutline threshold (m/s, 34 kt) | `34/1.944` |
 | `debug` | Print debug messages | `true` |
 
-> **Note:** `scrub_info.storm_name`, `scrub_info.storm_year`, `scrub_info.track_file`, `scrub_info.storm_start`, and `scrub_info.storm_end` are automatically populated from the shared variables — do not set them separately. Likewise, `storm_info.starttime` and `storm_info.endtime` are derived from `storm_start` and `storm_end`.
+> **Note:** `scrub_info.storm_name`, `scrub_info.storm_year`, `scrub_info.storm_designation`, `scrub_info.track_file`, `scrub_info.storm_start`, and `scrub_info.storm_end` are automatically populated from the shared variables — do not set them separately. Likewise, `storm_info.starttime` and `storm_info.endtime` are derived from `storm_start` and `storm_end`.
 
 #### 3. GAHM2026 parameters
 
@@ -177,7 +176,7 @@ Place in `GAHM2026/input/`. If not found, `run_GAHM2026` will attempt to downloa
 
 ### ERA5 reanalysis data
 
-ERA5 NetCDF files must contain variables `msl`, `u10`, `v10`, and `time` (or `valid_time`). The file path is specified in `scrub_info.nc_file`.
+ERA5 NetCDF files must contain variables `msl`, `u10`, `v10`, and `time` (or `valid_time`). The file path is specified in `scrub_info.background_file`.
 
 ---
 

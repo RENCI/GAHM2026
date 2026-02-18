@@ -11,13 +11,13 @@
 %    Trackdata  - track data with Rmax, Vmax, quadrant info
 %    theta_inc  - plot every Nth radial angle (e.g., 2 = every other)
 %    ptype      - 'velrad' for velocity or 'prerad' for pressure
-%    nplot      - starting figure number
+%    fign       - starting figure number
 %    opts       - (optional) options struct from plot_defaults()
 %
 %                 11/7/2024   - Rick Luettich
 %                 2/8/2026    - modernized (VPrad struct, opts pattern)
 
-function []=radplot_blend_GAHM2026(VPrad,Trackdata,theta_inc,ptype,nplot,opts)
+function []=radplot_blend_GAHM2026(VPrad,Trackdata,theta_inc,ptype,fign,opts)
 
 if nargin < 6
     opts = plot_defaults();
@@ -40,11 +40,11 @@ nr = length(VPrad.r);
 
 if rad_Vplot
     for int = 1:itot
-        nploti = nplot + 1;
+        nploti = fign + 1;
         for it = theta_inc:theta_inc:ntheta
-            nplot = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
-            figure(nplot)
-            splot = it/theta_inc - (nplot-nploti)*slotsPerFig;
+            fign = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
+            figure(fign)
+            splot = it/theta_inc - (fign-nploti)*slotsPerFig;
             subplot(opts.radial.layout(1), opts.radial.layout(2), splot)
 
             if hasEnv
@@ -80,7 +80,7 @@ if rad_Vplot
             QRP1_t2 = ['RPQ' num2str(Trackdata(int).RP1(it)) ' t2'];
             QRP2_t2 = ['RPQ' num2str(Trackdata(int).RP2(it)) ' t2'];
 
-            if splot == slotsPerFig || splot == floor(ntheta/theta_inc)-(nplot-nploti)*slotsPerFig
+            if splot == slotsPerFig || splot == floor(ntheta/theta_inc)-(fign-nploti)*slotsPerFig
                 if hasEnv
                     if Trackdata(int).Vmax_t2 == 0
                         lgd = legend('EV Speed 10 10','E Speed 10 10','Vmax t1',QRP1_t1,QRP2_t1);
@@ -104,11 +104,11 @@ end
 
 if rad_Pplot
     for int = 1:itot
-        nploti = nplot + 1;
+        nploti = fign + 1;
         for it = theta_inc:theta_inc:ntheta
-            nplot = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
-            figure(nplot)
-            splot = it/theta_inc - (nplot-nploti)*slotsPerFig;
+            fign = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
+            figure(fign)
+            splot = it/theta_inc - (fign-nploti)*slotsPerFig;
             subplot(opts.radial.layout(1), opts.radial.layout(2), splot)
             if hasEnv
                 P1 = VPrad.EnvVor(int).Press(it,1:nr);

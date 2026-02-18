@@ -1,15 +1,15 @@
-function animate(obj, ptype, nplot, plotdata, filename)
+function animate(obj, ptype, fign, plotdata, filename)
 % animate  Generate GIF and/or MP4 animation of contour maps over all timesteps.
 %
-%   obj.animate(ptype, nplot)
-%   obj.animate(ptype, nplot, plotdata)
-%   obj.animate(ptype, nplot, plotdata, filename)
+%   obj.animate(ptype, fign)
+%   obj.animate(ptype, fign, plotdata)
+%   obj.animate(ptype, fign, plotdata, filename)
 %
 %   Loops over all timesteps, calling contourMap for each frame, and
 %   captures to GIF and/or MP4 according to opts.anim settings.
 %
 %   ptype    - 'velcon', 'precon', 'mvelcon', or 'mprecon'
-%   nplot    - figure number (reused each frame)
+%   fign    - figure number (reused each frame)
 %   plotdata - (optional) gridded field struct array; defaults to
 %              Result.Reggrid_TC_out
 %   filename - (optional) base filename without extension; defaults to
@@ -41,7 +41,7 @@ function animate(obj, ptype, nplot, plotdata, filename)
     end
 
     for ip = 1:itot
-        fig = contourMap(obj, ptype, nplot, ip, plotdata);
+        fig = contourMap(obj, ptype, fign, ip, plotdata);
         drawnow
 
         if opts.anim.gif

@@ -38,7 +38,7 @@
 %
 % 10/23/2024
 % 1. Changes to variable names and types to bring ATCF2 into alignment with
-%    read_IBTrACS
+%    read_IBTrACS.m
 % 
 % 10/30/2024
 % 1. Data structure reorganized

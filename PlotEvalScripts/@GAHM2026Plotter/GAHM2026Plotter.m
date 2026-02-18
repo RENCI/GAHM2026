@@ -11,7 +11,7 @@ classdef GAHM2026Plotter < handle
 %     and optionally .Points_TC_out, .Points_Env_out (for point output)
 %
 % PLOTTING METHODS
-%   contourMap(ptype, nplot, time, plotdata)
+%   contourMap(ptype, fign, time, plotdata)
 %       Contour map (pcolor) of wind speed or pressure at one timestep.
 %       ptype: 'velcon','precon','mvelcon','mprecon'
 %       time:  integer index, datetime, or [] (default 1)
@@ -19,14 +19,14 @@ classdef GAHM2026Plotter < handle
 %   addQuiver(time, plotdata)
 %       Overlay velocity vectors on the current axes at one timestep.
 %
-%   radialProfile(ptype, nplot, time, theta_inc)
+%   radialProfile(ptype, fign, time, theta_inc)
 %       Radial profiles of wind or pressure at one timestep in subplots.
 %       ptype: 'velrad' or 'prerad'
 %
-%   scatterCompare(X, Y, nplot, titleStr, xlabelStr, ylabelStr, legendLabels)
+%   scatterCompare(X, Y, fign, titleStr, xlabelStr, ylabelStr, legendLabels)
 %       1:1 scatter plot.  N×4 → by-quadrant; N×K → by-series.
 %
-%   animate(ptype, nplot, plotdata, filename)
+%   animate(ptype, fign, plotdata, filename)
 %       GIF/MP4 animation over all timesteps via contourMap.
 %
 %   exportFigure(fig, filename)
@@ -135,12 +135,12 @@ classdef GAHM2026Plotter < handle
 
         %% Plotting methods (in separate files)
 
-        fig = contourMap(obj, ptype, nplot, time, plotdata)
+        fig = contourMap(obj, ptype, fign, time, plotdata)
         addQuiver(obj, time, plotdata)
-        radialProfile(obj, ptype, nplot, time, theta_inc)
-        fig = scatterCompare(obj, X, Y, nplot, titleStr, xlabelStr, ylabelStr, legendLabels)
+        radialProfile(obj, ptype, fign, time, theta_inc)
+        fig = scatterCompare(obj, X, Y, fign, titleStr, xlabelStr, ylabelStr, legendLabels)
         [idxA, idxB] = syncDatetime(obj, A, B)
-        animate(obj, ptype, nplot, plotdata, filename)
+        animate(obj, ptype, fign, plotdata, filename)
         exportFigure(obj, fig, filename)
 
     end

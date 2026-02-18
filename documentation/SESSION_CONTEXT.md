@@ -27,7 +27,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | Orchestrator | `GAHM2026.m` |
 | GAHM pipeline | `util/GAHM2026_prep.m`, `util/GAHM2026_consistency.m`, `util/GAHM2026_solve.m` |
 | Profile computation | `util/GAHM_VPradial.m`, `util/GAHM_VP.m` |
-| I/O | `util/read_ATCF_fort22.m`, `util/read_IBTrACS2.m`, `util/read_Env_and_Hurr_fields2.m`, `util/writeGAHM2026NetCdf.m` |
+| I/O | `util/read_ATCF_fort22.m`, `util/read_IBTrACS.m`, `util/read_Env_and_Hurr_fields2.m`, `util/writeGAHM2026NetCdf.m` |
 | Grid operations | `util/VEnvreg2radial2.m`, `util/radial2regular.m`, `util/radial_taper2.m` |
 | Post-processing | `util/apply_WAF_from_raster.m` |
 | Extracted utilities | `util/computeRmaxTot.m`, `util/quadrantUnitVectors.m`, `util/thetaToQuadrantPair.m`, `util/turnAngleDeg.m`, `util/logMsg.m`, `util/GAHM_physical_constants.m` |
@@ -174,12 +174,12 @@ Built an object-oriented plotting and evaluation class in 7 phases. The class li
 
 | File | Method | Phase | Description |
 |------|--------|-------|-------------|
-| `contourMap.m` | `contourMap(ptype, nplot, time, plotdata)` | 2 | Single-timestep pcolor map (wind or pressure) |
+| `contourMap.m` | `contourMap(ptype, fign, time, plotdata)` | 2 | Single-timestep pcolor map (wind or pressure) |
 | `addQuiver.m` | `addQuiver(time, plotdata)` | 3 | Standalone velocity vector overlay |
-| `radialProfile.m` | `radialProfile(ptype, nplot, time, theta_inc)` | 4 | Radial wind/pressure profiles in subplots |
-| `scatterCompare.m` | `scatterCompare(X, Y, nplot, ...)` | 5 | 1:1 scatter (by-quadrant N×4 or by-series N×K) |
+| `radialProfile.m` | `radialProfile(ptype, fign, time, theta_inc)` | 4 | Radial wind/pressure profiles in subplots |
+| `scatterCompare.m` | `scatterCompare(X, Y, fign, ...)` | 5 | 1:1 scatter (by-quadrant N×4 or by-series N×K) |
 | `syncDatetime.m` | `syncDatetime(A, B)` | 5 | Match two struct arrays by `.datetime` field |
-| `animate.m` | `animate(ptype, nplot, plotdata, filename)` | 6 | GIF/MP4 animation loop over all timesteps |
+| `animate.m` | `animate(ptype, fign, plotdata, filename)` | 6 | GIF/MP4 animation loop over all timesteps |
 | `exportFigure.m` | `exportFigure(fig, filename)` | 7 | Save figure to PNG or PDF via `opts.export` |
 
 **Private helpers:**

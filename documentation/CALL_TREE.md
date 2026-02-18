@@ -11,7 +11,7 @@
 |------|-------|
 | Driver | `run_GAHM2026.m` |
 | Orchestrator | `GAHM2026.m` |
-| I/O | `read_ATCF_fort22.m`, `read_IBTrACS2.m`, `read_Env_and_Hurr_fields2.m`, `writeGAHM2026NetCdf.m` |
+| I/O | `read_ATCF_fort22.m`, `read_IBTrACS.m`, `read_Env_and_Hurr_fields2.m`, `writeGAHM2026NetCdf.m` |
 | GAHM pipeline | `GAHM2026_prep.m`, `GAHM2026_consistency.m`, `GAHM2026_solve.m` |
 | Legacy solvers | `GAHM2026v3e.m`, `GAHM2026v4a.m` (removed, logic unified in `GAHM2026_solve.m`) |
 | Profile computation | `GAHM_VPradial.m`, `GAHM_VP.m` |
@@ -41,7 +41,7 @@ Decomposed into a main function + 7 local helper functions (Phase 3).
 | Function | Condition | Calls | Description |
 |----------|-----------|-------|-------------|
 | `readAndSliceTrack` | `file_type == "ATCF"/"fort22"` | `read_ATCF_fort22.m` | Read track file, find start/end lines |
-| `readAndSliceTrack` | `file_type == "IBTrACS"` | `read_IBTrACS2.m` | Read IBTrACS track file |
+| `readAndSliceTrack` | `file_type == "IBTrACS"` | `read_IBTrACS.m` | Read IBTrACS track file |
 | `loadEnvFields` | `env_type == 3` | `read_Env_and_Hurr_fields2.m` | Load gridded env & hurricane fields |
 | main | `WAF_flag == true` | `readgeoraster` (builtin) | Read Wind Adjustment Factor raster |
 
@@ -158,7 +158,7 @@ run_GAHM2026.m
 │   │   ├── read_ATCF_fort22.m       [if ATCF/fort22]
 │   │   │   └── computeRmaxTot.m     [if ASWIP]
 │   │   │       └── thetaToQuadrantPair.m
-│   │   └── read_IBTrACS2.m          [if IBTrACS]
+│   │   └── read_IBTrACS.m           [if IBTrACS]
 │   ├── loadEnvFields [local]
 │   │   └── read_Env_and_Hurr_fields2.m [if env_type==3]
 │   ├── readgeoraster (builtin)      [if WAF_flag]

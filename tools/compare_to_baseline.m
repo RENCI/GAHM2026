@@ -41,7 +41,7 @@ total_fail = 0;
 
 %% Common parameters (must match generate_baseline.m exactly)
 
-storm_info.file_name   = fullfile(projdir, 'input', 'ibtracs.NA.list.v04r01.csv');
+storm_info.track_file  = fullfile(projdir, 'input', 'ibtracs.NA.list.v04r01.csv');
 storm_info.file_type   = "IBTrACS";
 storm_info.name        = 'FLORENCE';
 storm_info.year        = '2018';

@@ -30,11 +30,11 @@ These variables are used by both ScrubEra5 and GAHM2026:
 
 ### 2. ScrubEra5 Parameters (`scrub_info.*`)
 
-Controls ERA5 data extraction and vortex scrubbing. The fields `storm_name`, `storm_year`, `track_file`, `storm_start`, and `storm_end` are populated from the shared variables — do not set them separately.
+Controls ERA5 data extraction and vortex scrubbing. The fields `storm_name`, `storm_year`, `storm_designation`, `track_file`, `storm_start`, and `storm_end` are populated from the shared variables — do not set them separately.
 
 | Parameter | Type | Description | Default/Example |
 |-----------|------|-------------|-----------------|
-| `nc_file` | char | Path to ERA5 NetCDF input file | `'/path/to/2018.global.nc'` |
+| `background_file` | char | Path to ERA5 NetCDF input file. Use `<year>` as a placeholder for the storm year (resolved at runtime by `getERA5Data`) | `'/path/to/<year>/<year>.global.nc'` |
 | `storm_start` | datetime | Start time (from shared) | `storm_start` |
 | `storm_end` | datetime | End time (from shared) | `storm_end` |
 | `grid_half_size` | numeric | Half-size of extraction grid (grid points) | `40` |
@@ -49,6 +49,7 @@ Controls ERA5 data extraction and vortex scrubbing. The fields `storm_name`, `st
 | `output_dir` | char | Output directory for `.mat` file | `'output'` |
 | `storm_name` | char | Storm name (from shared) | `storm_name` |
 | `storm_year` | numeric | Storm year (from shared) | `storm_year` |
+| `storm_designation` | char | Basin + storm number (from shared) | `storm_designation` |
 | `track_file` | char | Track data file path | `fullfile('input', track_file)` |
 
 ---
@@ -59,7 +60,7 @@ Identifies the storm and track file for GAHM2026. Most fields are derived from t
 
 | Parameter | Type | Description | Example |
 |-----------|------|-------------|---------|
-| `file_name` | char | Full path to track data file | `fullfile('input', track_file)` |
+| `track_file` | char | Full path to track data file | `fullfile('input', track_file)` |
 | `file_type` | string | Track file format: `"ATCF"`, `"fort22"`, or `"IBTrACS"` | `"IBTrACS"` |
 | `name` | char | Storm name | `storm_name` |
 | `year` | char | Storm year (4-digit string) | `num2str(storm_year)` |
@@ -245,7 +246,7 @@ The number of longitude and latitude values must be equal and are fixed in time.
    storm_start       = datetime(2018,10,7,0,0,0);
    storm_end         = datetime(2018,10,12,0,0,0);
    ```
-3. Update `scrub_info.nc_file` with the path to the ERA5 data.
+3. Update `scrub_info.background_file` with the path to the ERA5 data (use `<year>` as a placeholder for the storm year).
 4. Adjust GAHM model parameters as needed.
 5. Run:
    ```matlab

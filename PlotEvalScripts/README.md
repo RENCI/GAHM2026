@@ -177,11 +177,11 @@ obj.resetOpts();
 
 | Method | Description |
 |--------|-------------|
-| `contourMap(ptype, nplot, time, plotdata)` | Contour map (pcolor) of wind speed or pressure at one timestep |
+| `contourMap(ptype, fign, time, plotdata)` | Contour map (pcolor) of wind speed or pressure at one timestep |
 | `addQuiver(time, plotdata)` | Overlay velocity vectors on the current axes |
-| `radialProfile(ptype, nplot, time, theta_inc)` | Radial profiles in subplot panels at one timestep |
-| `scatterCompare(X, Y, nplot, title, xlabel, ylabel, legend)` | 1:1 scatter plot — by-quadrant (N×4) or by-series (N×K) |
-| `animate(ptype, nplot, plotdata, filename)` | GIF/MP4 animation over all timesteps |
+| `radialProfile(ptype, fign, time, theta_inc)` | Radial profiles in subplot panels at one timestep |
+| `scatterCompare(X, Y, fign, title, xlabel, ylabel, legend)` | 1:1 scatter plot — by-quadrant (N×4) or by-series (N×K) |
+| `animate(ptype, fign, plotdata, filename)` | GIF/MP4 animation over all timesteps |
 | `exportFigure(fig, filename)` | Save figure to PNG or PDF |
 
 ### Utility Methods

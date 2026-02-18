@@ -16,16 +16,16 @@
 
 %% ===== Shared storm identity (used by both ScrubEra5 and GAHM2026) =====
 storm_name        = 'FLORENCE';
-storm_year        = 2018;
+storm_year        = 2017;
 track_file        = 'ibtracs.NA.list.v04r01.csv';
 storm_designation = 'AL06';
 debug             = true;
-storm_start       = datetime(2018,9,14,0,0,0);
-storm_end         = datetime(2018,9,15,0,0,0);
+storm_start       = datetime(2017,7,30,0,0,0);
+storm_end         = datetime(2017,8,2,0,0,0);
 
 %% ===== ScrubEra5 parameters =====
-%scrub_info.nc_file            = '/Users/bblanton/ees/TDS/ERA5/global/uvp/2018/2018.global.nc';
-scrub_info.nc_file            = 'input/09.nc';
+scrub_info.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.global.nc';
+% scrub_info.background_file    = 'input/09.nc';
 scrub_info.storm_start        = storm_start;
 scrub_info.storm_end          = storm_end;
 scrub_info.grid_half_size     = 40;
@@ -39,12 +39,13 @@ scrub_info.wind_threshold_inner  = 34/1.944; % 34 kts -> m/s
 scrub_info.debug              = true;
 scrub_info.output_dir         = 'output';
 % Populate shared fields into scrub_info for ScrubEra5 consumption
-scrub_info.storm_name  = storm_name;
-scrub_info.storm_year  = storm_year;
-scrub_info.track_file  = fullfile('input', track_file);
+scrub_info.storm_name        = storm_name;
+scrub_info.storm_year        = storm_year;
+scrub_info.storm_designation = storm_designation;
+scrub_info.track_file        = fullfile('input', track_file);
 
 %% ===== GAHM2026 storm / track file info =====
-storm_info.file_name   = fullfile('input', track_file);
+storm_info.track_file  = fullfile('input', track_file);
 storm_info.file_type   = "IBTrACS";
 storm_info.name        = storm_name;
 storm_info.year        = num2str(storm_year);

@@ -7,7 +7,8 @@
 % 
 %% See documentation/README.md for full configuration reference.
 %
-%%                        2/3/2026  Rick Luettich
+%                        2/3/2026  Rick Luettich
+%                        2/16/2026 Brian Blanton
 
 function Result = run_GAHM2026(config_name)
 
@@ -33,14 +34,23 @@ if ~exist('debug','var'), debug = false; end
 logMsg(-1, 'INFO', 'Configuration loaded from %s', config_file);
 logMsg(-1, 'INFO', 'Storm: %s %s, env_type=%d', storm_info.name, storm_info.year, env_info.type);
 
+%% Validate storm_year vs storm_start/storm_end
+sy = str2double(storm_info.year);
+if isdatetime(storm_info.starttime) && year(storm_info.starttime) ~= sy
+    logMsg(-1, 'ERROR', 'storm_year (%d) does not match year of storm_start (%d)', sy, year(storm_info.starttime));
+end
+if isdatetime(storm_info.endtime) && year(storm_info.endtime) ~= sy
+    logMsg(-1, 'WARNING', 'storm_year (%d) does not match year of storm_end (%d) — storm may span year boundary', sy, year(storm_info.endtime));
+end
+
 %% Download IBTrACS file if it does not exist
-if storm_info.file_type == "IBTrACS" && ~exist(storm_info.file_name,'file')
+if storm_info.file_type == "IBTrACS" && ~exist(storm_info.track_file,'file')
     ibtracs_url = ['https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/' ...
-                   erase(storm_info.file_name,'input/')];
-    logMsg(-1, 'INFO', 'IBTrACS file not found: %s', storm_info.file_name);
+                   erase(storm_info.track_file,'input/')];
+    logMsg(-1, 'INFO', 'IBTrACS file not found: %s', storm_info.track_file);
     logMsg(-1, 'INFO', 'Downloading from %s ...', ibtracs_url);
     try
-        websave(storm_info.file_name, ibtracs_url);
+        websave(storm_info.track_file, ibtracs_url);
         logMsg(-1, 'INFO', 'Download complete.');
     catch ME
         error('Failed to download IBTrACS file: %s', ME.message);

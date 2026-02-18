@@ -1,15 +1,15 @@
-function radialProfile(obj, ptype, nplot, time, theta_inc)
+function radialProfile(obj, ptype, fign, time, theta_inc)
 % radialProfile  Radial profiles of wind speed or pressure at one timestep.
 %
-%   obj.radialProfile(ptype, nplot)
-%   obj.radialProfile(ptype, nplot, time)
-%   obj.radialProfile(ptype, nplot, time, theta_inc)
+%   obj.radialProfile(ptype, fign)
+%   obj.radialProfile(ptype, fign, time)
+%   obj.radialProfile(ptype, fign, time, theta_inc)
 %
 %   ptype:
 %     'velrad' - radial velocity profiles with isotach & Vmax markers
 %     'prerad' - radial pressure profiles
 %
-%   nplot     - starting figure number
+%   fign      - starting figure number
 %   time      - integer index, datetime, or [] (defaults to 1)
 %   theta_inc - plot every Nth radial angle (default 2)
 %
@@ -35,7 +35,7 @@ function radialProfile(obj, ptype, nplot, time, theta_inc)
     ntheta  = length(VPr.theta);
     nr      = length(VPr.r);
 
-    nploti = nplot + 1;
+    nploti = fign + 1;
 
     %% radial velocity profiles
 

@@ -1,8 +1,8 @@
-function fig = scatterCompare(obj, X, Y, nplot, titleStr, xlabelStr, ylabelStr, legendLabels)
+function fig = scatterCompare(obj, X, Y, fign, titleStr, xlabelStr, ylabelStr, legendLabels)
 % scatterCompare  1:1 scatter comparison plot.
 %
-%   fig = obj.scatterCompare(X, Y, nplot, titleStr, xlabelStr, ylabelStr)
-%   fig = obj.scatterCompare(X, Y, nplot, titleStr, xlabelStr, ylabelStr, legendLabels)
+%   fig = obj.scatterCompare(X, Y, fign, titleStr, xlabelStr, ylabelStr)
+%   fig = obj.scatterCompare(X, Y, fign, titleStr, xlabelStr, ylabelStr, legendLabels)
 %
 %   Two modes based on the shape of X and Y:
 %
@@ -18,7 +18,7 @@ function fig = scatterCompare(obj, X, Y, nplot, titleStr, xlabelStr, ylabelStr, 
 %
 %   Inputs:
 %     X, Y         - data matrices (same size); zeros are treated as NaN
-%     nplot        - figure number
+%     fign        - figure number
 %     titleStr     - figure title string
 %     xlabelStr    - x-axis label
 %     ylabelStr    - y-axis label
@@ -47,7 +47,7 @@ function fig = scatterCompare(obj, X, Y, nplot, titleStr, xlabelStr, ylabelStr, 
         colors = seriesColors;
     end
 
-    fig = figure(nplot);
+    fig = figure(fign);
     clf(fig);
     hold on
 

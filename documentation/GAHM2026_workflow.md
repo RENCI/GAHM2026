@@ -31,7 +31,7 @@ flowchart TB
         direction TB
 
         subgraph INIT["Phase A: Initialization"]
-            track["readAndSliceTrack\nread_IBTrACS2 / read_ATCF_fort22"]
+            track["readAndSliceTrack\nread_IBTrACS / read_ATCF_fort22"]
             loadenv["loadEnvFields\nread_Env_and_Hurr_fields2"]
         end
 

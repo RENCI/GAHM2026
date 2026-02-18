@@ -20,20 +20,18 @@
 function logMsg(fid, level, fmt, varargin)
 
 st = dbstack;
+caller = 'base';
 if length(st) >= 2
     caller = st(2).name;
-else
-    caller = 'base';
 end
 
 msg = sprintf('[%s:%s] %s\n', level, caller, fmt);
 
 if strcmp(level, 'ERROR')
-    error('%s:%s', caller, sprintf(fmt, varargin{:}));
+    error('[%s:%s] %s',level, caller, sprintf(fmt, varargin{:}));
 end
 
 fprintf(msg, varargin{:});
 if fid > 0
     fprintf(fid, msg, varargin{:});
 end
-

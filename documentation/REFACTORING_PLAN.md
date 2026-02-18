@@ -34,7 +34,7 @@ This plan is organized into five phases from lowest-risk/highest-payoff to more 
 | `regular2radial.m` | Interpolate regular grid to radial grid | ~35 |
 | `VEnvreg2radial2.m` | Interpolate environmental fields to radial grid | ~62 |
 | `read_ATCF_fort22.m` | Read ATCF/fort22 format track files | ~658 |
-| `read_IBTrACS2.m` | Read IBTrACS format track files | ~118 |
+| `read_IBTrACS.m` | Read IBTrACS format track files | ~118 |
 | `read_Env_and_Hurr_fields2.m` | Read gridded environmental/hurricane fields | ? |
 | `writeGAHM2026NetCdf.m` | Write output to NetCDF | ~114 |
 | `apply_WAF_from_raster.m` | Apply Wind Adjustment Factor from raster | ~55 |
@@ -187,7 +187,7 @@ Break the 660-line monolith into focused functions. Keep top-level signature sta
 
 | New Function | Responsibility |
 |-------------|----------------|
-| `readAndSliceTrack.m` | Wraps `read_ATCF_fort22`/`read_IBTrACS2` + start/end time slicing |
+| `readAndSliceTrack.m` | Wraps `read_ATCF_fort22`/`read_IBTrACS` + start/end time slicing |
 | `computeGAHMAtTrackTime.m` | One timestep: prep -> consistency -> solve (selects v3/v4) |
 | `computeRadialProfiles.m` | `for it=1:ntheta` loop calling `GAHM_VPradial` |
 | `interpolateInTime.m` | Time-interpolation of radial fields between track snaps |

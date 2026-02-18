@@ -50,7 +50,7 @@ To run ScrubEra5 standalone with a unified config:
 You can also pass a struct directly:
 
 ```matlab
->> cfg = struct('nc_file','path/to/era5.nc', 'storm_name','FLORENCE', ...
+>> cfg = struct('background_file','path/to/era5.nc', 'storm_name','FLORENCE', ...
 >>              'storm_year',2018, 'track_file','input/ibtracs.NA.list.v04r01.csv', ...
 >>              'storm_start',datetime(2018,9,10,0,0,0), ...
 >>              'storm_end',datetime(2018,9,18,0,0,0), ...
@@ -68,7 +68,7 @@ Output is saved as `<STORM_NAME>_<YEAR>.mat` (e.g., `FLORENCE_2018.mat`).  If `o
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `nc_file` | `'Florence.nc'` | ERA5 NetCDF input file |
+| `background_file` | `'/path/to/<year>/<year>.global.nc'` | ERA5 NetCDF input file (`<year>` replaced at runtime) |
 | `track_file` | `'ibtracs.NA.list.v04r01.csv'` | IBTrACS track data file |
 | `storm_name` | `'FLORENCE'` | Storm name for filtering and output |
 | `storm_year` | `2018` | Year of storm |
@@ -87,7 +87,6 @@ Output is saved as `<STORM_NAME>_<YEAR>.mat` (e.g., `FLORENCE_2018.mat`).  If `o
 
 | Function | Description |
 |----------|-------------|
-| `loadTrackData` | Loads IBTrACS storm track data |
 | `getERA5Data` | Retrieves ERA5 fields from NetCDF |
 | `findPressureCenter` | Locates storm center via minimum SLP |
 | `convertToPolarCoords` | Transforms fields to polar coordinates |

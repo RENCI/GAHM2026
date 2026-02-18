@@ -20,16 +20,43 @@ else
     end
 end
 
-if CONFIG.debug, logMsg(-1, 'DEBUG', 'Configuration loaded: storm=%s, year=%d', CONFIG.storm_name, CONFIG.storm_year); end
+logMsg(-1, 'INFO', 'Configuration loaded: storm=%s, year=%d', CONFIG.storm_name, CONFIG.storm_year);
 
-%% Load and preprocess data
+%% Load and preprocess track data (shared reader with GAHM2026)
 if CONFIG.debug, logMsg(-1, 'DEBUG', 'Loading track data from %s ...', CONFIG.track_file); end
-[time, real_lon, real_lat, start_time, end_time] = loadTrackData(CONFIG);
-num_times = length(time);
-if CONFIG.debug, logMsg(-1, 'DEBUG', 'Track loaded: %d hourly times from %s to %s', num_times, string(start_time), string(end_time)); end
+track_storm.track_file  = CONFIG.track_file;
+track_storm.designation = CONFIG.storm_designation;
+track_storm.year        = num2str(CONFIG.storm_year);
+track_storm.name        = CONFIG.storm_name;
+ATCF_data = read_IBTrACS(track_storm);
+if isempty(ATCF_data)
+    logMsg(-1, 'ERROR', 'Storm info combination of %s,%s not found in track file.',track_storm.designation,track_storm.year);
+end
 
-% lon_idx, lat_idx are the indices into the ERA5 grid for the track positions.  
-% TODO: Note that this ("*4") depends on the resolution of .25 deg, which 
+% Trim to storm_start / storm_end
+all_times = [ATCF_data.datetime];
+keep = true(size(all_times));
+if ~isnat(CONFIG.storm_start), keep = keep & all_times >= CONFIG.storm_start; end
+if ~isnat(CONFIG.storm_end),   keep = keep & all_times <= CONFIG.storm_end;   end
+ATCF_data = ATCF_data(keep);
+if isempty(ATCF_data)
+    logMsg(-1, 'ERROR', 'No track info remaining after storm_start and storm_end filtering. Check storm_info in config file.');
+end
+
+% Generate hourly time vector and interpolate positions
+raw_time = [ATCF_data.datetime];
+raw_lon  = [ATCF_data.lon] + 360;   % shift to 0-360 for ERA5
+raw_lat  = [ATCF_data.lat];
+start_time = raw_time(1);
+end_time   = raw_time(end);
+time = start_time:hours(1):end_time;
+real_lon = interp1(raw_time, raw_lon, time);
+real_lat = interp1(raw_time, raw_lat, time);
+num_times = length(time);
+logMsg(-1, 'INFO', 'Track loaded: %d hourly times from %s to %s', num_times, string(start_time), string(end_time));
+
+% lon_idx, lat_idx are the indices into the ERA5 grid for the track positions.
+% TODO: Note that this ("*4") depends on the resolution of .25 deg, which
 % should be fixed with round(1/CONFIG.resolution) or just calc from the
 % era5 grid
 lon_idx = round(real_lon * 4);
@@ -37,9 +64,9 @@ lat_idx = round((90 - real_lat) * 4);
 
 % TODO: Replace loadERA5Data with something that gets any time period for a 
 % specific storm, and preferably not the entire global grid
-if CONFIG.debug, logMsg(-1, 'DEBUG', 'Loading ERA5 data from %s ...', CONFIG.nc_file); end
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'Loading ERA5 data from %s ...', CONFIG.background_file); end
 era5 = getERA5Data(CONFIG,time);
-if CONFIG.debug, logMsg(-1, 'DEBUG', 'ERA5 data loaded: grid=%dx%d, %d time steps', length(era5.lon), length(era5.lat), length(era5.time)); end
+logMsg(-1, 'INFO', 'ERA5 data loaded: grid=%dx%d, %d time steps', length(era5.lon), length(era5.lat), length(era5.time)); 
 
 % era5 = 
 %   struct with fields:
@@ -91,7 +118,7 @@ for i = 1:num_times
         lat_idx(i), lon_idx(i), CONFIG.wind_threshold_inner, CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', '34-kt cutline found: mean radius=%.1f km, points inside=%d', mean(distance_34), sum(in_34)); end
     
-    [count, in, distance] = findCutline(hr_u, hr_v, Xq, Yq, ...
+    [~, in, distance] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
         lat_idx(i), lon_idx(i), CONFIG.wind_threshold_outer, CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', '10-m/s cutline found: mean radius=%.1f km, points inside=%d', mean(distance), sum(in)); end
@@ -111,7 +138,7 @@ for i = 1:num_times
 end
 
 %% Save output
-% TODO: fix longitude shift 
+% TODO: fix longitude shift in createOutputStruct
 env_vals = createOutputStruct(OUTPUT, time, real_lon, real_lat, era5_lon, era5_lat);
 outfile = string(CONFIG.storm_name)+"_"+string(CONFIG.storm_year)+".mat";
 if isfield(CONFIG, 'output_dir')
@@ -120,5 +147,4 @@ if isfield(CONFIG, 'output_dir')
 end
 if CONFIG.debug, logMsg(-1, 'DEBUG', 'Saving output to %s', outfile); end
 save(outfile, "env_vals")
-if CONFIG.debug, logMsg(-1, 'DEBUG', 'Done.'); end
-
+logMsg(-1, 'INFO', 'Done.');
