@@ -49,6 +49,8 @@ storm_info.designation = 'AL06';
 storm_info.starttime   = datetime(2018,9,13,12,0,0);
 storm_info.endtime     = datetime(2018,9,15,0,0,0);
 
+ATCF_data_in = read_IBTrACS(storm_info);
+
 GAHM_param_info.Vmax_multiplier    = 1;
 GAHM_param_info.one2tenF           = 0.89;
 GAHM_param_info.BLF                = 0.9;
@@ -95,7 +97,7 @@ if exist(baseline_file_1, 'file')
     try
         tic;
         [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
-            Trackdata, GAHM_out] = GAHM2026(storm_info, GAHM_param_info, ...
+            Trackdata, GAHM_out] = GAHM2026(storm_info, ATCF_data_in, GAHM_param_info, ...
             GAHM_compute_info, WAF_info_1, env_info_1, output_info);
         elapsed = toc;
         fprintf('  Run completed in %.1f seconds\n', elapsed);
@@ -144,7 +146,7 @@ if exist(baseline_file_3, 'file')
     try
         tic;
         [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
-            Trackdata, GAHM_out] = GAHM2026(storm_info, GAHM_param_info, ...
+            Trackdata, GAHM_out] = GAHM2026(storm_info, ATCF_data_in, GAHM_param_info, ...
             GAHM_compute_info, WAF_info_3, env_info_3, output_info);
         elapsed = toc;
         fprintf('  Run completed in %.1f seconds\n', elapsed);
@@ -201,7 +203,7 @@ if exist(baseline_file_florence, 'file')
     try
         tic;
         [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
-            Trackdata, GAHM_out] = GAHM2026(storm_info, GAHM_param_info, ...
+            Trackdata, GAHM_out] = GAHM2026(storm_info, ATCF_data_in, GAHM_param_info, ...
             GAHM_compute_info, WAF_info_full, env_info_full, output_info_full);
         elapsed = toc;
         fprintf('  Run completed in %.1f seconds\n', elapsed);

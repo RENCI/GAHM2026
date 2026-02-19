@@ -1,7 +1,10 @@
-function env_vals = ScrubEra5(config_input)
+function env_vals = ScrubEra5(config_input, ATCF_data_in)
 %SCRUBERA5  Extract environmental fields from ERA5 data for a tropical cyclone.
 %   env_vals = ScrubEra5(config_file) runs the vortex removal using the
 %   configuration specified in config_file (a .m file that defines CONFIG).
+%
+%   env_vals = ScrubEra5(config_input, ATCF_data_in) uses pre-loaded track
+%   data instead of reading the track file.
 %
 %   config_input can be:
 %     - a string/char path to a .m file that defines a CONFIG struct
@@ -23,14 +26,19 @@ end
 logMsg(-1, 'INFO', 'Configuration loaded: storm=%s, year=%d', CONFIG.storm_name, CONFIG.storm_year);
 
 %% Load and preprocess track data (shared reader with GAHM2026)
-if CONFIG.debug, logMsg(-1, 'DEBUG', 'Loading track data from %s ...', CONFIG.track_file); end
-track_storm.track_file  = CONFIG.track_file;
-track_storm.designation = CONFIG.storm_designation;
-track_storm.year        = num2str(CONFIG.storm_year);
-track_storm.name        = CONFIG.storm_name;
-ATCF_data = read_IBTrACS(track_storm);
-if isempty(ATCF_data)
-    logMsg(-1, 'ERROR', 'Storm info combination of %s,%s not found in track file.',track_storm.designation,track_storm.year);
+if nargin >= 2 && ~isempty(ATCF_data_in)
+    ATCF_data = ATCF_data_in;
+    logMsg(-1, 'INFO', 'Using pre-loaded track data (%d entries)', length(ATCF_data));
+else
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Loading track data from %s ...', CONFIG.track_file); end
+    track_storm.track_file  = CONFIG.track_file;
+    track_storm.designation = CONFIG.storm_designation;
+    track_storm.year        = num2str(CONFIG.storm_year);
+    track_storm.name        = CONFIG.storm_name;
+    ATCF_data = read_IBTrACS(track_storm);
+    if isempty(ATCF_data)
+        logMsg(-1, 'ERROR', 'Storm info combination of %s,%s not found in track file.',track_storm.designation,track_storm.year);
+    end
 end
 
 % Trim to storm_start / storm_end
@@ -64,7 +72,8 @@ lat_idx = round((90 - real_lat) * 4);
 
 % TODO: Replace loadERA5Data with something that gets any time period for a 
 % specific storm, and preferably not the entire global grid
-if CONFIG.debug, logMsg(-1, 'DEBUG', 'Loading ERA5 data from %s ...', CONFIG.background_file); end
+logMsg(-1, 'INFO', 'Loading ERA5 data from %s ...', ...
+    replace(CONFIG.background_file,'<year>',string(CONFIG.storm_year)));
 era5 = getERA5Data(CONFIG,time);
 logMsg(-1, 'INFO', 'ERA5 data loaded: grid=%dx%d, %d time steps', length(era5.lon), length(era5.lat), length(era5.time)); 
 
@@ -140,7 +149,7 @@ end
 %% Save output
 % TODO: fix longitude shift in createOutputStruct
 env_vals = createOutputStruct(OUTPUT, time, real_lon, real_lat, era5_lon, era5_lat);
-outfile = string(CONFIG.storm_name)+"_"+string(CONFIG.storm_year)+".mat";
+outfile = string(CONFIG.storm_name)+"_"+string(CONFIG.storm_designation)+"_"+string(CONFIG.storm_year)+".mat";
 if isfield(CONFIG, 'output_dir')
     if ~exist(CONFIG.output_dir, 'dir'), mkdir(CONFIG.output_dir); end
     outfile = fullfile(CONFIG.output_dir, outfile);

@@ -24,14 +24,14 @@ flowchart TB
     end
 
     subgraph DRIVER["Driver"]
-        run["run_GAHM2026.m\nLoad config, auto-run\nScrubEra5 if needed"]
+        run["run_GAHM2026.m\nLoad config, read track,\nauto-run ScrubEra5 if needed"]
     end
 
     subgraph GAHM["GAHM2026.m  Orchestrator"]
         direction TB
 
         subgraph INIT["Phase A: Initialization"]
-            track["readAndSliceTrack\nread_IBTrACS / read_ATCF_fort22"]
+            track["sliceTrack\n(ATCF_data_in passed from driver)"]
             loadenv["loadEnvFields\nread_Env_and_Hurr_fields2"]
         end
 
@@ -86,13 +86,12 @@ flowchart TB
     cfg --> run
     ibt --> run
     era5 --> scrub
-    ibt --> scrub
     cfg --> scrub
     waf -.->|if WAF enabled| run
     scrub --> envmat
     envmat -.->|if env_type=3| run
-    run --> GAHM
-    ibt --> track
+    run -->|ATCF_data_in| scrub
+    run -->|ATCF_data_in| GAHM
     envmat --> loadenv
     GAHM --> res
     res --> nc

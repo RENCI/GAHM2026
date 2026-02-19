@@ -120,7 +120,7 @@ The `VPrad` struct packages radial-grid data for plotting. `.Env` and `.EnvVor` 
 
 ### Phase 3: Decompose Orchestrator
 Decomposed `GAHM2026.m` from 660-line monolith into ~190-line main + 7 local helpers:
-`readAndSliceTrack`, `loadEnvFields`, `computeGAHMAtTrackTime`, `computeRadialProfiles`, `interpolateEnvOnRadialGrid`, `applyTaperOnRadialGrid`, `buildRegularGridOutputs`
+`sliceTrack`, `loadEnvFields`, `computeGAHMAtTrackTime`, `computeRadialProfiles`, `interpolateEnvOnRadialGrid`, `applyTaperOnRadialGrid`, `buildRegularGridOutputs`
 
 ### Phase 4: Unify v3e/v4a Solvers
 Created `GAHM2026_solve.m` as unified entry point. Shared code extracted; version-specific backends (`compute_Bg_iterative` for v3, `compute_Bg_fsolve` for v4) dispatched by `compute_Bg`. Original `GAHM2026v3e.m` and `GAHM2026v4a.m` deleted.

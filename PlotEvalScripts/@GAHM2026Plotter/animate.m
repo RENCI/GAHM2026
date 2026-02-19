@@ -32,8 +32,8 @@ function animate(obj, ptype, fign, plotdata, filename)
     opts = obj.Opts;
     itot = length(plotdata);
 
-    gifFile = [filename '.gif'];
-    mp4File = [filename '.mp4'];
+    gifFile = fullfile(opts.export.dir,string(filename)+".gif");
+    mp4File = fullfile(opts.export.dir,string(filename)+".mp4");
 
     vw = [];
     if opts.anim.mp4

@@ -26,7 +26,7 @@ storm_start       = datetime(2018,9,10,0,0,0);
 storm_end         = datetime(2018,9,18,0,0,0);
 
 %% ===== ScrubEra5 parameters =====
-scrub_info.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.global.nc';  % <year> is replaced with storm_year at runtime
+scrub_info.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.nc';  % <year> is replaced with storm_year at runtime
 scrub_info.storm_start        = storm_start;
 scrub_info.storm_end          = storm_end;
 scrub_info.grid_half_size     = 40;

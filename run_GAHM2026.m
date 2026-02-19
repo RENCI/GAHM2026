@@ -17,6 +17,7 @@ if nargin < 1
 end
 
 addpath('util')
+addpath('PlotEvalScripts')
 
 if ~exist('input', 'dir'),  mkdir('input');  end
 if ~exist('output', 'dir'), mkdir('output'); end
@@ -32,7 +33,7 @@ run(config_file)
 
 if ~exist('debug','var'), debug = false; end
 logMsg(-1, 'INFO', 'Configuration loaded from %s', config_file);
-logMsg(-1, 'INFO', 'Storm: %s %s, env_type=%d', storm_info.name, storm_info.year, env_info.type);
+logMsg(-1, 'INFO', 'Storm: %s/%s/%s, env_type=%d', storm_info.name, storm_info.year, storm_info.designation, env_info.type);
 
 %% Validate storm_year vs storm_start/storm_end
 sy = str2double(storm_info.year);
@@ -57,6 +58,20 @@ if storm_info.file_type == "IBTrACS" && ~exist(storm_info.track_file,'file')
     end
 end
 
+%% Load storm track data
+logMsg(-1, 'INFO', 'Loading %s %s %s ... ', storm_info.designation, storm_info.year, storm_info.name);
+if storm_info.file_type == "ATCF" || storm_info.file_type == "fort22"
+    ATCF_data_in = read_ATCF_fort22(storm_info.track_file, storm_info.file_type);
+elseif storm_info.file_type == "IBTrACS"
+    ATCF_data_in = read_IBTrACS(storm_info);
+end
+if strcmp(ATCF_data_in(1).sname_cha, storm_info.name)
+    logMsg(-1, 'INFO', '%s %s %s found in track file', storm_info.designation, storm_info.year, storm_info.name);
+else
+    logMsg(-1, 'ERROR', 'Mismatch in storm_name. %s/%s/%s in config file, but %s does not match.', ...
+        storm_info.designation, storm_info.year, storm_info.name, ATCF_data_in(1).sname_cha);
+end
+
 %% Check for existing output file before running
 if output_info.type == "grid"
     f_out = [output_info.NetCDFfilename '.nc'];
@@ -68,7 +83,7 @@ end
 
 %% Auto-run ScrubEra5 if env_info.type==3 and the .mat file does not exist
 if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
-    % TODO:  the following does not look right.  just because the variable
+    % TODO:  THE FOLLOWING DOES NOT LOOK RIGHT.  just because the variable
     % scrub_info (which contains the scrubera5 config parameters) exists
     % does NOT mean that the EnvFields.mat file does.   Basically, we need
     % to get rid of this auto-trun stuff and just compute the env fields
@@ -88,8 +103,8 @@ if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
     end
     addpath(scrub_dir);
 
-    % Run ScrubEra5 with the scrub_info struct from the unified config
-    ScrubEra5(scrub_info);
+    % Run ScrubEra5 with the scrub_info struct and pre-loaded track data
+    ScrubEra5(scrub_info, ATCF_data_in);
 
     % ScrubEra5 saves its output as <storm_name>_<storm_year>.mat in its
     % own working directory.  Move it here if needed.
@@ -104,12 +119,13 @@ end
 
 %% compute and output final TC wind/pressure fields as well as additional diagnostic information
 
-if debug, logMsg(-1, 'DEBUG', 'Calling GAHM2026 (version=%d, ntheta=%d, nr=%d, delr=%d) ...', ...
-    GAHM_param_info.version, GAHM_compute_info.ntheta, GAHM_compute_info.nr, GAHM_compute_info.delr); end
+logMsg(-1, 'INFO', 'Calling GAHM2026 (version=%d, ntheta=%d, nr=%d, delr=%d) ...', ...
+    GAHM_param_info.version, GAHM_compute_info.ntheta, GAHM_compute_info.nr, GAHM_compute_info.delr);
 
 [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
-        Trackdata, GAHM_out, VPrad]= GAHM2026(storm_info,GAHM_param_info, ...
-                          GAHM_compute_info,WAF_info,env_info,output_info,debug);
+        Trackdata, GAHM_out, VPrad] = ...
+        GAHM2026(storm_info,ATCF_data_in,GAHM_param_info, ...
+                 GAHM_compute_info,WAF_info,env_info,output_info,debug);
 
 if output_info.type == "grid"
     if debug, logMsg(-1, 'DEBUG', 'Writing netCDF output to %s.nc', output_info.NetCDFfilename); end

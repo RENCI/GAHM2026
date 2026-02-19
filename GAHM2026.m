@@ -20,8 +20,6 @@
 %  Uses GAHM2026_solve to compute GAHM parameters (dispatches to v3e or v4a)
 %
 % Required Matlab scripts:
-%     read_ATCF_fort22 - read track input in ATCF or fort22 format
-%     read_IBTrACS     - read track input in IBTrACS format
 %     read_Env_and_Hurr_fields2.m - read gridded environmental and
 %                          hurricane fields
 %     GAHM2026_prep.m - initialize the GAHM datastructure each timestep
@@ -56,10 +54,10 @@
 %
 function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, ...
           Reggrid_VVor_invtapHur_out, Trackdata, GAHM_out, VPrad] = ...
-          GAHM2026(storm,GAHM_param_info,GAHM_compute_info,WAF_info,...
+          GAHM2026(storm,ATCF_data_in,GAHM_param_info,GAHM_compute_info,WAF_info,...
           env_info,output,debug)
 
-if nargin < 7, debug = false; end
+if nargin < 8, debug = false; end
 
 %% transfer / compute needed information
 
@@ -90,12 +88,12 @@ fid=fopen(output.warnings,'wt');
 if debug, logMsg(fid, 'DEBUG', 'GAHM version=%d, env_type=%d, taper=%d, WAF=%d', GAHM_version, env_type, taper_flag, WAF_flag); end
 if debug, logMsg(fid, 'DEBUG', 'Radial grid: ntheta=%d, nr=%d, delr=%d m (max radius=%.0f km)', ntheta, nr, delr, nr*delr/1000); end
 
-%% Read in storm track information & find beginning and ending lines
+%% Slice storm track to requested time window
 
-[ATCF_data_in, ATCF_startline, ATCF_endline, starttime_dt, endtime_dt] = ...
-    readAndSliceTrack(storm);
+[ATCF_startline, ATCF_endline, starttime_dt, endtime_dt] = ...
+    sliceTrack(storm, ATCF_data_in);
 
-if debug, logMsg(fid, 'DEBUG', 'Track loaded: %s, lines %d-%d (%s to %s)', ...
+if debug, logMsg(fid, 'DEBUG', 'Track sliced: %s, lines %d-%d (%s to %s)', ...
     storm.name, ATCF_startline, ATCF_endline, string(starttime_dt), string(endtime_dt)); end
 
 %% Read gridded environmental/hurricane fields and WAF raster
@@ -303,20 +301,8 @@ end  % end main function
 %  Local helper functions
 %  ========================================================================
 
-function [ATCF_data_in, ATCF_startline, ATCF_endline, starttime_dt, endtime_dt] = ...
-    readAndSliceTrack(storm)
-
-    if storm.file_type == "ATCF" || storm.file_type == "fort22"
-        ATCF_data_in=read_ATCF_fort22(storm.track_file,storm.file_type);
-    elseif storm.file_type == "IBTrACS"
-        ATCF_data_in=read_IBTrACS(storm);
-    end
-
-    if convertCharsToStrings(ATCF_data_in(1).sname_cha) == convertCharsToStrings(storm.name)
-        logMsg(-1, 'INFO', '%s %s %s found in track file', storm.designation, storm.year, storm.name)
-    else
-        logMsg(-1, 'ERROR', '%s %s %s not found in track file', storm.designation, storm.year, storm.name)
-    end
+function [ATCF_startline, ATCF_endline, starttime_dt, endtime_dt] = ...
+    sliceTrack(storm, ATCF_data_in)
 
     if isdatetime(storm.starttime)
         starttime_dt = storm.starttime;

@@ -16,15 +16,15 @@
 
 %% ===== Shared storm identity (used by both ScrubEra5 and GAHM2026) =====
 storm_name        = 'FLORENCE';
-storm_year        = 2017;
+storm_year        = 2018;
 track_file        = 'ibtracs.NA.list.v04r01.csv';
 storm_designation = 'AL06';
 debug             = true;
-storm_start       = datetime(2017,7,30,0,0,0);
-storm_end         = datetime(2017,8,2,0,0,0);
+storm_start       = datetime(2018,9,11,0,0,0);
+storm_end         = datetime(2018,9,12,0,0,0);
 
 %% ===== ScrubEra5 parameters =====
-scrub_info.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.global.nc';
+scrub_info.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.nc';
 % scrub_info.background_file    = 'input/09.nc';
 scrub_info.storm_start        = storm_start;
 scrub_info.storm_end          = storm_end;
@@ -52,7 +52,8 @@ storm_info.year        = num2str(storm_year);
 storm_info.designation = storm_designation;
 storm_info.starttime   = storm_start;
 storm_info.endtime     = storm_end;
-storm_info.outputfilename = sprintf('%s_%s', storm_info.name, storm_info.year);
+storm_info.outputfilename = sprintf('%s_%s_%s', storm_info.name, ...
+    storm_info.designation, storm_info.year);
 
 %% ===== GAHM2026 parameter values =====
 GAHM_param_info.Vmax_multiplier     = 1;    % =1 use full Vmax, =0.9 use 90% Vmax...

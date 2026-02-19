@@ -25,10 +25,12 @@
 
 ### Step 1: `run_GAHM2026.m` (driver function)
 
-Loads configuration from `config/config_GAHM2026.m` (or a user-specified config) and makes two calls:
+Loads configuration from `config/config_GAHM2026_default.m` (or a user-specified config), reads the storm track data once (`read_IBTrACS` or `read_ATCF_fort22`), and passes it to both ScrubEra5 and GAHM2026:
 
-1. **Line 236**: Calls `GAHM2026.m` (the orchestrator)
-2. **Line 241**: Calls `writeGAHM2026NetCdf.m` (if `output_info.type == "grid"`)
+1. Reads track file → `ATCF_data_in`
+2. Calls `ScrubEra5(scrub_info, ATCF_data_in)` (if env_type=3 and `.mat` missing)
+3. Calls `GAHM2026(storm_info, ATCF_data_in, ...)` (the orchestrator)
+4. Calls `writeGAHM2026NetCdf.m` (if `output_info.type == "grid"`)
 
 ---
 
@@ -40,8 +42,7 @@ Decomposed into a main function + 7 local helper functions (Phase 3).
 
 | Function | Condition | Calls | Description |
 |----------|-----------|-------|-------------|
-| `readAndSliceTrack` | `file_type == "ATCF"/"fort22"` | `read_ATCF_fort22.m` | Read track file, find start/end lines |
-| `readAndSliceTrack` | `file_type == "IBTrACS"` | `read_IBTrACS.m` | Read IBTrACS track file |
+| `sliceTrack` | always | — | Slice pre-loaded `ATCF_data_in` to start/end lines |
 | `loadEnvFields` | `env_type == 3` | `read_Env_and_Hurr_fields2.m` | Load gridded env & hurricane fields |
 | main | `WAF_flag == true` | `readgeoraster` (builtin) | Read Wind Adjustment Factor raster |
 
@@ -106,7 +107,7 @@ Writes `Reggrid_out` and `Reggrid_TC_out` to a NetCDF4 file.
 ### `GAHM2026.m` (Phase 3 decomposition)
 | Function | Description |
 |----------|-------------|
-| `readAndSliceTrack` | Track file I/O + start/end line finding |
+| `sliceTrack` | Slice pre-loaded track to start/end lines |
 | `loadEnvFields` | Env/hurricane gridded field loading by env_type |
 | `computeGAHMAtTrackTime` | prep → consistency → solve |
 | `computeRadialProfiles` | Theta loop calling GAHM_VPradial |
@@ -153,12 +154,13 @@ Previously duplicated logic, now standalone `.m` files:
 
 ```
 run_GAHM2026.m
-├── GAHM2026.m
-│   ├── readAndSliceTrack [local]
-│   │   ├── read_ATCF_fort22.m       [if ATCF/fort22]
-│   │   │   └── computeRmaxTot.m     [if ASWIP]
-│   │   │       └── thetaToQuadrantPair.m
-│   │   └── read_IBTrACS.m           [if IBTrACS]
+├── read_ATCF_fort22.m               [if ATCF/fort22]
+│   └── computeRmaxTot.m             [if ASWIP]
+│       └── thetaToQuadrantPair.m
+├── read_IBTrACS.m                   [if IBTrACS]
+├── ScrubEra5.m                      [if env_type==3 and .mat missing]
+├── GAHM2026.m (ATCF_data_in passed in)
+│   ├── sliceTrack [local]
 │   ├── loadEnvFields [local]
 │   │   └── read_Env_and_Hurr_fields2.m [if env_type==3]
 │   ├── readgeoraster (builtin)      [if WAF_flag]

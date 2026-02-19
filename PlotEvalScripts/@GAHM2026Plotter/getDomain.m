@@ -11,11 +11,11 @@ function [minX, maxX, minY, maxY] = getDomain(obj, datagrid, ip)
         if isempty(lims)
             % get min/max extents of entire datagrid
             temp=vertcat(obj.DataGrid.Lon);
-            minX=min(temp);
-            maxX=max(temp);
+            minX=min(temp(:));
+            maxX=max(temp(:));
             temp=vertcat(obj.DataGrid.Lat);
-            minY=min(temp);
-            maxY=max(temp);
+            minY=min(temp(:));
+            maxY=max(temp(:));
         else
             minX = lims(1);
             maxX = lims(2);
