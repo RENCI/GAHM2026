@@ -3,7 +3,9 @@ function era5 = getERA5Data(cfg,time)
 %TODO: spatial subsetting
 
     bg_file = strrep(cfg.background_file, '<year>', num2str(cfg.storm_year));
-    if ~exist(bg_file, 'file')
+    if startsWith(bg_file, 'http')
+        check_url([bg_file '.html']);
+    elseif ~exist(bg_file, 'file')
         logMsg(-1, 'ERROR', 'ERA5 file not found: %s', bg_file);
     end
 

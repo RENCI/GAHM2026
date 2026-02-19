@@ -82,7 +82,7 @@ WAF_info.file_name = 'input/WAF_15deg_10km_6km_raster_test.tif'; % ignored if WA
 % env_info.file_name is derived from the shared storm identity so it
 % automatically matches the .mat file produced by ScrubEra5.
 env_info.type             = 3;
-env_info.file_name        = fullfile('output', sprintf('%s_%d', storm_name, storm_year));  % e.g. 'output/FLORENCE_2018'
+env_info.file_name        = fullfile('output', sprintf('%s_%s_%s', storm_name, storm_designation, num2sstr(storm_year))); % e.g. 'output/FLORENCE_AL06_2018'
 env_info.taper_flag       = true;
 env_info.taper_mindelr2r1 = 0.1; % minimum value of (r2-r1)/r2 if violated r1 is reduced.
 env_info.taper_a          = 2;   % adjusts steepness of hyperbolic tangent taper function (2 is suggested)
