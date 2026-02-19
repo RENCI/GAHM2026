@@ -57,8 +57,8 @@ opts.radial.layout = [4 4];        % subplot layout [rows cols]
 
 %% Masks
 opts.mask.show = false;            % overlay mask contours
-opts.mask.color = 'k';
-opts.mask.linewidth = 1.0;
+opts.mask.color = 'm';
+opts.mask.linewidth = 2;
 
 %% Time
 opts.time.format='dd MMM yyyy HH:mm';

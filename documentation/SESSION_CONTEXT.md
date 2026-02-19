@@ -1,6 +1,6 @@
 # GAHM2026 Refactoring Session Context
 
-**Last updated**: February 17, 2026  
+**Last updated**: February 19, 2026  
 **Purpose**: Continuity document for resuming work in a new session.
 
 ---
@@ -15,7 +15,7 @@ MATLAB codebase for computing hurricane wind and pressure fields using the Gener
 
 ## Current State
 
-All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization fully modernized with the `GAHM2026Plotter` class (7 build phases complete). ScrubEra5 subproject updated to share the same IBTrACS file as GAHM2026.
+All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization fully modernized with the `GAHM2026Plotter` class (7 build phases complete). ScrubEra5 subproject fully integrated: shared IBTrACS file, shared track reader (`util/read_IBTrACS.m`), unified config with `<year>` placeholder, track loaded once in `run_GAHM2026.m` and passed to both subsystems. All `fprintf` logging converted to `logMsg` across `util/` and `GAHM2026.m`. GitHub Pages site created in `docs/`.
 
 ### Active Files
 
@@ -27,10 +27,10 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | Orchestrator | `GAHM2026.m` |
 | GAHM pipeline | `util/GAHM2026_prep.m`, `util/GAHM2026_consistency.m`, `util/GAHM2026_solve.m` |
 | Profile computation | `util/GAHM_VPradial.m`, `util/GAHM_VP.m` |
-| I/O | `util/read_ATCF_fort22.m`, `util/read_IBTrACS.m`, `util/read_Env_and_Hurr_fields2.m`, `util/writeGAHM2026NetCdf.m` |
+| I/O | `util/read_ATCF_fort22.m`, `util/read_IBTrACS.m`, `util/read_Env_and_Hurr_fields2.m`, `util/writeGAHM2026NetCdf.m`, `util/check_url.m` |
 | Grid operations | `util/VEnvreg2radial2.m`, `util/radial2regular.m`, `util/radial_taper2.m` |
 | Post-processing | `util/apply_WAF_from_raster.m` |
-| Extracted utilities | `util/computeRmaxTot.m`, `util/quadrantUnitVectors.m`, `util/thetaToQuadrantPair.m`, `util/turnAngleDeg.m`, `util/logMsg.m`, `util/GAHM_physical_constants.m` |
+| Extracted utilities | `util/computeRmaxTot.m`, `util/quadrantUnitVectors.m`, `util/thetaToQuadrantPair.m`, `util/turnAngleDeg.m`, `util/logMsg.m`, `util/GAHM_physical_constants.m`, `util/struct2vars.m` |
 | Plotting class | `PlotEvalScripts/@GAHM2026Plotter/` (15 .m files) |
 | Plotting helpers | `PlotEvalScripts/plot_defaults.m`, `plot_coastline.m`, `plot_quiver_scaled.m` |
 | Legacy plot scripts | `PlotEvalScripts/conplot_blend_GAHM2026.m`, `radplot_blend_GAHM2026.m`, etc. |
@@ -45,7 +45,8 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | `output/` | NetCDF output files (`stormname_year.nc`) |
 | `documentation/` | Call tree, data structure reference, refactoring notes, this file |
 | `tools/` | Regression testing harness |
-| `ScrubEra5/` | ERA5 environmental field extraction subproject (uses shared config from `config/`) |
+| `ScrubEra5/` | ERA5 environmental field extraction subproject (uses shared config from `config/`, shared track reader from `util/`) |
+| `docs/` | GitHub Pages site (`_config.yml`, `index.md`) |
 | `PlotEvalScripts/` | Plotting class, legacy scripts, helpers |
 
 ### Documentation
@@ -57,8 +58,11 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | `documentation/CALL_TREE.md` | Full execution trace and call graph |
 | `documentation/REFACTORING_PLAN.md` | Original 5-phase refactoring plan (all phases complete) |
 | `documentation/phase3context.md` | Detailed Phase 3 decomposition context |
+| `documentation/GAHM2026_workflow.md` | Pipeline workflow description |
 | `documentation/SESSION_CONTEXT.md` | This file |
+| `documentation/README_config.md` | Authoritative configuration parameter reference |
 | `PlotEvalScripts/README.md` | GAHM2026Plotter class guide with Florence 2018 demo |
+| `docs/index.md` | GitHub Pages landing page |
 
 ### Regression Testing
 
@@ -157,6 +161,22 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 - Promoted the unified config pattern to the default `config/config_GAHM2026_default.m`. Every config now includes both `scrub_info` (ScrubEra5 parameters) and the GAHM2026 parameter structs, with shared storm identity defined once at the top.
 - Deleted `ScrubEra5/config.m` — ScrubEra5 is now driven from config files in `config/`.
 
+### Logging, Naming, and Integration Cleanup (Feb 18–19, 2026)
+
+1. **`logMsg` adoption**: Converted all `fprintf` statements to `logMsg(fid, level, fmt, varargin)` across `util/` and `GAHM2026.m`. The `tools/` directory intentionally still uses `fprintf` (standalone utilities).
+2. **Renamed `nplot` → `fign`** throughout `@GAHM2026Plotter` class methods, standalone plotting scripts in `PlotEvalScripts/`, and documentation.
+3. **Renamed `read_IBTrACS2.m` → `read_IBTrACS.m`** and updated all call sites and documentation.
+4. **Removed `ScrubEra5/loadTrackData.m`**: `ScrubEra5.m` now uses `util/read_IBTrACS.m` as fallback for standalone usage.
+5. **Renamed `scrub_info.nc_file` → `scrub_info.background_file`** throughout code and documentation.
+6. **Renamed `storm_info.file_name` → `storm_info.track_file`** throughout: config files, `run_GAHM2026.m`, `GAHM2026.m`, `util/read_IBTrACS.m`, `ScrubEra5/ScrubEra5.m`, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `documentation/README_config.md`.
+7. **Generalized `<year>` placeholder**: `scrub_info.background_file` in config files uses `<year>` instead of a hard-coded year. `ScrubEra5/getERA5Data.m` resolves via `strrep(cfg.background_file, '<year>', num2str(cfg.storm_year))`.
+8. **Storm year validation**: Added `storm_year` vs `storm_start`/`storm_end` consistency checks in `run_GAHM2026.m` (ERROR on mismatch with `storm_start`, WARNING for `storm_end` to allow year-boundary storms).
+9. **Consolidated track loading**: Track is now read once in `run_GAHM2026.m` (via `read_IBTrACS` or `read_ATCF_fort22`) with storm name validation, then passed to both `ScrubEra5(scrub_info, ATCF_data_in)` and `GAHM2026(storm_info, ATCF_data_in, ...)`. `GAHM2026.m` signature now takes `ATCF_data_in` as 2nd arg. The old `readAndSliceTrack` local function was renamed to `sliceTrack` (time slicing only, no I/O). `ScrubEra5.m` accepts optional 2nd arg for pre-loaded track data.
+10. **URL validation for remote datasets**: Created `util/check_url.m` (HTTP HEAD request via `matlab.net.http`, uses `logMsg`). `getERA5Data.m` checks if `bg_file` starts with `'http'` and calls `check_url([bg_file '.html'])`; local files use `exist()`.
+11. **GitHub Pages site**: Created `docs/_config.yml` (minimal theme) and `docs/index.md` (landing page with project overview, GAHM equations, pipeline diagram, quick start, ScrubEra5 description, configuration, output structures, references).
+12. **README.md updates**: Added Brian Blanton as co-author, corrected default config filename, documented `Result` struct, added Plotting subsection, fixed field names (`storm_info.track_file`), expanded `<year>` placeholder docs, new Logging and Shared Utilities sections, clickable reference links.
+13. **Documentation updates**: Updated `CALL_TREE.md`, `GAHM2026_workflow.md`, `README_config.md`, `SESSION_CONTEXT.md` with all changes above.
+
 ### GAHM2026Plotter Class (Feb 17, 2026)
 
 Built an object-oriented plotting and evaluation class in 7 phases. The class lives in `PlotEvalScripts/@GAHM2026Plotter/` (15 .m files).
@@ -239,7 +259,6 @@ PlotEvalScripts/
 
 ## Possible Future Work
 
-- Gradually adopt `logMsg.m` to replace duplicated `fprintf` pairs throughout codebase
 - Gradually adopt `GAHM_physical_constants.m` to replace magic number literals
 - Time-series diagnostics: Vmax, central pressure, Rmax, isotach radii vs time
 - Difference maps between field pairs (diverging colormap)
@@ -258,11 +277,14 @@ In a new Amp session:
 
 Additional context files if needed:
 - `documentation/CALL_TREE.md` — execution flow
+- `documentation/GAHM2026_workflow.md` — pipeline workflow
+- `documentation/README_config.md` — authoritative configuration reference
 - `documentation/REFACTORING_PLAN.md` — original plan (historical)
 - `documentation/phase3context.md` — Phase 3 decomposition details
 - `documentation/GAHM_struct.md` — data structure reference
 - `README.md` — user-facing documentation
 - `PlotEvalScripts/README.md` — GAHM2026Plotter class guide with Florence 2018 demo
+- `docs/index.md` — GitHub Pages landing page
 
 ### Quick Test
 
