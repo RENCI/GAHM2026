@@ -177,6 +177,12 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 12. **README.md updates**: Added Brian Blanton as co-author, corrected default config filename, documented `Result` struct, added Plotting subsection, fixed field names (`storm_info.track_file`), expanded `<year>` placeholder docs, new Logging and Shared Utilities sections, clickable reference links.
 13. **Documentation updates**: Updated `CALL_TREE.md`, `GAHM2026_workflow.md`, `README_config.md`, `SESSION_CONTEXT.md` with all changes above.
 
+### ScrubEra5 and Plotter Cleanup (Feb 19, 2026)
+
+1. **Renamed `cfg` → `CONFIG`** in all ScrubEra5 sub-functions (`getERA5Data.m`, `computeBasicField.m`, `initializeOutputArrays.m`, `findCutline.m`, `convertToPolarCoords.m`, `storeResults.m`) and documentation (`ScrubEra5/README.md`, `GAHM2026_workflow.md`, `SESSION_CONTEXT.md`). Now consistent with the `CONFIG` variable used in `ScrubEra5.m` itself.
+2. **Renamed `wei` → `LatIdx` and `jing` → `LonIdx`** in all ScrubEra5 sub-functions (`findPressureCenter.m`, `computeBasicField.m`, `convertToPolarCoords.m`, `storeResults.m`, `findCutline.m`). Callers in `ScrubEra5.m` already used `lat_idx`/`lon_idx`.
+3. **Added `'prequiv'` plot type** to `GAHM2026Plotter`: pressure contours with wind velocity vectors overlaid. Updated `contourMap.m` (new `showQuiv` flag), `animate.m` (default filename `GAHM_PQ`), and class docstring. Usage: `obj.contourMap('prequiv', 1, 5)`.
+
 ### GAHM2026Plotter Class (Feb 17, 2026)
 
 Built an object-oriented plotting and evaluation class in 7 phases. The class lives in `PlotEvalScripts/@GAHM2026Plotter/` (15 .m files).
@@ -194,7 +200,7 @@ Built an object-oriented plotting and evaluation class in 7 phases. The class li
 
 | File | Method | Phase | Description |
 |------|--------|-------|-------------|
-| `contourMap.m` | `contourMap(ptype, fign, time, plotdata)` | 2 | Single-timestep pcolor map (wind or pressure) |
+| `contourMap.m` | `contourMap(ptype, fign, time, plotdata)` | 2 | Single-timestep pcolor map (wind or pressure); ptypes: `velcon`, `precon`, `prequiv`, `mvelcon`, `mprecon` |
 | `addQuiver.m` | `addQuiver(time, plotdata)` | 3 | Standalone velocity vector overlay |
 | `radialProfile.m` | `radialProfile(ptype, fign, time, theta_inc)` | 4 | Radial wind/pressure profiles in subplots |
 | `scatterCompare.m` | `scatterCompare(X, Y, fign, ...)` | 5 | 1:1 scatter (by-quadrant N×4 or by-series N×K) |
