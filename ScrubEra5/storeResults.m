@@ -1,9 +1,9 @@
 function OUTPUT = storeResults(OUTPUT, i, lon, lat, basic_slp, basic_u, basic_v, ...
-        psl, u, v, in, in_34, distance, distance_34, wei, jing, cfg)
+        psl, u, v, in, in_34, distance, distance_34, LatIdx, LonIdx, CONFIG)
     
-    half = cfg.output_half_size;
-    rows = wei-half : wei+half;
-    cols = jing-half : jing+half;
+    half = CONFIG.output_half_size;
+    rows = LatIdx-half : LatIdx+half;
+    cols = LonIdx-half : LonIdx+half;
     grid_size = length(rows);
     
     OUTPUT.lon(i,:,:) = lon(rows, cols);

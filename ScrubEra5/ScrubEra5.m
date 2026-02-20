@@ -52,15 +52,15 @@ if isempty(ATCF_data)
 end
 
 % Generate hourly time vector and interpolate positions
-raw_time = [ATCF_data.datetime];
-raw_lon  = [ATCF_data.lon] + 360;   % shift to 0-360 for ERA5
-raw_lat  = [ATCF_data.lat];
+raw_time   = [ATCF_data.datetime];
+raw_lon    = [ATCF_data.lon] + 360;   % shift to 0-360 for ERA5
+raw_lat    = [ATCF_data.lat];
 start_time = raw_time(1);
 end_time   = raw_time(end);
-time = start_time:hours(1):end_time;
-real_lon = interp1(raw_time, raw_lon, time);
-real_lat = interp1(raw_time, raw_lat, time);
-num_times = length(time);
+time       = start_time:hours(1):end_time;
+real_lon   = interp1(raw_time, raw_lon, time);
+real_lat   = interp1(raw_time, raw_lat, time);
+num_times  = length(time);
 logMsg(-1, 'INFO', 'Track loaded: %d hourly times from %s to %s', num_times, string(start_time), string(end_time));
 
 % lon_idx, lat_idx are the indices into the ERA5 grid for the track positions.
@@ -70,12 +70,11 @@ logMsg(-1, 'INFO', 'Track loaded: %d hourly times from %s to %s', num_times, str
 lon_idx = round(real_lon * 4);
 lat_idx = round((90 - real_lat) * 4);
 
-% TODO: Replace loadERA5Data with something that gets any time period for a 
-% specific storm, and preferably not the entire global grid
 logMsg(-1, 'INFO', 'Loading ERA5 data from %s ...', ...
     replace(CONFIG.background_file,'<year>',string(CONFIG.storm_year)));
 era5 = getERA5Data(CONFIG,time);
-logMsg(-1, 'INFO', 'ERA5 data loaded: grid=%dx%d, %d time steps', length(era5.lon), length(era5.lat), length(era5.time)); 
+logMsg(-1, 'INFO', 'ERA5 data loaded: grid=%dx%d, %d time steps', ...
+    length(era5.lon), length(era5.lat), length(era5.time)); 
 
 % era5 = 
 %   struct with fields:

@@ -1,7 +1,7 @@
-function [basic_slp, basic_u, basic_v] = computeBasicField(psl, u, v, wei, jing, tem_ave_r, cfg)
-    half = cfg.filter_domain_size;
-    rows = wei-half : wei+half;
-    cols = jing-half : jing+half;
+function [basic_slp, basic_u, basic_v] = computeBasicField(psl, u, v, LatIdx, LonIdx, tem_ave_r, CONFIG)
+    half = CONFIG.filter_domain_size;
+    rows = LatIdx-half : LatIdx+half;
+    cols = LonIdx-half : LonIdx+half;
     
     half_power_wl = tem_ave_r / 0.04;
     d1 = designfilt('lowpassiir', ...

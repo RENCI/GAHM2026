@@ -21,7 +21,7 @@ track_file        = 'ibtracs.NA.list.v04r01.csv';
 storm_designation = 'AL09';
 debug             = true;
 storm_start       = datetime(2022,9,23,0,0,0);
-storm_end         = datetime(2022,9,30,0,0,0);
+storm_end         = datetime(2022,9,24,0,0,0);
 
 %% ===== ScrubEra5 parameters =====
 %scrub_info.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.nc';

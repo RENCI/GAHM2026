@@ -13,10 +13,11 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
 %   ptype options:
 %     'velcon'  - wind speed contours with velocity vectors
 %     'precon'  - pressure contours
+%     'prequiv' - pressure contours with velocity vectors
 %     'mvelcon' - wind speed contours with mask boundary lines
 %     'mprecon' - pressure contours with mask boundary lines
 %
-%   fign    - figure number
+%   fign     - figure number
 %   plotdata - (optional) gridded field struct array to plot instead of
 %              the default Result.Reggrid_TC_out
 %
@@ -33,8 +34,9 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
     ip = resolveTime(obj, time);
 
     con_Vplot = strcmp(ptype,'velcon') || strcmp(ptype,'mvelcon');
-    con_Pplot = strcmp(ptype,'precon') || strcmp(ptype,'mprecon');
+    con_Pplot = strcmp(ptype,'precon') || strcmp(ptype,'mprecon') || strcmp(ptype,'prequiv');
     showMask  = strcmp(ptype,'mvelcon') || strcmp(ptype,'mprecon');
+    showQuiv  = strcmp(ptype,'velcon') || strcmp(ptype,'prequiv');
 
     [minX, maxX, minY, maxY] = getDomain(obj, datagrid, ip);
 
@@ -72,6 +74,10 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
         colorbar
         clim(opts.pres.clims)
         alpha(opts.pres.alpha);
+
+        if showQuiv
+            addQuiver(obj, ip, plotdata);
+        end
 
         titleStr = ['Atm Pressure (mb)  ' ...
             datestr(datetime(datagrid(ip).datetime),'mmm dd yyyy HH:MM') ' UTC'];

@@ -1,8 +1,8 @@
-function era5 = getERA5Data(cfg,time)
+function era5 = getERA5Data(CONFIG,time)
 % getERA5Data - extract time chunk from ERA5 netCDF files
 %TODO: spatial subsetting
 
-    bg_file = strrep(cfg.background_file, '<year>', num2str(cfg.storm_year));
+    bg_file = strrep(CONFIG.background_file, '<year>', num2str(CONFIG.storm_year));
     if startsWith(bg_file, 'http')
         check_url([bg_file '.html']);
     elseif ~exist(bg_file, 'file')
@@ -57,7 +57,7 @@ function era5 = getERA5Data(cfg,time)
 
     era5.time = datetime(double(era5.time) * fac, 'ConvertFrom', 'epochtime', 'Epoch', epochstart);
 
-    if cfg.debug, logMsg(-1, 'DEBUG', 'time units="%s", epoch=%s, conversion factor=%.4g s', tunits_str, string(epochstart), fac); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'time units="%s", epoch=%s, conversion factor=%.4g s', tunits_str, string(epochstart), fac); end
 
     idx=(era5.time>=time(1) & era5.time<=time(end));
     if isempty(find(idx,1))

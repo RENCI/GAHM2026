@@ -1,9 +1,9 @@
 function [count, in, distance] = findCutline( ...
         hr_u, hr_v, Xq, Yq, cx, cy, real_lon, real_lat, ...
-        lonn, latt, wei, jing, wind_threshold, cfg)
+        lonn, latt, LatIdx, LonIdx, wind_threshold, CONFIG)
     
-    half = cfg.grid_half_size;
-    num_radial = cfg.num_radial_points;
+    half = CONFIG.grid_half_size;
+    num_radial = CONFIG.num_radial_points;
     max_search = num_radial / 10 * 6;
     
     start_dist = 2 * hypot(cx - real_lon, cy - real_lat);
@@ -34,11 +34,11 @@ function [count, in, distance] = findCutline( ...
     lat_newv = [lat_newv, lat_newv(1)];
     
     [domain_lon, domain_lat] = meshgrid( ...
-        lonn(jing-half : jing+half), ...
-        latt(wei-half : wei+half));
+        lonn(LonIdx-half : LonIdx+half), ...
+        latt(LatIdx-half : LatIdx+half));
     
     in = inpolygon(domain_lon(:), domain_lat(:), lon_newv', lat_newv');
     
-    count_deg = count * 10 / cfg.num_radial_points;
+    count_deg = count * 10 / CONFIG.num_radial_points;
     distance = computeDistanceKm(count_deg, real_lat);
 end

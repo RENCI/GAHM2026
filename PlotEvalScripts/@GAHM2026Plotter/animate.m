@@ -8,7 +8,7 @@ function animate(obj, ptype, fign, plotdata, filename)
 %   Loops over all timesteps, calling contourMap for each frame, and
 %   captures to GIF and/or MP4 according to opts.anim settings.
 %
-%   ptype    - 'velcon', 'precon', 'mvelcon', or 'mprecon'
+%   ptype    - 'velcon', 'precon', 'prequiv', 'mvelcon', or 'mprecon'
 %   fign    - figure number (reused each frame)
 %   plotdata - (optional) gridded field struct array; defaults to
 %              Result.Reggrid_TC_out
@@ -21,9 +21,12 @@ function animate(obj, ptype, fign, plotdata, filename)
     if nargin < 4 || isempty(plotdata), plotdata = obj.PlotData; end
 
     isVel = strcmp(ptype,'velcon') || strcmp(ptype,'mvelcon');
+    isPQ  = strcmp(ptype,'prequiv');
     if nargin < 5 || isempty(filename)
         if isVel
             filename = 'GAHM_V';
+        elseif isPQ
+            filename = 'GAHM_PQ';
         else
             filename = 'GAHM_P';
         end

@@ -13,7 +13,7 @@ classdef GAHM2026Plotter < handle
 % PLOTTING METHODS
 %   contourMap(ptype, fign, time, plotdata)
 %       Contour map (pcolor) of wind speed or pressure at one timestep.
-%       ptype: 'velcon','precon','mvelcon','mprecon'
+%       ptype: 'velcon','precon','prequiv','mvelcon','mprecon'
 %       time:  integer index, datetime, or [] (default 1)
 %
 %   addQuiver(time, plotdata)

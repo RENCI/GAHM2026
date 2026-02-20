@@ -9,7 +9,7 @@ Or view in any Mermaid-compatible viewer (GitHub, VS Code, etc.)
 
 flowchart TB
     subgraph CONFIG["Configuration"]
-        cfg["config/config_*.m\nStorm identity, GAHM params,\nScrubEra5 params, output settings"]
+        CONFIG_node["config/config_*.m\nStorm identity, GAHM params,\nScrubEra5 params, output settings"]
     end
 
     subgraph INPUT["Input Data"]
@@ -83,10 +83,10 @@ flowchart TB
         ctor --> sync
     end
 
-    cfg --> run
+    CONFIG_node --> run
     ibt --> run
     era5 --> scrub
-    cfg --> scrub
+    CONFIG_node --> scrub
     waf -.->|if WAF enabled| run
     scrub --> envmat
     envmat -.->|if env_type=3| run

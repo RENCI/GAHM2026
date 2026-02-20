@@ -1,7 +1,7 @@
-function [cx, cy] = findPressureCenter(psl, lon, lat, wei, jing)
+function [cx, cy] = findPressureCenter(psl, lon, lat, LatIdx, LonIdx)
     search_range = 6;
-    rows = wei-search_range : wei+search_range;
-    cols = jing-search_range : jing+search_range;
+    rows = LatIdx-search_range : LatIdx+search_range;
+    cols = LonIdx-search_range : LonIdx+search_range;
     
     tem = psl(rows, cols);
     lowest = min(tem, [], "all");
