@@ -1,7 +1,7 @@
 % script to interpolate Wind Adjustment Factors from a gridded raster with 
 % multiple layers (for wind direction angles) to Reggrid
 %
-% the WAF raster assumes windirections are the direction the wind is
+% the WAF raster assumes wind directions are the direction the wind is
 % blowing from specified in degrees CW from N.
 % 
 % Sends back Reggrid_VVor data structure with VelU, VelV, Speed modified
