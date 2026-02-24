@@ -61,6 +61,14 @@ function GAHM = GAHM2026_prep(GAHM_constants,env,ATCF_data_in,VEnv_10_10,...
 
 % constants
 
+%TODO:
+% need to switch to using the physical constants in the c datastructure
+% here and in lines 222, 283
+%c.nm2m % = 1852 nautical miles to meters
+%c.kt2ms % = 0.514444 knots to m/s
+%c.ms2kt % = 1/0.514444 m/s to knots
+% earthRadiusInMeters=c.earthRadiusM;  % switch to using physical constants in the c datastructure
+
 earthRadiusInMeters=6371000;
 BLF=GAHM_constants.BLF;
 one2tenF=GAHM_constants.one2tenF;

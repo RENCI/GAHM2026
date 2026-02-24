@@ -1,9 +1,10 @@
-% Compute an interpolated Rmax from quadrant Rmax values using the 
-% environmental wind direction to determine the interpolation angle.
-%
+% Use quadrant Rmax values to compute an interpolated Rmax that lies along
+% a radial line that is 90 deg to the right of a specified input vector
+% (called Venv).  u,v are in the direction vector is point toward
+% 
 % Inputs:
 %       RmaxQ(4) - Rmax values for each quadrant (NE,SE,SW,NW)
-%       Venv(2)  - environmental wind vector [u,v]
+%       Venv(2)  - input vector [u,v]
 %
 % Outputs:
 %       Rmax  - interpolated Rmax value

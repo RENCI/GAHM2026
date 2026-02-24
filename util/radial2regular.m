@@ -13,7 +13,9 @@ theta=squeeze(theta);  % this gets rid of a bogus leading dimension of 1, i.e., 
 Vel=squeeze(Vel);
 Press=squeeze(Press);
 
-% earthRadiusInMeters = 6371000;
+%TODO:
+% need to switch to using the physical constants in the c datastructure
+%c.nm2m % = 1852 nautical miles to meters
 
 % convert from r,theta coordinates to lon, lat coordinates
     r_arc=nm2deg(r/1852);  %convert r to nautical miles and then arclength (deg)

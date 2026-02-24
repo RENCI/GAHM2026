@@ -32,7 +32,7 @@ scrub_info.storm_end          = storm_end;
 scrub_info.grid_half_size     = 40;
 scrub_info.output_half_size   = 40;
 scrub_info.filter_domain_size = 120;
-scrub_info.num_radial_points  = 1000;
+scrub_info.num_radial_points  = 100;
 scrub_info.num_azimuth_points = 360;
 scrub_info.max_radius_deg     = 10;
 scrub_info.wind_threshold_outer  = 20/1.944; % 20 kts -> m/s
@@ -72,7 +72,7 @@ GAHM_param_info.c0                  = 0;
 
 %% ===== Constants for computing wind/pressure field =====
 GAHM_compute_info.ntheta = 24;
-GAHM_compute_info.nr     = 800;
+GAHM_compute_info.nr     = 30;
 GAHM_compute_info.delr   = 1000;
 
 %% ===== Wind Adjustment Factor info =====

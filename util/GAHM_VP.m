@@ -8,7 +8,7 @@
 %
 %    version 1 coded by Rick Luettich 8/15/2024
 %    version 2 output changed to pressure deficit RL 6/20/2025
-%    version 3 eliminated unused output RL 7/6/2026
+%    version 3 eliminated unused output RL 7/6/2025
 %
 % Units used in calculations:
 %      velocity - m/s unless otherwise specified 10 min @ 10 m height
@@ -30,7 +30,7 @@
 %
 % Constants & Assumptions:
 %       BLF - multiplication factor to reduce winds from the top of the
-%            boundary layer to 10 m height (ADCIRC 0.9, others 0.8?)
+%            boundary layer to 10 m height
 %       f - Coriolis parameter = 2 omega sin(latitude) units 1/s
 %       omega - rotation speed of earth rad/s (0.00007272)
 %       turnangle - turning angle (ccw in N hemisphere) for the vortex wind
@@ -52,6 +52,8 @@ function [Press,VVorRadProf_10_10] = GAHM_VP(r,q,iso,GAHM_constants,GAHM)
 LatNS=GAHM.Eye(2);
 BLF = GAHM_constants.BLF;
 omega = 0.00007272;    % rad / s
+%TODO: get omega from GAHM_Physical_constants.m
+%omega = c.omega:
 f=2*omega*sind(LatNS);
 
 % Compute unit vectors & rotation matricies
