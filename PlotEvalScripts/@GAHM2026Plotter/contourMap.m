@@ -1,6 +1,12 @@
 function fig = contourMap(obj, ptype, fign, time, plotdata)
 % contourMap  Contour plot of a gridded wind or pressure field at one time.
 %
+%  To use this, must first issue command: 
+%      obj = GAHM2026Plotter(R);
+%  where R is the datastructure from
+%      R=run_GAHM2026( );
+%
+%   fig = obs.contourMap(ptype)                  - defaults to figure #1
 %   fig = obj.contourMap(ptype, fign)            — plots first timestep
 %   fig = obj.contourMap(ptype, fign, time)      — plots specified time
 %   fig = obj.contourMap(ptype, fign, time, plotdata)
@@ -25,6 +31,7 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
 
     if nargin < 5, plotdata = obj.PlotData; end
     if nargin < 4 || isempty(time), time = 1; end
+    if nargin < 3 || isempty(fign), fign = 1; end
 
     opts     = obj.Opts;
     datagrid = obj.DataGrid;

@@ -1,6 +1,11 @@
 function radialProfile(obj, ptype, fign, time, theta_inc)
 % radialProfile  Radial profiles of wind speed or pressure at one timestep.
+%  To use this, must first issue command: 
+%      obj = GAHM2026Plotter(R);
+%  where R is the datastructure from
+%      R=run_GAHM2026( );
 %
+%   obj.radialProfile(ptype)
 %   obj.radialProfile(ptype, fign)
 %   obj.radialProfile(ptype, fign, time)
 %   obj.radialProfile(ptype, fign, time, theta_inc)
@@ -9,14 +14,19 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
 %     'velrad' - radial velocity profiles with isotach & Vmax markers
 %     'prerad' - radial pressure profiles
 %
-%   fign      - starting figure number
+%   fign      - starting figure number (defaults to 1)
 %   time      - integer index, datetime, or [] (defaults to 1)
 %   theta_inc - plot every Nth radial angle (default 2)
 %
 %   Produces subplot panels arranged according to opts.radial.layout.
+%
+%     Fixed Vmax to kts, Rmax to m, starting fig number  2/24/2026
+%
+%-------------------------------------------------------------------
 
     if nargin < 5 || isempty(theta_inc), theta_inc = 2; end
     if nargin < 4 || isempty(time), time = 1; end
+    if nargin < 3 || isempty(fign), fign = 1; end
 
     VPr   = obj.VPrad;
     Tdata = obj.Trackdata;
@@ -35,7 +45,7 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
     ntheta  = length(VPr.theta);
     nr      = length(VPr.r);
 
-    nploti = fign + 1;
+    nploti = fign;
 
     %% radial velocity profiles
 
@@ -49,17 +59,20 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
             if hasEnv
                 S_envvor = 1.944*VPr.EnvVor(int).Speed(it,1:nr);
                 S_env    = 1.944*VPr.Env(int).Speed(it,1:nr);
-                plot(VPr.r, S_envvor, 'k', VPr.r, S_env, '--r')
+                plot(VPr.r, S_envvor, 'k', VPr.r, S_env, '--k')
             else
                 S_vor = 1.944*VPr.VVor(int).Speed(it,1:nr);
                 plot(VPr.r, S_vor, 'k')
             end
             hold on
 
-            plot(Tdata(int).Rmax_t1, Tdata(int).Vmax_t1*1.944*one2ten, 'b*')
+%            plot(Tdata(int).Rmax_t1, Tdata(int).Vmax_t1*1.944*one2ten, 'b*')
+            plot(Tdata(int).Rmax_t1*1852, Tdata(int).Vmax_t1*one2ten, 'b*')
             if Tdata(int).Vmax_t2 ~= 0
-                plot(Tdata(int).Rmax_t2, Tdata(int).Vmax_t2*1.944*one2ten, 'r*')
+%                plot(Tdata(int).Rmax_t2, Tdata(int).Vmax_t2*1.944*one2ten, 'r*')
+                plot(Tdata(int).Rmax_t2*1852, Tdata(int).Vmax_t2*one2ten, 'r*')
             end
+
             for ii = 1:length(SQuad_1_10)
                 if Tdata(int).RQuad_t1(Tdata(int).RP1(it),ii) ~= 0
                     plot(Tdata(int).RQuad_t1(Tdata(int).RP1(it),ii), SQuad_1_10(ii)*one2ten, 'bo')
@@ -115,14 +128,14 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
             if hasEnv
                 P1 = VPr.EnvVor(int).Press(it,1:nr);
                 P2 = VPr.Env(int).Press(it,1:nr);
-                plot(VPr.r, P1, 'k', VPr.r, P2, '--r');
+                plot(VPr.r, P1, 'k', VPr.r, P2, '--k');
                 lgd = legend('Total Pres','Env Pres');
             else
                 P1 = VPr.VVor(int).Press(it,1:nr);
                 plot(VPr.r, P1, 'k');
                 lgd = legend('Vortex Pres');
             end
-            % ylim([940 1020]);
+            ylim([940 1020]);
             hold on
             text(3e5, 1000, ['theta=' num2str(VPr.theta(it),'%.1f')])
             lgd.Location = 'southeast';
