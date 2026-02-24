@@ -8,7 +8,7 @@ Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 
 ---
 
-## Quick Start
+### Quick Start
 
 ```matlab
 >> cd GAHM2026
