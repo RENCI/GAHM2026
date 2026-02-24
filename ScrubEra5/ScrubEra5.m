@@ -126,10 +126,10 @@ for i = 1:num_times
         lat_idx(i), lon_idx(i), CONFIG.wind_threshold_inner, CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Inner cutline found: mean radius=%.1f km, points inside=%d', mean(distance_inner), sum(in_inner)); end
     
-    [~, in, distance] = findCutline(hr_u, hr_v, Xq, Yq, ...
+    [~, in, distance_outer] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
         lat_idx(i), lon_idx(i), CONFIG.wind_threshold_outer, CONFIG);
-    if CONFIG.debug, logMsg(-1, 'DEBUG', '10-m/s cutline found: mean radius=%.1f km, points inside=%d', mean(distance), sum(in)); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Outer cutline found: mean radius=%.1f km, points inside=%d', mean(distance_outer), sum(in)); end
     
     tem_ave_r = mean(count_inner, "all") * 10 / 1000;
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Mean inner vortex radius=%.4f deg', tem_ave_r); end
@@ -140,7 +140,7 @@ for i = 1:num_times
     
     OUTPUT = storeResults(OUTPUT, i, era5.lon_grid, era5.lat_grid, basic_slp, ...
         basic_u, basic_v, ThisMsl, ThisU, ThisV, in, in_inner,  ...
-        distance, distance_inner, lat_idx(i), lon_idx(i), CONFIG);
+        distance_outer, distance_inner, lat_idx(i), lon_idx(i), CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Results stored for step %d (elapsed=%.2f s)', i, toc); end
 
 end

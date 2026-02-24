@@ -1,5 +1,5 @@
 function OUTPUT = storeResults(OUTPUT, i, lon, lat, basic_slp, basic_u, basic_v, ...
-        psl, u, v, in, in_inner, distance, distance_inner, LatIdx, LonIdx, CONFIG)
+        psl, u, v, in, in_inner, distance_outer, distance_inner, LatIdx, LonIdx, CONFIG)
     
     half = CONFIG.output_half_size;
     rows = LatIdx-half : LatIdx+half;
@@ -18,6 +18,6 @@ function OUTPUT = storeResults(OUTPUT, i, lon, lat, basic_slp, basic_u, basic_v,
     
     OUTPUT.mask(i,:,:) = reshape(in, [grid_size, grid_size]);
     OUTPUT.mask_inner(i,:,:) = reshape(in_inner, [grid_size, grid_size]);
-    OUTPUT.distance(i,:) = distance;
+    OUTPUT.distance_outer(i,:) = distance_outer;
     OUTPUT.distance_inner(i,:) = distance_inner;
 end
