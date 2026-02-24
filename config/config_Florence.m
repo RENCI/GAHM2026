@@ -90,7 +90,7 @@ env_info.taper_mindelr2r1 = 0.1; % minimum value of (r2-r1)/r2 if violated r1 is
 env_info.taper_a          = 2;   % adjusts steepness of hyperbolic tangent taper function (2 is suggested)
 
 %% ===== Output information =====
-output_info.warnings       = fullfile('output', sprintf('%s_%s_GAHM2026_warnings.dat', storm_info.name, storm_info.year));
+output_info.diagnostics    = fullfile('output', sprintf('%s_%s_%s_GAHM2026_diagnostics.dat', storm_info.name, storm_info.designation, storm_info.year));
 output_info.NetCDFfilename = ['output/' storm_info.outputfilename];
 output_info.timeinc        = 1;
 output_info.type           = "grid";

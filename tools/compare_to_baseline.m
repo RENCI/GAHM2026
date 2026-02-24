@@ -68,7 +68,7 @@ GAHM_compute_info.ntheta = 24;
 GAHM_compute_info.nr     = 800;
 GAHM_compute_info.delr   = 1000;
 
-output_info.warnings       = fullfile(toolsdir, 'compare_warnings.dat');
+output_info.diagnostics    = fullfile(toolsdir, 'compare_diagnostics.dat');
 output_info.NetCDFfilename = fullfile(toolsdir, 'compare_test');
 output_info.timeinc        = 1;
 output_info.type           = "grid";
@@ -191,7 +191,7 @@ if exist(baseline_file_florence, 'file')
         end
     end
 
-    output_info_full.warnings       = fullfile(toolsdir, 'compare_florence_warnings.dat');
+    output_info_full.diagnostics    = fullfile(toolsdir, 'compare_florence_diagnostics.dat');
     output_info_full.NetCDFfilename = fullfile(toolsdir, 'compare_florence');
     output_info_full.timeinc        = 1;
     output_info_full.type           = "grid";

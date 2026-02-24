@@ -158,7 +158,7 @@ Times must include all track file times; additional times (e.g., hourly) are per
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `warnings` | char | File path for warning messages | `fullfile('output', '<NAME>_<YEAR>_GAHM2026_warnings.dat')` |
+| `diagnostics` | char | File path for diagnostic messages | `fullfile('output', '<NAME>_<DESIG>_<YEAR>_GAHM2026_diagnostics.dat')` |
 | `NetCDFfilename` | char | Base output NetCDF path (`.nc` appended automatically) | `'output/<NAME>_<YEAR>'` |
 | `timeinc` | numeric | Output time interval (hours). Must be ≤ track file snapshot interval | `1` |
 | `type` | string | Output type: `"grid"` or `"points"` | `"grid"` |

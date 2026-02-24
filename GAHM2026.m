@@ -83,7 +83,7 @@ if taper_flag
     taper_constants.taper_a=env_info.taper_a; 
 end
  
-fid=fopen(output.warnings,'wt');
+fid=fopen(output.diagnostics,'at');
 
 if debug, logMsg(fid, 'DEBUG', 'GAHM version=%d, env_type=%d, taper=%d, WAF=%d', GAHM_version, env_type, taper_flag, WAF_flag); end
 if debug, logMsg(fid, 'DEBUG', 'Radial grid: ntheta=%d, nr=%d, delr=%d m (max radius=%.0f km)', ntheta, nr, delr, nr*delr/1000); end

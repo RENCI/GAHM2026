@@ -101,7 +101,7 @@ env_info.taper_a          = 2;   % adjusts steepness of hyperbolic tangent taper
 %   the number of longitude and latitude values much be equal and are fixed in time.  
 %   Output is computed a corresponding lon,lat pairs
 
-output_info.warnings       = fullfile('output', sprintf('%s_%s_GAHM2026_warnings.dat', storm_info.name, storm_info.year));
+output_info.diagnostics    = fullfile('output', sprintf('%s_%s_%s_GAHM2026_diagnostics.dat', storm_info.name, storm_info.designation, storm_info.year));
 output_info.NetCDFfilename = ['output/' storm_info.outputfilename];
 output_info.timeinc        = 1;     % output time interval (hrs) must be <= time between BestTrack snaps
 output_info.type           = "grid";

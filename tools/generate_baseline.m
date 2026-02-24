@@ -58,7 +58,7 @@ GAHM_compute_info.ntheta = 24;
 GAHM_compute_info.nr     = 800;
 GAHM_compute_info.delr   = 1000;
 
-output_info.warnings       = fullfile(toolsdir, 'baseline_warnings.dat');
+output_info.diagnostics    = fullfile(toolsdir, 'baseline_diagnostics.dat');
 output_info.NetCDFfilename = fullfile(toolsdir, 'baseline_test');
 output_info.timeinc        = 1;
 output_info.type           = "grid";
@@ -171,7 +171,7 @@ if exist(florence_file, 'file')
         fprintf('  WAF raster not found, running without WAF\n');
     end
 
-    output_info_full.warnings       = fullfile(toolsdir, 'baseline_florence_warnings.dat');
+    output_info_full.diagnostics    = fullfile(toolsdir, 'baseline_florence_diagnostics.dat');
     output_info_full.NetCDFfilename = fullfile(toolsdir, 'baseline_florence');
     output_info_full.timeinc        = 1;
     output_info_full.type           = "grid";

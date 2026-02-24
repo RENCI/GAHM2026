@@ -32,43 +32,44 @@ end
 run(config_file)
 
 if ~exist('debug','var'), debug = false; end
-logMsg(-1, 'INFO', 'Configuration loaded from %s', config_file);
-logMsg(-1, 'INFO', 'Storm: %s/%s/%s, env_type=%d', storm_info.name, storm_info.year, storm_info.designation, env_info.type);
+fid = fopen(output_info.diagnostics, 'wt');
+logMsg(fid, 'INFO', 'Configuration loaded from %s', config_file);
+logMsg(fid, 'INFO', 'Storm: %s/%s/%s, env_type=%d', storm_info.name, storm_info.year, storm_info.designation, env_info.type);
 
 %% Validate storm_year vs storm_start/storm_end
 sy = str2double(storm_info.year);
 if isdatetime(storm_info.starttime) && year(storm_info.starttime) ~= sy
-    logMsg(-1, 'ERROR', 'storm_year (%d) does not match year of storm_start (%d)', sy, year(storm_info.starttime));
+    logMsg(fid, 'ERROR', 'storm_year (%d) does not match year of storm_start (%d)', sy, year(storm_info.starttime));
 end
 if isdatetime(storm_info.endtime) && year(storm_info.endtime) ~= sy
-    logMsg(-1, 'WARNING', 'storm_year (%d) does not match year of storm_end (%d) — storm may span year boundary', sy, year(storm_info.endtime));
+    logMsg(fid, 'WARNING', 'storm_year (%d) does not match year of storm_end (%d) — storm may span year boundary', sy, year(storm_info.endtime));
 end
 
 %% Download IBTrACS file if it does not exist
 if storm_info.file_type == "IBTrACS" && ~exist(storm_info.track_file,'file')
     ibtracs_url = ['https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/' ...
                    erase(storm_info.track_file,'input/')];
-    logMsg(-1, 'INFO', 'IBTrACS file not found: %s', storm_info.track_file);
-    logMsg(-1, 'INFO', 'Downloading from %s ...', ibtracs_url);
+    logMsg(fid, 'INFO', 'IBTrACS file not found: %s', storm_info.track_file);
+    logMsg(fid, 'INFO', 'Downloading from %s ...', ibtracs_url);
     try
         websave(storm_info.track_file, ibtracs_url);
-        logMsg(-1, 'INFO', 'Download complete.');
+        logMsg(fid, 'INFO', 'Download complete.');
     catch ME
         error('Failed to download IBTrACS file: %s', ME.message);
     end
 end
 
 %% Load storm track data
-logMsg(-1, 'INFO', 'Loading %s %s %s ... ', storm_info.designation, storm_info.year, storm_info.name);
+logMsg(fid, 'INFO', 'Loading %s %s %s ... ', storm_info.designation, storm_info.year, storm_info.name);
 if storm_info.file_type == "ATCF" || storm_info.file_type == "fort22"
     ATCF_data_in = read_ATCF_fort22(storm_info.track_file, storm_info.file_type);
 elseif storm_info.file_type == "IBTrACS"
     ATCF_data_in = read_IBTrACS(storm_info);
 end
 if strcmp(ATCF_data_in(1).sname_cha, storm_info.name)
-    logMsg(-1, 'INFO', '%s %s %s found in track file', storm_info.designation, storm_info.year, storm_info.name);
+    logMsg(fid, 'INFO', '%s %s %s found in track file', storm_info.designation, storm_info.year, storm_info.name);
 else
-    logMsg(-1, 'ERROR', 'Mismatch in storm_name. %s/%s/%s in config file, but %s does not match.', ...
+    logMsg(fid, 'ERROR', 'Mismatch in storm_name. %s/%s/%s in config file, but %s does not match.', ...
         storm_info.designation, storm_info.year, storm_info.name, ATCF_data_in(1).sname_cha);
 end
 
@@ -77,7 +78,7 @@ if output_info.type == "grid"
     f_out = [output_info.NetCDFfilename '.nc'];
     if exist(f_out,'file')
         % error([f_out ' already exists. Delete or rename it before running.'])
-        logMsg(-1,'ERROR',[f_out ' already exists. Delete or rename it before running.'])
+        logMsg(fid,'ERROR',[f_out ' already exists. Delete or rename it before running.'])
     end
 end
 
@@ -91,8 +92,8 @@ if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
                'Use a unified config (with scrub_info) to enable auto-generation, ' ...
                'or run ScrubEra5 separately first.'], env_info.file_name);
     end
-    logMsg(-1, 'INFO', 'EnvFields file not found: %s.mat', env_info.file_name);
-    logMsg(-1, 'INFO', 'Running ScrubEra5 to generate it ...');
+    logMsg(fid, 'INFO', 'EnvFields file not found: %s.mat', env_info.file_name);
+    logMsg(fid, 'INFO', 'Running ScrubEra5 to generate it ...');
 
     % Locate ScrubEra5 — subdirectory of GAHM2026
     scrub_dir = fullfile(pwd, 'ScrubEra5');
@@ -110,14 +111,14 @@ if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
     if ~exist(expected_mat, 'file')
         error('ScrubEra5 completed but %s was not found.', expected_mat);
     end
-    logMsg(-1, 'INFO', 'ScrubEra5 complete. %s is ready.', expected_mat);
+    logMsg(fid, 'INFO', 'ScrubEra5 complete. %s is ready.', expected_mat);
 else
-    logMsg(-1, 'INFO', 'EnvField file %s from ScrubEra5 already exists.  Using.', [env_info.file_name '.mat']);
+    logMsg(fid, 'INFO', 'EnvField file %s from ScrubEra5 already exists.  Using.', [env_info.file_name '.mat']);
 end
 
 %% compute and output final TC wind/pressure fields as well as additional diagnostic information
 
-logMsg(-1, 'INFO', 'Calling GAHM2026 (version=%d, ntheta=%d, nr=%d, delr=%d) ...', ...
+logMsg(fid, 'INFO', 'Calling GAHM2026 (version=%d, ntheta=%d, nr=%d, delr=%d) ...', ...
     GAHM_param_info.version, GAHM_compute_info.ntheta, GAHM_compute_info.nr, GAHM_compute_info.delr);
 
 [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
@@ -126,8 +127,8 @@ logMsg(-1, 'INFO', 'Calling GAHM2026 (version=%d, ntheta=%d, nr=%d, delr=%d) ...
                  GAHM_compute_info,WAF_info,env_info,output_info,debug);
 
 if output_info.type == "grid"
-    if debug, logMsg(-1, 'DEBUG', 'Writing netCDF output to %s.nc', output_info.NetCDFfilename); end
-    logMsg(-1, 'INFO', 'Writing netCDF output')
+    if debug, logMsg(fid, 'DEBUG', 'Writing netCDF output to %s.nc', output_info.NetCDFfilename); end
+    logMsg(fid, 'INFO', 'Writing netCDF output')
     err=writeGAHM2026NetCdf(output_info.NetCDFfilename,Reggrid_out,Reggrid_TC_out);
 elseif output_info.type == "points"
     nt=length(Reggrid_out);
@@ -146,7 +147,7 @@ elseif output_info.type == "points"
         Points_Env_out(i).Press=Reggrid_Env_out(i).Press;        
     end
 
-    logMsg(-1, 'INFO', 'Done computing values at output points')
+    logMsg(fid, 'INFO', 'Done computing values at output points')
 end
 
 %% Package results for return
@@ -166,6 +167,7 @@ if output_info.type == "points"
     Result.Points_Env_out = Points_Env_out;
 end
 
-logMsg(-1, 'INFO', 'Done.');
+logMsg(fid, 'INFO', 'Done.');
+fclose(fid);
 
 end
