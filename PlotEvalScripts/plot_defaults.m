@@ -53,7 +53,7 @@ opts.track.progressive = true;     % show track up to current time (vs full trac
 %% Radial plots
 opts.radial.isotachs = [34 50 64]; % knots
 opts.radial.one2ten = 0.89;        % 1-min to 10-min conversion
-opts.radial.layout = [4 4];        % subplot layout [rows cols]
+opts.radial.layout = [6 4];        % subplot layout [rows cols]
 
 %% Masks
 opts.mask.show = false;            % overlay mask contours

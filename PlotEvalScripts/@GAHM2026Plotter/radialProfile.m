@@ -59,7 +59,7 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
             if hasEnv
                 S_envvor = 1.944*VPr.EnvVor(int).Speed(it,1:nr);
                 S_env    = 1.944*VPr.Env(int).Speed(it,1:nr);
-                plot(VPr.r, S_envvor, 'k', VPr.r, S_env, '--k')
+                plot(VPr.r, S_envvor, 'k', VPr.r, S_env, '--r')
             else
                 S_vor = 1.944*VPr.VVor(int).Speed(it,1:nr);
                 plot(VPr.r, S_vor, 'k')
@@ -128,14 +128,14 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
             if hasEnv
                 P1 = VPr.EnvVor(int).Press(it,1:nr);
                 P2 = VPr.Env(int).Press(it,1:nr);
-                plot(VPr.r, P1, 'k', VPr.r, P2, '--k');
+                plot(VPr.r, P1, 'k', VPr.r, P2, '--r');
                 lgd = legend('Total Pres','Env Pres');
             else
                 P1 = VPr.VVor(int).Press(it,1:nr);
                 plot(VPr.r, P1, 'k');
                 lgd = legend('Vortex Pres');
             end
-            ylim([940 1020]);
+            % ylim([940 1020]);
             hold on
             text(3e5, 1000, ['theta=' num2str(VPr.theta(it),'%.1f')])
             lgd.Location = 'southeast';

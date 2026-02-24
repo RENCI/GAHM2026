@@ -16,7 +16,7 @@
 %             filename.La(i,nEr:-1:1,:);
 %             filename.Vortex_mask(i,nEr:-1:1,:) 0,1=inside,outside outer
 %                                                    cut line
-%             filename.Vortex_mask34(i,nEr:-1:1,:) 0,1=inside,outside inner
+%             filename.Vortex_mask_inner(i,nEr:-1:1,:) 0,1=inside,outside inner
 %                                                    cut line
 %             filename.env_u10(i,nEr:-1:1,:);   E-W velocity (m/s)
 %             filename.env_v10(i,nEr:-1:1,:);   N-S velocity (m/s)
@@ -100,7 +100,7 @@ for nl=startline:endline
     VHur_10_10(i).Press=squeeze(env_vals.hur_msl(nl,lat1:dlat:latn,lon1:dlon:lonn)); % mb
     Masks(i).lon=squeeze(env_vals.Lo(nl,:,lon1:dlon:lonn));
     Masks(i).lat=squeeze(env_vals.La(nl,lat1:dlat:latn,:));         
-    Masks(i).mask1=squeeze(env_vals.Vortex_mask34(nl,lat1:dlat:latn,lon1:dlon:lonn)); %inner mask
+    Masks(i).mask1=squeeze(env_vals.Vortex_mask_inner(nl,lat1:dlat:latn,lon1:dlon:lonn)); %inner mask
     Masks(i).mask1(isnan(Masks(i).mask1))=0;    %convert NaNs in mask to 0    
     Masks(i).mask2=squeeze(env_vals.Vortex_mask(nl,lat1:dlat:latn,lon1:dlon:lonn));   %outer mask
     Masks(i).mask2(isnan(Masks(i).mask2))=0;    %convert NaNs in mask to 0  

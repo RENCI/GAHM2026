@@ -85,9 +85,7 @@ end
 if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
     % TODO:  THE FOLLOWING DOES NOT LOOK RIGHT.  just because the variable
     % scrub_info (which contains the scrubera5 config parameters) exists
-    % does NOT mean that the EnvFields.mat file does.   Basically, we need
-    % to get rid of this auto-trun stuff and just compute the env fields
-    % every time.
+    % does NOT mean that the EnvFields.mat file does. 
     if ~exist('scrub_info', 'var')
         error(['EnvFields file not found: %s.mat\n' ...
                'Use a unified config (with scrub_info) to enable auto-generation, ' ...

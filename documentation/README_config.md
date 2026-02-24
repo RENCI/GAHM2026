@@ -137,7 +137,7 @@ When `env_info.type = 3`, the `.mat` file (produced by ScrubEra5) must contain a
 | `Lo(i,:,:)` | (nt, nlat, nlon) | Longitude grid |
 | `La(i,:,:)` | (nt, nlat, nlon) | Latitude grid |
 | `Vortex_mask(i,:,:)` | (nt, nlat, nlon) | Outer cutline mask (0 = inside, 1 = outside) |
-| `Vortex_mask34(i,:,:)` | (nt, nlat, nlon) | Inner cutline mask (0 = inside, 1 = outside) |
+| `Vortex_mask_inner(i,:,:)` | (nt, nlat, nlon) | Inner cutline mask (0 = inside, 1 = outside) |
 | `env_msl(i,:,:)` | (nt, nlat, nlon) | Environmental mean sea level pressure (mb) |
 | `env_u10(i,:,:)` | (nt, nlat, nlon) | Environmental E-W wind velocity (m/s) |
 | `env_v10(i,:,:)` | (nt, nlat, nlon) | Environmental N-S wind velocity (m/s) |

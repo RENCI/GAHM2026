@@ -121,26 +121,26 @@ for i = 1:num_times
         lat_idx(i), lon_idx(i), era5_lon(i), era5_lat(i), CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Polar coordinate interpolation done (grid size=%dx%d)', size(Xq,1), size(Xq,2)); end
     
-    [count_34, in_34, distance_34] = findCutline(hr_u, hr_v, Xq, Yq, ...
+    [count_inner, in_inner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
         lat_idx(i), lon_idx(i), CONFIG.wind_threshold_inner, CONFIG);
-    if CONFIG.debug, logMsg(-1, 'DEBUG', '34-kt cutline found: mean radius=%.1f km, points inside=%d', mean(distance_34), sum(in_34)); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Inner cutline found: mean radius=%.1f km, points inside=%d', mean(distance_inner), sum(in_inner)); end
     
     [~, in, distance] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
         lat_idx(i), lon_idx(i), CONFIG.wind_threshold_outer, CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', '10-m/s cutline found: mean radius=%.1f km, points inside=%d', mean(distance), sum(in)); end
     
-    tem_ave_r = mean(count_34, "all") * 10 / 1000;
-    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Mean 34-kt vortex radius=%.4f deg', tem_ave_r); end
+    tem_ave_r = mean(count_inner, "all") * 10 / 1000;
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Mean inner vortex radius=%.4f deg', tem_ave_r); end
     
     [basic_slp, basic_u, basic_v] = computeBasicField(ThisMsl, ThisU, ThisV, ...
         lat_idx(i), lon_idx(i), tem_ave_r, CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Basic field computed (filter half-power wavelength=%.2f)', tem_ave_r / 0.04); end
     
     OUTPUT = storeResults(OUTPUT, i, era5.lon_grid, era5.lat_grid, basic_slp, ...
-        basic_u, basic_v, ThisMsl, ThisU, ThisV, in, in_34,  ...
-        distance, distance_34, lat_idx(i), lon_idx(i), CONFIG);
+        basic_u, basic_v, ThisMsl, ThisU, ThisV, in, in_inner,  ...
+        distance, distance_inner, lat_idx(i), lon_idx(i), CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Results stored for step %d (elapsed=%.2f s)', i, toc); end
 
 end
