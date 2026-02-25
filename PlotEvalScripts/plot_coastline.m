@@ -7,12 +7,16 @@ function plot_coastline(opts)
 %
 %                Rick Luettich / RENCI 2026
 
+if ~exist("opts",'var')
+    opts=plot_defaults;
+end
+
 if ~opts.coast.show
     return
 end
 
 C = load('coastlines');
-plot(C.coastlon, C.coastlat, '-', ...
+line(C.coastlon, C.coastlat, 'LineStyle', '-', ...
     'Color', opts.coast.color, ...
     'LineWidth', opts.coast.linewidth);
 

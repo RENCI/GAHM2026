@@ -20,8 +20,8 @@ storm_year        = 2018;
 track_file        = 'ibtracs.NA.list.v04r01.csv';
 storm_designation = 'AL06';
 debug             = true;
-storm_start       = datetime(2018,9,11,0,0,0);
-storm_end         = datetime(2018,9,12,0,0,0);
+storm_start       = datetime(2018,9,12,0,0,0);
+storm_end         = datetime(2018,9,13,0,0,0);
 
 %% ===== ScrubEra5 parameters =====
 scrub_info.background_file    = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/<year>/<year>.nc';
