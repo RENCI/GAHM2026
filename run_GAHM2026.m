@@ -17,6 +17,7 @@ if nargin < 1
 end
 
 addpath('util')
+addpath('static')
 addpath('PlotEvalScripts')
 
 if ~exist('input', 'dir'),  mkdir('input');  end

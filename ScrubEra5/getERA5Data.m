@@ -47,7 +47,9 @@ function era5 = getERA5Data(CONFIG,time)
     epoch_str = strjoin(parts(3:end), ' ');
     epoch_str = strrep(epoch_str, 'T', ' ');
     epoch_str = regexprep(epoch_str, '[Zz]$', '');
-    epoch_str = regexprep(epoch_str, '\s*[+-]\d{1,2}(:\d{2})?$', '');
+    if contains(epoch_str, ':')
+        epoch_str = regexprep(epoch_str, '\s*[+-]\d{1,2}(:\d{2})?$', '');
+    end
 
     try
         epochstart = datetime(epoch_str);

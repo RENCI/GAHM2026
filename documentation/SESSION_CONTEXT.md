@@ -1,6 +1,6 @@
 # GAHM2026 Refactoring Session Context
 
-**Last updated**: February 19, 2026  
+**Last updated**: February 25, 2026  
 **Purpose**: Continuity document for resuming work in a new session.
 
 ---
@@ -176,6 +176,14 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 11. **GitHub Pages site**: Created `docs/_config.yml` (minimal theme) and `docs/index.md` (landing page with project overview, GAHM equations, pipeline diagram, quick start, ScrubEra5 description, configuration, output structures, references).
 12. **README.md updates**: Added Brian Blanton as co-author, corrected default config filename, documented `Result` struct, added Plotting subsection, fixed field names (`storm_info.track_file`), expanded `<year>` placeholder docs, new Logging and Shared Utilities sections, clickable reference links.
 13. **Documentation updates**: Updated `CALL_TREE.md`, `GAHM2026_workflow.md`, `README_config.md`, `SESSION_CONTEXT.md` with all changes above.
+
+### ScrubEra5 Naming, Logging, and Bug Fixes (Feb 25, 2026)
+
+1. **Renamed `34` → `inner` in ScrubEra5 variables**: `mask34`→`mask_inner`, `distance_34`→`distance_inner`, `in_34`→`in_inner`, `count_34`→`count_inner`, `Vortex_mask34`→`Vortex_mask_inner`. Updated across `ScrubEra5.m`, `initializeOutputArrays.m`, `storeResults.m`, `createOutputStruct.m`, and consumer `util/read_Env_and_Hurr_fields2.m` (code + comments). Debug log messages updated to say "Inner cutline" instead of "34-kt cutline". Documentation updated in `README_config.md`.
+2. **Renamed `distance` → `distance_outer`** in ScrubEra5: bare `distance` variable (outer cutline) renamed to `distance_outer` for consistency with `distance_inner`. Output struct field `distance_10` renamed to `distance_outer`. Updated across `ScrubEra5.m`, `storeResults.m`, `initializeOutputArrays.m`, `createOutputStruct.m`.
+3. **Renamed `output_info.warnings` → `output_info.diagnostics`**: Filename changed from `NAME_YEAR_GAHM2026_warnings.dat` to `NAME_DESIG_YEAR_GAHM2026_diagnostics.dat` (adds storm designation). Updated in all 3 config files, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `documentation/README_config.md`.
+4. **Unified diagnostics file logging**: Diagnostics file now opened early in `run_GAHM2026.m` (right after config loads). All `logMsg(-1, ...)` calls in `run_GAHM2026.m` changed to `logMsg(fid, ...)` so messages go to both screen and file from the start. File closed at end of `run_GAHM2026.m`. `GAHM2026.m` changed from `fopen(output.warnings,'wt')` to `fopen(output.diagnostics,'at')` (append mode).
+5. **Fixed epoch parsing bug in `getERA5Data.m`**: The timezone-offset stripping regex (`\s*[+-]\d{1,2}(:\d{2})?$`) was incorrectly matching the day portion of date-only strings like `"1970-01-01"` (stripping `-01` → `"1970-01"`). Fixed by guarding the regex with `if contains(epoch_str, ':')` so it only runs when a time component is present.
 
 ### ScrubEra5 and Plotter Cleanup (Feb 19, 2026)
 
