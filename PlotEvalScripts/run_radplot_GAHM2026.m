@@ -1,4 +1,4 @@
-%  Sample call lines for radplot_blend_GAHM2026.m
+%  Sample call lines for radplot_GAHM2026.m
 %  Uses output variables from GAHM2026.m / run_GAHM2026.m
 %
 %  After running run_GAHM2026.m, the VPrad struct contains:
@@ -16,9 +16,9 @@
 opts = plot_defaults();
 
 % plot radial pressure profiles (every other radial)
-radplot_blend_GAHM2026(VPrad, Trackdata, 2, 'prerad', 20, opts)
+radplot_GAHM2026(VPrad, Trackdata, 2, 'prerad', 20, opts)
 
 %% Other example calls (uncomment as needed):
 %
 % % radial velocity profiles
-% radplot_blend_GAHM2026(VPrad, Trackdata, 2, 'velrad', 20, opts)
+% radplot_GAHM2026(VPrad, Trackdata, 2, 'velrad', 20, opts)

@@ -2,6 +2,11 @@
 %
 %  Plot contour output from GAHM2026.m
 %
+%  Can also plot output from the environmental & hurricane field separation
+%  step as found in the .mat file by running the code:
+%        prep_separated_fields_4_conplot_GAHM2026.m
+%  to create the needed inputs for this contour plotting script
+%  %
 %  ptype options:
 %       velcon  - velocity contour plot with vectors
 %       precon  - pressure contour plot
@@ -11,7 +16,7 @@
 %                 1/29/2026   - Rick Luettich
 %                 2/7/2026    - modernized (opts pattern, built-in helpers)
 
-function []=conplot_blend_GAHM2026(plotdata,datagrid,Trackdata,ptype,fign,opts)
+function []=conplot_GAHM2026(plotdata,datagrid,Trackdata,ptype,fign,opts)
 
 if nargin < 6
     opts = plot_defaults();

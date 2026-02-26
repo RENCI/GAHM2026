@@ -5,7 +5,7 @@ Plotting and evaluation tools for GAHM2026 output fields, radial profiles, and p
 There are two ways to produce plots:
 
 1. **`GAHM2026Plotter` class** (recommended) — object-oriented interface that receives the `Result` struct returned by `run_GAHM2026` and provides methods for contour maps, radial profiles, scatter comparisons, animation, and figure export.
-2. **Standalone scripts** — the original function-based scripts (`conplot_blend_GAHM2026.m`, `radplot_blend_GAHM2026.m`, etc.) that operate on individual workspace variables.
+2. **Standalone scripts** — the original function-based scripts (`conplot_GAHM2026.m`, `radplot_GAHM2026.m`, etc.) that operate on individual workspace variables.
 
 Both approaches share the same `plot_defaults.m` options struct.
 
@@ -261,16 +261,16 @@ The original function-based scripts remain available for backward compatibility:
 
 | File | Description |
 |------|-------------|
-| `conplot_blend_GAHM2026.m` | Contour plots with track, coastline, animation |
-| `radplot_blend_GAHM2026.m` | Radial profiles with isotach markers |
+| `conplot_GAHM2026.m` | Contour plots with track, coastline, animation |
+| `radplot_GAHM2026.m` | Radial profiles with isotach markers |
 | `GAHM2026_ASWIP_compare.m` | GAHM2026 vs ASWIP scatter comparisons |
 | `Rmax_compare.m` | Input vs computed Rmax comparison across storms |
 | `plot_defaults.m` | Default options struct (shared with class) |
 | `plot_coastline.m` | Coastline overlay helper |
 | `plot_quiver_scaled.m` | Subsampled quiver overlay helper |
 | `radial_find_maskedge.m` | Radial mask-edge detection utility |
-| `run_conplot_blend_GAHM2026.m` | Example contour plot calls |
-| `run_radplot_blend_GAHM2026.m` | Example radial profile calls |
+| `run_conplot_GAHM2026.m` | Example contour plot calls |
+| `run_radplot_GAHM2026.m` | Example radial profile calls |
 
 ---
 

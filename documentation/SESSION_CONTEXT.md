@@ -1,6 +1,6 @@
 # GAHM2026 Refactoring Session Context
 
-**Last updated**: February 25, 2026  
+**Last updated**: February 26, 2026  
 **Purpose**: Continuity document for resuming work in a new session.
 
 ---
@@ -33,7 +33,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | Extracted utilities | `util/computeRmaxTot.m`, `util/quadrantUnitVectors.m`, `util/thetaToQuadrantPair.m`, `util/turnAngleDeg.m`, `util/logMsg.m`, `util/GAHM_physical_constants.m`, `util/struct2vars.m` |
 | Plotting class | `PlotEvalScripts/@GAHM2026Plotter/` (15 .m files) |
 | Plotting helpers | `PlotEvalScripts/plot_defaults.m`, `plot_coastline.m`, `plot_quiver_scaled.m` |
-| Legacy plot scripts | `PlotEvalScripts/conplot_blend_GAHM2026.m`, `radplot_blend_GAHM2026.m`, etc. |
+| Legacy plot scripts | `PlotEvalScripts/conplot_GAHM2026.m`, `radplot_GAHM2026.m`, etc. |
 
 ### Directory Structure
 
@@ -150,9 +150,9 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 - `plot_coastline.m` — Built-in coastline overlay replacing external `plotcoast`
 
 **Modernized files:**
-- `conplot_blend_GAHM2026.m` — Accepts optional `opts` struct; removed all external dependencies
-- `radplot_blend_GAHM2026.m` — Rewritten to accept `VPrad` struct; accepts optional `opts`
-- `run_conplot_blend_GAHM2026.m`, `run_radplot_blend_GAHM2026.m` — Updated
+- `conplot_GAHM2026.m` — Accepts optional `opts` struct; removed all external dependencies
+- `radplot_GAHM2026.m` — Rewritten to accept `VPrad` struct; accepts optional `opts`
+- `run_conplot_GAHM2026.m`, `run_radplot_GAHM2026.m` — Updated
 
 ### ScrubEra5 Integration (Feb 16, 2026)
 - Moved the IBTrACS CSV from `ScrubEra5/` to `input/` so both GAHM2026 and ScrubEra5 use the same file.
@@ -184,6 +184,10 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 3. **Renamed `output_info.warnings` → `output_info.diagnostics`**: Filename changed from `NAME_YEAR_GAHM2026_warnings.dat` to `NAME_DESIG_YEAR_GAHM2026_diagnostics.dat` (adds storm designation). Updated in all 3 config files, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `documentation/README_config.md`.
 4. **Unified diagnostics file logging**: Diagnostics file now opened early in `run_GAHM2026.m` (right after config loads). All `logMsg(-1, ...)` calls in `run_GAHM2026.m` changed to `logMsg(fid, ...)` so messages go to both screen and file from the start. File closed at end of `run_GAHM2026.m`. `GAHM2026.m` changed from `fopen(output.warnings,'wt')` to `fopen(output.diagnostics,'at')` (append mode).
 5. **Fixed epoch parsing bug in `getERA5Data.m`**: The timezone-offset stripping regex (`\s*[+-]\d{1,2}(:\d{2})?$`) was incorrectly matching the day portion of date-only strings like `"1970-01-01"` (stripping `-01` → `"1970-01"`). Fixed by guarding the regex with `if contains(epoch_str, ':')` so it only runs when a time component is present.
+
+### Plot Script Rename (Feb 26, 2026)
+
+1. **Removed `_blend` from plot script filenames**: `conplot_blend_GAHM2026.m` → `conplot_GAHM2026.m`, `radplot_blend_GAHM2026.m` → `radplot_GAHM2026.m`, `run_conplot_blend_GAHM2026.m` → `run_conplot_GAHM2026.m`, `run_radplot_blend_GAHM2026.m` → `run_radplot_GAHM2026.m`. Updated all internal call references in run scripts and all documentation (`PlotEvalScripts/README.md`, `SESSION_CONTEXT.md`).
 
 ### ScrubEra5 and Plotter Cleanup (Feb 19, 2026)
 
@@ -257,16 +261,16 @@ PlotEvalScripts/
 │   ├── captureGifFrame.m         (private)
 │   └── openMp4.m                 (private)
 ├── README.md                     (rewritten — Florence 2018 demo)
-├── conplot_blend_GAHM2026.m      (legacy, unchanged)
-├── radplot_blend_GAHM2026.m      (legacy, unchanged)
+├── conplot_GAHM2026.m             (legacy, unchanged)
+├── radplot_GAHM2026.m             (legacy, unchanged)
 ├── GAHM2026_ASWIP_compare.m      (legacy, unchanged)
 ├── Rmax_compare.m                 (legacy, unchanged)
 ├── plot_defaults.m                (shared options)
 ├── plot_coastline.m               (shared helper)
 ├── plot_quiver_scaled.m           (shared helper)
 ├── radial_find_maskedge.m         (utility)
-├── run_conplot_blend_GAHM2026.m   (legacy driver)
-└── run_radplot_blend_GAHM2026.m   (legacy driver)
+├── run_conplot_GAHM2026.m         (legacy driver)
+└── run_radplot_GAHM2026.m         (legacy driver)
 ```
 
 ---

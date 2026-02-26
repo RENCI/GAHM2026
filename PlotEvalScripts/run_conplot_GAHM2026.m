@@ -1,4 +1,4 @@
-%  Sample call lines for conplot_blend_GAHM2026.m
+%  Sample call lines for conplot_GAHM2026.m
 %  Uses output variables from GAHM2026.m / run_GAHM2026.m
 %
 %  Available output variables after running run_GAHM2026.m:
@@ -19,25 +19,25 @@
 opts = plot_defaults();
 
 % plot the final blended TC velocity field with mask lines
-conplot_blend_GAHM2026(Reggrid_TC_out, Reggrid_out, Trackdata, 'mvelcon', 20, opts)
+conplot_GAHM2026(Reggrid_TC_out, Reggrid_out, Trackdata, 'mvelcon', 20, opts)
 
 %% Other example calls (uncomment as needed):
 %
 % % final blended TC velocity (no mask)
-% conplot_blend_GAHM2026(Reggrid_TC_out, Reggrid_out, Trackdata, 'velcon', 20, opts)
+% conplot_GAHM2026(Reggrid_TC_out, Reggrid_out, Trackdata, 'velcon', 20, opts)
 %
 % % final blended TC pressure
-% conplot_blend_GAHM2026(Reggrid_TC_out, Reggrid_out, Trackdata, 'mprecon', 120, opts)
+% conplot_GAHM2026(Reggrid_TC_out, Reggrid_out, Trackdata, 'mprecon', 120, opts)
 %
 % % environmental velocity field
-% conplot_blend_GAHM2026(Reggrid_Env_out, Reggrid_out, Trackdata, 'mvelcon', 220, opts)
+% conplot_GAHM2026(Reggrid_Env_out, Reggrid_out, Trackdata, 'mvelcon', 220, opts)
 %
 % % GAHM vortex + inverse-tapered hurricane (env_type=3 only)
-% conplot_blend_GAHM2026(Reggrid_VVor_invtapHur_out, Reggrid_out, Trackdata, 'mvelcon', 320, opts)
+% conplot_GAHM2026(Reggrid_VVor_invtapHur_out, Reggrid_out, Trackdata, 'mvelcon', 320, opts)
 %
 %% Example: fixed domain with no animation
 % opts.domain.mode = 'fixed';
 % opts.domain.fixedLimits = [-85 -60 20 45];
 % opts.anim.gif = false;
 % opts.anim.mp4 = false;
-% conplot_blend_GAHM2026(Reggrid_TC_out, Reggrid_out, Trackdata, 'mvelcon', 20, opts)
+% conplot_GAHM2026(Reggrid_TC_out, Reggrid_out, Trackdata, 'mvelcon', 20, opts)

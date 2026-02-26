@@ -17,7 +17,7 @@
 %                 11/7/2024   - Rick Luettich
 %                 2/8/2026    - modernized (VPrad struct, opts pattern)
 
-function []=radplot_blend_GAHM2026(VPrad,Trackdata,theta_inc,ptype,fign,opts)
+function []=radplot_GAHM2026(VPrad,Trackdata,theta_inc,ptype,fign,opts)
 
 if nargin < 6
     opts = plot_defaults();
