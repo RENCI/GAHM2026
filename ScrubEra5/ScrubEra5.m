@@ -53,28 +53,31 @@ end
 
 % Generate hourly time vector and interpolate positions
 raw_time   = [ATCF_data.datetime];
-raw_lon    = [ATCF_data.lon] + 360;   % shift to 0-360 for ERA5
+raw_lon    = [ATCF_data.lon];   % track lons (typically -180 to 180)
 raw_lat    = [ATCF_data.lat];
 start_time = raw_time(1);
 end_time   = raw_time(end);
 time       = start_time:hours(1):end_time;
-real_lon   = interp1(raw_time, raw_lon, time);
-real_lat   = interp1(raw_time, raw_lat, time);
 num_times  = length(time);
 logMsg(-1, 'INFO', 'Track loaded: %d hourly times from %s to %s', num_times, string(start_time), string(end_time));
 
-% lon_idx, lat_idx are the indices into the ERA5 grid for the track positions.
-% TODO: Note that this ("*4") depends on the resolution of .25 deg, which
-% should be fixed with round(1/CONFIG.resolution) or just calc from the
-% era5 grid
-lon_idx = round(real_lon * 4);
-lat_idx = round((90 - real_lat) * 4);
-
+% Load ERA5 data (detects longitude convention)
 logMsg(-1, 'INFO', 'Loading ERA5 data from %s ...', ...
     replace(CONFIG.background_file,'<year>',string(CONFIG.storm_year)));
 era5 = getERA5Data(CONFIG,time);
 logMsg(-1, 'INFO', 'ERA5 data loaded: grid=%dx%d, %d time steps', ...
-    length(era5.lon), length(era5.lat), length(era5.time)); 
+    length(era5.lon), length(era5.lat), length(era5.time));
+
+% Shift track longitudes to match the ERA5 longitude convention
+if strcmp(era5.lon_convention, '0_360')
+    raw_lon(raw_lon < 0) = raw_lon(raw_lon < 0) + 360;
+end
+real_lon = interp1(raw_time, raw_lon, time);
+real_lat = interp1(raw_time, raw_lat, time);
+
+% Compute grid indices from the actual ERA5 coordinate vectors
+lon_idx = interp1(era5.lon, 1:length(era5.lon), real_lon, 'nearest', 'extrap');
+lat_idx = interp1(era5.lat, 1:length(era5.lat), real_lat, 'nearest', 'extrap');
 
 % era5 = 
 %   struct with fields:
@@ -146,7 +149,6 @@ for i = 1:num_times
 end
 
 %% Save output
-% TODO: fix longitude shift in createOutputStruct
 env_vals = createOutputStruct(OUTPUT, time, real_lon, real_lat, era5_lon, era5_lat);
 outfile = string(CONFIG.storm_name)+"_"+string(CONFIG.storm_designation)+"_"+string(CONFIG.storm_year)+".mat";
 if isfield(CONFIG, 'output_dir')

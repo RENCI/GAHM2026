@@ -1,6 +1,6 @@
 # GAHM2026 Refactoring Session Context
 
-**Last updated**: February 26, 2026  
+**Last updated**: March 1, 2026  
 **Purpose**: Continuity document for resuming work in a new session.
 
 ---
@@ -184,6 +184,14 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 3. **Renamed `output_info.warnings` → `output_info.diagnostics`**: Filename changed from `NAME_YEAR_GAHM2026_warnings.dat` to `NAME_DESIG_YEAR_GAHM2026_diagnostics.dat` (adds storm designation). Updated in all 3 config files, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `documentation/README_config.md`.
 4. **Unified diagnostics file logging**: Diagnostics file now opened early in `run_GAHM2026.m` (right after config loads). All `logMsg(-1, ...)` calls in `run_GAHM2026.m` changed to `logMsg(fid, ...)` so messages go to both screen and file from the start. File closed at end of `run_GAHM2026.m`. `GAHM2026.m` changed from `fopen(output.warnings,'wt')` to `fopen(output.diagnostics,'at')` (append mode).
 5. **Fixed epoch parsing bug in `getERA5Data.m`**: The timezone-offset stripping regex (`\s*[+-]\d{1,2}(:\d{2})?$`) was incorrectly matching the day portion of date-only strings like `"1970-01-01"` (stripping `-01` → `"1970-01"`). Fixed by guarding the regex with `if contains(epoch_str, ':')` so it only runs when a time component is present.
+
+### Adaptive Longitude Convention (Mar 1, 2026)
+
+1. **Detect ERA5 longitude convention in `getERA5Data.m`**: After reading `era5.lon`, the code inspects the range to determine whether the grid uses 0–360 or −180–180. The detected convention is stored in `era5.lon_convention` and logged.
+2. **Convention-aware track shifting in `ScrubEra5.m`**: Replaced the hardcoded `+ 360` shift with conditional logic that only shifts track longitudes when the ERA5 grid uses 0–360. No shift is applied for −180–180 grids.
+3. **Grid-based index computation in `ScrubEra5.m`**: Replaced the hardcoded `round(real_lon * 4)` and `round((90 - real_lat) * 4)` with `interp1`-based lookups into the actual ERA5 coordinate vectors. This eliminates both the 0.25° resolution assumption and the longitude-origin assumption. The ERA5 data is now loaded before index computation (reordered from original).
+4. **Conditional output normalization in `createOutputStruct.m`**: Replaced the blanket `- 360` with conditional normalization (`lon > 180` → subtract 360) so output is always −180–180 regardless of input convention.
+5. **Removed TODO**: Deleted the `% TODO: fix longitude shift in createOutputStruct` comment in `ScrubEra5.m`.
 
 ### Plot Script Rename (Feb 26, 2026)
 

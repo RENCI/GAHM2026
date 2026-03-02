@@ -24,6 +24,15 @@ function era5 = getERA5Data(CONFIG,time)
     era5.lat  = double(ncread(bg_file, 'latitude'));
     era5.time = ncread(bg_file, tvarname);
 
+    % Detect longitude convention from the ERA5 grid
+    if min(era5.lon) < 0
+        era5.lon_convention = '-180_180';
+    else
+        era5.lon_convention = '0_360';
+    end
+    logMsg(-1, 'INFO', 'ERA5 longitude convention detected: %s (range %.1f to %.1f)', ...
+        era5.lon_convention, min(era5.lon), max(era5.lon));
+
     tunits_str = ncreadatt(bg_file, tvarname, 'units');
     parts = strsplit(strtrim(tunits_str));
 

@@ -1,8 +1,10 @@
 function storm = createOutputStruct(OUTPUT, time, real_lon, real_lat, era5_lon, era5_lat)
 
-    output_lon = OUTPUT.lon - 360;
-    real_lon = real_lon - 360;
-    era5_lon = era5_lon - 360;
+    % Normalize all longitudes to -180..180 for downstream consumers
+    output_lon = OUTPUT.lon;
+    output_lon(output_lon > 180) = output_lon(output_lon > 180) - 360;
+    real_lon(real_lon > 180) = real_lon(real_lon > 180) - 360;
+    era5_lon(era5_lon > 180) = era5_lon(era5_lon > 180) - 360;
     mask = 1 - OUTPUT.mask;
     mask_inner = 1 - OUTPUT.mask_inner;
     
