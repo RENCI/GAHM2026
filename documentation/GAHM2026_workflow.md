@@ -9,7 +9,7 @@ Or view in any Mermaid-compatible viewer (GitHub, VS Code, etc.)
 
 flowchart TB
     subgraph CONFIG["Configuration"]
-        CONFIG_node["config/config_*.m\nStorm identity, GAHM params,\nScrubEra5 params, output settings"]
+        CONFIG_node["config/config_*.m\nStorm identity, GAHM params,\nSeparateEnvHur params, output settings"]
     end
 
     subgraph INPUT["Input Data"]
@@ -18,13 +18,13 @@ flowchart TB
         waf["WAF Raster\n(land roughness)"]
     end
 
-    subgraph SCRUB["ScrubEra5 Preprocessing"]
-        scrub["ScrubEra5.m\nExtract & filter\nenvironmental fields"]
+    subgraph SCRUB["SeparateEnvHur Preprocessing"]
+        scrub["SeparateEnvHur.m\nExtract & filter\nenvironmental fields"]
         envmat["EnvFields .mat\n(gridded env + hurricane)"]
     end
 
     subgraph DRIVER["Driver"]
-        run["run_GAHM2026.m\nLoad config, read track,\nauto-run ScrubEra5 if needed"]
+        run["run_GAHM2026.m\nLoad config, read track,\nauto-run SeparateEnvHur if needed"]
     end
 
     subgraph GAHM["GAHM2026.m  Orchestrator"]

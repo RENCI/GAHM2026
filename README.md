@@ -1,8 +1,8 @@
-# GAHM2026 — Generalized Asymmetric Holland Model <img width="70" height="70" alt="gahm" src="https://github.com/user-attachments/assets/4c152a13-d5ee-423e-bd08-594bfd9de366" />
+# GAHM2026 — Generalized Asymmetric Holland Model <img width="70" height="70" alt="gahm" src="documentation/image3.png"	" />
 
 MATLAB codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). The pipeline reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with large-scale gridded environmental fields, and writes output to NetCDF.
 
-When using gridded environmental fields (`env_info.type = 3`), the companion project **ScrubEra5** separates storm-scale features from ERA5 reanalysis data to produce the required environmental input. A unified configuration file lets both projects share storm identity and run as a single pipeline.
+When using gridded environmental fields (`env_info.type = 3`), the companion project **SeparateEnvHur** separates storm-scale features from ERA5 reanalysis data to produce the required environmental input. A unified configuration file lets both projects share storm identity and run as a single pipeline.
 
 Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 
@@ -16,7 +16,7 @@ Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 >> R = run_GAHM2026('config_Florence');       % uses config/config_Florence.m
 ```
 
-`run_GAHM2026` returns a `Result` struct containing all output fields (see [Output](#output) below). If the ScrubEra5 `.mat` file does not exist (e.g., `output/FLORENCE_2018.mat`), it will automatically run ScrubEra5 to generate it before proceeding.
+`run_GAHM2026` returns a `Result` struct containing all output fields (see [Output](#output) below). If the SeparateEnvHur `.mat` file does not exist (e.g., `output/FLORENCE_2018_AL06.mat`), it will automatically run SeparateEnvHur to generate it before proceeding.
 
 ### Plotting
 
@@ -30,31 +30,31 @@ obj.animate('mvelcon', 1);                    % animated GIF/MP4
 
 See [`PlotEvalScripts/README.md`](PlotEvalScripts/README.md) for the full `GAHM2026Plotter` class reference.
 
-### Running ScrubEra5 separately
+### Running SeparateEnvHur separately
 
-You can run ScrubEra5 standalone using the same config file:
+You can run SeparateEnvHur standalone using the same config file:
 
 ```matlab
 >> cd GAHM2026
->> addpath('ScrubEra5')
->> env_vals = ScrubEra5('config/config_GAHM2026_default');  % default config
->> env_vals = ScrubEra5('config/config_Florence');           % storm-specific config
+>> addpath('SeparateEnvHur')
+>> env_vals = SeparateEnvHur('config/config_GAHM2026_default');  % default config
+>> env_vals = SeparateEnvHur('config/config_Florence');          % storm-specific config
 ```
 
 ---
 
 ## Directory Layout
 
-ScrubEra5 lives inside the GAHM2026 directory:
+SeparateEnvHur lives inside the GAHM2026 directory:
 
 ```
 GAHM2026/
 ├── run_GAHM2026.m             — top-level driver (returns Result struct)
-├── GAHM2026.m                 — master orchestrator
+├── GAHM2026.m                 — main GAHM2026 orchestrator
 ├── config/
-│   ├── config_GAHM2026_default.m — default unified config (ScrubEra5 + GAHM2026)
+│   ├── config_GAHM2026_default.m — default config (SeparateEnvHur + GAHM2026)
 │   └── config_Florence.m      — example storm-specific config
-├── util/                      — GAHM pipeline functions and shared utilities
+├── util/                      — GAHM2026 pipeline functions and shared utilities
 ├── input/                     — track files (IBTrACS, ATCF, fort22)
 ├── output/                    — NetCDF output, warning logs
 ├── PlotEvalScripts/           — GAHM2026Plotter class and legacy plotting scripts
@@ -62,8 +62,8 @@ GAHM2026/
 ├── documentation/             — derivation, call tree, data structures, config reference
 ├── docs/                      — GitHub Pages site
 │
-└── ScrubEra5/
-    ├── ScrubEra5.m             — vortex scrubber entry point
+└── SeparateEnvHur/
+    ├── SeparateEnvHur.m        — vortex scrubber entry point
     ├── getERA5Data.m           — ERA5 NetCDF reader (supports <year> placeholder)
     ├── findCutline.m           — wind threshold contour detection
     ├── computeBasicField.m     — environmental field separation
@@ -77,11 +77,11 @@ GAHM2026/
 
 ### Config file layout (`config/config_GAHM2026_default.m`)
 
-Every config file has four sections. Storm identity parameters are defined once and shared by both ScrubEra5 and GAHM2026. The driver validates that `storm_year` is consistent with `storm_start` and `storm_end` at startup.
+Every config file has four sections. Storm identity parameters are defined once and shared by both SeparateEnvHur and GAHM2026. The driver validates that `storm_year` is consistent with `storm_start` and `storm_end` at startup.
 
 #### 1. Shared storm identity
 
-These values are defined as plain workspace variables and automatically populated into both the `scrub_info` and `storm_info` structs:
+These values are defined as plain workspace variables and automatically populated into both the `sepenvhur` and `storm_info` structs:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
@@ -92,7 +92,7 @@ These values are defined as plain workspace variables and automatically populate
 | `storm_start` | Start time for processing (shared) | `datetime(2018,9,10,0,0,0)` |
 | `storm_end` | End time for processing (shared) | `datetime(2018,9,12,0,0,0)` |
 
-#### 2. ScrubEra5 parameters (`scrub_info.*`)
+#### 2. SeparateEnvHur parameters (`sepenvhur.*`)
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
@@ -107,7 +107,7 @@ These values are defined as plain workspace variables and automatically populate
 | `wind_threshold_inner` | Inner cutline threshold (m/s, 34 kt) | `34/1.944` |
 | `debug` | Print debug messages | `true` |
 
-> **Note:** `scrub_info.storm_name`, `scrub_info.storm_year`, `scrub_info.storm_designation`, `scrub_info.track_file`, `scrub_info.storm_start`, and `scrub_info.storm_end` are automatically populated from the shared variables — do not set them separately. Likewise, `storm_info.starttime` and `storm_info.endtime` are derived from `storm_start` and `storm_end`.
+> **Note:** `sepenvhur.storm_name`, `sepenvhur.storm_year`, `sepenvhur.storm_designation`, `sepenvhur.track_file`, `sepenvhur.storm_start`, and `sepenvhur.storm_end` are automatically populated from the shared variables — do not set them separately. Likewise, `storm_info.starttime` and `storm_info.endtime` are derived from `storm_start` and `storm_end`.
 
 #### 3. GAHM2026 parameters
 
@@ -130,7 +130,7 @@ The `env_info.file_name` is derived from the shared storm identity:
 env_info.file_name = sprintf('%s_%d', storm_name, storm_year);  % e.g. 'FLORENCE_2018'
 ```
 
-This matches the output filename that ScrubEra5 produces (`FLORENCE_2018.mat`), so the two projects are linked without any manual coordination.
+This matches the output filename that SeparateEnvHur produces (`FLORENCE_2018.mat`), so the two projects are linked without any manual coordination.
 
 ---
 
@@ -138,18 +138,18 @@ This matches the output filename that ScrubEra5 produces (`FLORENCE_2018.mat`), 
 
 When `run_GAHM2026` is called and `env_info.type == 3`:
 
-1. It checks whether `<env_info.file_name>.mat` exists (e.g., `output/FLORENCE_2018.mat`).
+1. It checks whether `<env_info.file_name>.mat` exists (e.g., `output/FLORENCE_2018_AL06.mat`). This mat file contains the environmental fields needed by GAHM2026.
 2. If the file exists → proceeds directly to GAHM2026 computation.
-3. If the file is missing → locates `ScrubEra5/`, calls `ScrubEra5(scrub_info)`, saves the `.mat` file, and continues to GAHM2026.
+3. If the file is missing → calls `SeparateEnvHur(sepenvhur)`, saves the `.mat` file, and continues to GAHM2026.
 
 ```
 run_GAHM2026
   │
-  ├── Load config → storm_info, scrub_info, env_info, ...
+  ├── Load config → storm_info, sepenvhur, env_info, ...
   ├── Download IBTrACS if missing
   ├── Check for FLORENCE_2018.mat
   │     │
-  │     └── Missing? ──► ScrubEra5(scrub_info)
+  │     └── Missing? ──► SeparateEnvHur(sepenvhur)
   │                         ├── Load ERA5 NetCDF
   │                         ├── Extract & filter vortex
   │                         └── Save FLORENCE_2018.mat
@@ -170,8 +170,8 @@ run_GAHM2026
    track_file        = 'ibtracs.NA.list.v04r01.csv';
    storm_designation = 'AL14';
    ```
-3. Update `scrub_info` with the path to the ERA5 data and the desired extraction time window.
-4. Update `storm_start` and `storm_end` to set the processing time window (used by both ScrubEra5 and GAHM2026).
+3. Update `sepenvhur` with the path to the ERA5 data and the desired extraction time window.
+4. Update `storm_start` and `storm_end` to set the processing time window (used by both SeparateEnvHur and GAHM2026).
 5. Adjust any model parameters as needed.
 6. Run:
    ```matlab
@@ -190,7 +190,7 @@ Place in `GAHM2026/input/`. If not found, `run_GAHM2026` will attempt to downloa
 
 ### ERA5 reanalysis data
 
-ERA5 NetCDF files must contain variables `msl`, `u10`, `v10`, and `time` (or `valid_time`). The file path is specified in `scrub_info.background_file`. Use the `<year>` placeholder in the path to have it automatically replaced with `storm_year` at runtime (e.g., `/data/ERA5/<year>/<year>.global.nc`).
+ERA5 NetCDF files must contain variables `msl`, `u10`, `v10`, and `time` (or `valid_time`). The file path is specified in `sepenvhur.background_file`. Use the `<year>` placeholder in the path to have it automatically replaced with `storm_year` at runtime (e.g., `/data/ERA5/<year>/<year>.global.nc`).
 
 ---
 
@@ -214,7 +214,7 @@ ERA5 NetCDF files must contain variables `msl`, `u10`, `v10`, and `time` (or `va
 
 ### Gridded NetCDF output (`output_info.type = "grid"`)
 
-A NetCDF file is written to `output/<storm>_<year>.nc` containing:
+A NetCDF file is written to `output/<storm>_<year>_<designation>.nc` (e.g.,  `FLORENCE_AL06_2018.nc`) containing:
 - Combined TC wind and pressure fields (`Reggrid_TC_out`)
 - Environmental fields (`Reggrid_Env_out`)
 - Grid coordinates and timestamps (`Reggrid_out`)
@@ -223,23 +223,23 @@ A NetCDF file is written to `output/<storm>_<year>.nc` containing:
 
 MATLAB structs are returned in the `Result` struct with wind velocity (U10, V10) and pressure at specified lon/lat locations.
 
-### ScrubEra5 intermediate output
+### SeparateEnvHur intermediate output
 
-The `.mat` file (e.g., `FLORENCE_2018.mat`) contains the `env_vals` struct with:
+The `.mat` file (e.g., `FLORENCE_2018_AL06.mat`) contains the `env_vals` struct with:
 - Environmental fields: `env_msl`, `env_u10`, `env_v10`
 - Hurricane fields: `hur_msl`, `hur_u10`, `hur_v10`
-- Vortex masks: `Vortex_mask`, `Vortex_mask34`
+- Vortex masks: `Vortex_mask`, `Vortex_mask_inner`
 - Grid coordinates: `Lo`, `La`
 - Track positions: `BestTrack_lon/lat`, `min_pressure_center_lon/lat`
 
 ---
 
-## Backward Compatibility
+<!--## Backward Compatibility
 
 | Scenario | What to do |
 |----------|------------|
-| Existing `.mat` file already generated | `run_GAHM2026` — skips ScrubEra5, runs GAHM2026 directly |
-| New storm with auto-chaining | Copy the default config, update storm identity, and call `run_GAHM2026('config_<Storm>')` |
+| Existing `.mat` file already generated | `run_GAHM2026` — skips SeparateEnvHur, runs GAHM2026 directly |
+| New storm with auto-chaining | Copy the default config, update storm identity, and call `run_GAHM2026('config_<Storm>')` |-->
 
 ---
 
@@ -254,13 +254,13 @@ logMsg(fid, 'ERROR', 'File not found: %s', fname);   % terminates via error()
 logMsg(-1,  'DEBUG', 'grid=%dx%d', nx, ny);           % stdout only (fid=-1)
 ```
 
-Messages are printed to stdout and optionally to a log file. The `ERROR` level logs the message and then calls `error()` to terminate execution. The caller name is determined automatically via `dbstack`. Both GAHM2026 and ScrubEra5 use `logMsg` for all logging.
+Messages are printed to stdout and optionally to a log file. The `ERROR` level logs the message and then calls `error()` to terminate execution. The caller name is determined automatically via `dbstack`. Both GAHM2026 and SeparateEnvHur use `logMsg` for all logging.
 
 ---
 
 ## Shared Utilities
 
-GAHM2026 and ScrubEra5 share the following utilities in `util/`:
+GAHM2026 and SeparateEnvHur share the following utilities in `util/`:
 
 | File | Purpose |
 |------|---------|
@@ -280,4 +280,4 @@ GAHM2026 and ScrubEra5 share the following utilities in `util/`:
 - See [`documentation/GAHM_struct.md`](documentation/GAHM_struct.md) for the GAHM data structure definition.
 - See [`documentation/README_config.md`](documentation/README_config.md) for the complete configuration parameter reference.
 - See [`PlotEvalScripts/README.md`](PlotEvalScripts/README.md) for the GAHM2026Plotter class guide.
-- See [`ScrubEra5/README.md`](ScrubEra5/README.md) for details on the vortex scrubbing algorithm.
+- See [`SeparateEnvHur/README.md`](SeparateEnvHur/README.md) for details on the vortex scrubbing algorithm.

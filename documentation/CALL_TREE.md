@@ -25,10 +25,10 @@
 
 ### Step 1: `run_GAHM2026.m` (driver function)
 
-Loads configuration from `config/config_GAHM2026_default.m` (or a user-specified config), reads the storm track data once (`read_IBTrACS` or `read_ATCF_fort22`), and passes it to both ScrubEra5 and GAHM2026:
+Loads configuration from `config/config_GAHM2026_default.m` (or a user-specified config), reads the storm track data once (`read_IBTrACS` or `read_ATCF_fort22`), and passes it to both SeparateEnvHur and GAHM2026:
 
 1. Reads track file → `ATCF_data_in`
-2. Calls `ScrubEra5(scrub_info, ATCF_data_in)` (if env_type=3 and `.mat` missing)
+2. Calls `SeparateEnvHur(sepenvhur, ATCF_data_in)` (if env_type=3 and `.mat` missing)
 3. Calls `GAHM2026(storm_info, ATCF_data_in, ...)` (the orchestrator)
 4. Calls `writeGAHM2026NetCdf.m` (if `output_info.type == "grid"`)
 
@@ -158,7 +158,7 @@ run_GAHM2026.m
 │   └── computeRmaxTot.m             [if ASWIP]
 │       └── thetaToQuadrantPair.m
 ├── read_IBTrACS.m                   [if IBTrACS]
-├── ScrubEra5.m                      [if env_type==3 and .mat missing]
+├── SeparateEnvHur.m                      [if env_type==3 and .mat missing]
 ├── GAHM2026.m (ATCF_data_in passed in)
 │   ├── sliceTrack [local]
 │   ├── loadEnvFields [local]

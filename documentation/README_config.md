@@ -1,6 +1,6 @@
 # GAHM2026 Configuration Reference
 
-Complete reference for all configuration parameters used by GAHM2026 and ScrubEra5.
+Complete reference for all configuration parameters used by GAHM2026 and SeparateEnvHur.
 
 Configuration files are located in `config/` and follow the naming convention `config_<StormName>.m`. The default config is `config/config_GAHM2026.m`. See the top-level [README](../README.md) for usage examples and auto-chaining behavior.
 
@@ -8,11 +8,11 @@ Configuration files are located in `config/` and follow the naming convention `c
 
 ## Config File Layout
 
-Every config file has the following sections. Storm identity parameters are defined once as plain MATLAB workspace variables and automatically populated into both the `scrub_info` and `storm_info` structs.
+Every config file has the following sections. Storm identity parameters are defined once as plain MATLAB workspace variables and automatically populated into both the `sepenvhur` and `storm_info` structs.
 
 ### 1. Shared Storm Identity
 
-These variables are used by both ScrubEra5 and GAHM2026:
+These variables are used by both SeparateEnvHur and GAHM2026:
 
 | Variable | Type | Description | Example |
 |----------|------|-------------|---------|
@@ -24,11 +24,11 @@ These variables are used by both ScrubEra5 and GAHM2026:
 | `storm_start` | datetime | Start time for processing | `datetime(2018,9,10,0,0,0)` |
 | `storm_end` | datetime | End time for processing | `datetime(2018,9,18,0,0,0)` |
 
-`storm_start` and `storm_end` define the processing time window for both ScrubEra5 (ERA5 extraction) and GAHM2026 (track slicing). They are automatically propagated into `scrub_info.storm_start`, `scrub_info.storm_end`, `storm_info.starttime`, and `storm_info.endtime`.
+`storm_start` and `storm_end` define the processing time window for both SeparateEnvHur (ERA5 extraction) and GAHM2026 (track slicing). They are automatically propagated into `sepenvhur.storm_start`, `sepenvhur.storm_end`, `storm_info.starttime`, and `storm_info.endtime`.
 
 ---
 
-### 2. ScrubEra5 Parameters (`scrub_info.*`)
+### 2. SeparateEnvHur Parameters (`sepenvhur.*`)
 
 Controls ERA5 data extraction and vortex scrubbing. The fields `storm_name`, `storm_year`, `storm_designation`, `track_file`, `storm_start`, and `storm_end` are populated from the shared variables — do not set them separately.
 
@@ -121,7 +121,7 @@ Controls how the large-scale environmental velocity and pressure fields are hand
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `type` | numeric | Environmental field method: `1` = ADCIRC/ASWIP translation velocity, `2` = 0.6 × translation vel + 20° CCW rotation (Lin & Chavez 2012), `3` = gridded environmental field from ScrubEra5 | `3` |
+| `type` | numeric | Environmental field method: `1` = ADCIRC/ASWIP translation velocity, `2` = 0.6 × translation vel + 20° CCW rotation (Lin & Chavez 2012), `3` = gridded environmental field from SeparateEnvHur | `3` |
 | `file_name` | char | Base path to `.mat` file (no extension). Derived from shared storm identity. Ignored for type 1 or 2 | `fullfile('output', sprintf('%s_%d', storm_name, storm_year))` |
 | `taper_flag` | logical | Apply taper function to GAHM speed and pressure at blending boundary | `true` |
 | `taper_mindelr2r1` | numeric | Minimum value of (r2−r1)/r2. If violated, r1 is reduced | `0.1` |
@@ -129,7 +129,7 @@ Controls how the large-scale environmental velocity and pressure fields are hand
 
 #### Gridded Environmental File Format (`env_info.type = 3`)
 
-When `env_info.type = 3`, the `.mat` file (produced by ScrubEra5) must contain a struct with:
+When `env_info.type = 3`, the `.mat` file (produced by SeparateEnvHur) must contain a struct with:
 
 | Field | Dimensions | Description |
 |-------|-----------|-------------|
@@ -246,7 +246,7 @@ The number of longitude and latitude values must be equal and are fixed in time.
    storm_start       = datetime(2018,10,7,0,0,0);
    storm_end         = datetime(2018,10,12,0,0,0);
    ```
-3. Update `scrub_info.background_file` with the path to the ERA5 data (use `<year>` as a placeholder for the storm year).
+3. Update `sepenvhur.background_file` with the path to the ERA5 data (use `<year>` as a placeholder for the storm year).
 4. Adjust GAHM model parameters as needed.
 5. Run:
    ```matlab

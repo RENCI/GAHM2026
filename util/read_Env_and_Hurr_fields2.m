@@ -56,6 +56,8 @@ numline=endline-startline+1;
 VEnv_10_10(numline).lon=0;
 VHur_10_10(numline).lon=0;
 PscaleEnv(numline)=0;
+Masks(numline).lon=0;
+
 i=0;
 for nl=startline:endline
     i=i+1;

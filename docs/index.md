@@ -9,7 +9,7 @@ title: GAHM2026
 
 GAHM2026 is a MATLAB codebase for computing parametric hurricane wind and pressure fields. Given tropical cyclone track data (best-track observations or forecasts), the model solves for the Generalized Asymmetric Holland Model (GAHM) parameters at each timestep, generates azimuthally varying radial wind and pressure profiles, and interpolates them onto a regular lon/lat grid for output.
 
-When paired with the companion **ScrubEra5** preprocessor, GAHM2026 can blend its parametric vortex with large-scale environmental fields extracted from ERA5 reanalysis data, producing complete tropical cyclone wind and pressure fields suitable for storm surge and coastal hazard modeling.
+When paired with the companion **SeparateEnvHur** preprocessor, GAHM2026 can blend its parametric vortex with large-scale environmental fields extracted from ERA5 reanalysis data, producing complete tropical cyclone wind and pressure fields suitable for storm surge and coastal hazard modeling.
 
 Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 
@@ -19,7 +19,7 @@ Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 
 - **Asymmetric wind profiles** — Computes separate Holland B parameter and radius of maximum winds in each quadrant (NE, SE, SW, NW) at up to three isotach levels (34, 50, 64 kt)
 - **Multiple track formats** — Reads IBTrACS, ATCF, and fort.22 track files; auto-downloads IBTrACS data if not present
-- **Environmental field blending** — Three environmental velocity options: ADCIRC/ASWIP translation velocity, Lin & Chavas (2012) formulation, or gridded ERA5-derived fields via ScrubEra5
+- **Environmental field blending** — Three environmental velocity options: ADCIRC/ASWIP translation velocity, Lin & Chavas (2012) formulation, or gridded ERA5-derived fields via SeparateEnvHur
 - **Taper function** — Smooth blending at the hurricane/environment boundary using a hyperbolic tangent taper
 - **Wind Adjustment Factor** — Optional land-roughness correction from GeoTIFF rasters
 - **NetCDF and point output** — Gridded NetCDF4 output or evaluation at arbitrary lon/lat points
@@ -53,7 +53,7 @@ Two solver backends are available: version 3 (iterative fixed-point) and version
 │                                                         │
 │  1. Load config (config/config_*.m)                     │
 │  2. Download IBTrACS if missing                         │
-│  3. Auto-run ScrubEra5 if env_type=3 and .mat missing   │
+│  3. Auto-run SeparateEnvHur if env_type=3 and .mat missing   │
 │  4. Call GAHM2026.m orchestrator                        │
 │  5. Write NetCDF output                                 │
 │  6. Return Result struct                                │
@@ -90,7 +90,7 @@ R = run_GAHM2026;                          % default config (Florence 2018)
 R = run_GAHM2026('config_Florence');       % storm-specific config
 ```
 
-If `env_info.type = 3` and the ScrubEra5 `.mat` file does not exist, `run_GAHM2026` will automatically run ScrubEra5 to generate it before proceeding.
+If `env_info.type = 3` and the SeparateEnvHur `.mat` file does not exist, `run_GAHM2026` will automatically run SeparateEnvHur to generate it before proceeding.
 
 ### Plotting
 
@@ -110,9 +110,9 @@ obj.animate('mvelcon', 1);
 
 ---
 
-## ScrubEra5 — Environmental Field Extraction
+## SeparateEnvHur — Environmental Field Extraction
 
-ScrubEra5 separates tropical cyclone vortex fields from ERA5 reanalysis data to produce gridded environmental and hurricane-scale fields. The algorithm:
+SeparateEnvHur separates tropical cyclone vortex fields from ERA5 reanalysis data to produce gridded environmental and hurricane-scale fields. The algorithm:
 
 1. Loads ERA5 global u10, v10, and mean sea-level pressure
 2. Tracks the storm center using the pressure minimum
@@ -121,18 +121,18 @@ ScrubEra5 separates tropical cyclone vortex fields from ERA5 reanalysis data to 
 5. Computes the hurricane field as the residual (total minus environmental)
 6. Saves inner and outer vortex masks for blending
 
-ScrubEra5 can run automatically as part of the GAHM2026 pipeline or standalone:
+SeparateEnvHur can run automatically as part of the GAHM2026 pipeline or standalone:
 
 ```matlab
-addpath('ScrubEra5')
-env_vals = ScrubEra5('config/config_GAHM2026_default');
+addpath('SeparateEnvHur')
+env_vals = SeparateEnvHur('config/config_GAHM2026_default');
 ```
 
 ---
 
 ## Configuration
 
-Configuration files live in `config/` and define all parameters for both ScrubEra5 and GAHM2026. Storm identity is defined once at the top and shared:
+Configuration files live in `config/` and define all parameters for both SeparateEnvHur and GAHM2026. Storm identity is defined once at the top and shared:
 
 ```matlab
 storm_name        = 'FLORENCE';
@@ -147,7 +147,7 @@ Key parameter groups:
 
 | Struct | Purpose |
 |--------|---------|
-| `scrub_info` | ERA5 file path, grid sizes, wind thresholds, filter parameters |
+| `sepenvhur` | ERA5 file path, grid sizes, wind thresholds, filter parameters |
 | `storm_info` | Track file path and format, start/end times |
 | `GAHM_param_info` | Holland B limits, boundary layer factor, solver version |
 | `GAHM_compute_info` | Radial grid resolution (ntheta, nr, delr) |
@@ -171,7 +171,7 @@ GAHM2026/
 ├── util/                      — GAHM pipeline functions
 ├── input/                     — track data files (IBTrACS, ATCF)
 ├── output/                    — NetCDF output, warning logs
-├── ScrubEra5/                 — ERA5 environmental field extraction
+├── SeparateEnvHur/                 — ERA5 environmental field extraction
 ├── PlotEvalScripts/           — GAHM2026Plotter class & legacy scripts
 ├── tools/                     — regression testing harness
 └── documentation/             — derivation, call tree, data structures

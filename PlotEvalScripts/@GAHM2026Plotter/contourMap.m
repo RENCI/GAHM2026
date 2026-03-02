@@ -39,6 +39,8 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
     itot     = length(plotdata);
 
     ip = resolveTime(obj, time);
+    ThisTime=datagrid(ip).datetime;
+    ThisTime.Format='yyyy-MM-dd HH:mm';
 
     con_Vplot = strcmp(ptype,'velcon') || strcmp(ptype,'mvelcon');
     con_Pplot = strcmp(ptype,'precon') || strcmp(ptype,'mprecon') || strcmp(ptype,'prequiv');
@@ -68,8 +70,7 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
 
         addQuiver(obj, ip, plotdata);
 
-        titleStr = ['Wind Speed (kts) 10 min @ 10 m  ' ...
-            datestr(datetime(datagrid(ip).datetime),'mmm dd yyyy HH:MM') ' UTC'];
+        titleStr =  ['Wind Speed (kts) 10 min @ 10 m  ' char(string(ThisTime)) ' UTC'];
     end
 
     %% pressure contour
@@ -86,8 +87,7 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
             addQuiver(obj, ip, plotdata);
         end
 
-        titleStr = ['Atm Pressure (mb)  ' ...
-            datestr(datetime(datagrid(ip).datetime),'mmm dd yyyy HH:MM') ' UTC'];
+        titleStr = ['Atm Pressure (mb)  ' char(string(ThisTime)) ' UTC'];
     end
 
     %% overlays common to both

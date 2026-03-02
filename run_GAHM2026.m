@@ -83,38 +83,38 @@ if output_info.type == "grid"
     end
 end
 
-%% Auto-run ScrubEra5 if env_info.type==3 and the .mat file does not exist
+%% Auto-run SeparateEnvHur if env_info.type==3 and the .mat file does not exist
 if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
-    % TODO:  THE FOLLOWING DOES NOT LOOK RIGHT.  just because the variable
-    % scrub_info (which contains the scrubera5 config parameters) exists
+    % TODO:  THE FOLLOWING DOES NOT LOOK RIGHT.  Just because the variable
+    % sepenvhur (which contains the separateenvhur config parameters) exists
     % does NOT mean that the EnvFields.mat file does. 
-    if ~exist('scrub_info', 'var')
+    if ~exist('sepenvhur', 'var')
         error(['EnvFields file not found: %s.mat\n' ...
-               'Use a unified config (with scrub_info) to enable auto-generation, ' ...
-               'or run ScrubEra5 separately first.'], env_info.file_name);
+               'Use a unified config (with sepenvhur) to enable auto-generation, ' ...
+               'or run SeparateEnvHur separately first.'], env_info.file_name);
     end
     logMsg(fid, 'INFO', 'EnvFields file not found: %s.mat', env_info.file_name);
-    logMsg(fid, 'INFO', 'Running ScrubEra5 to generate it ...');
+    logMsg(fid, 'INFO', 'Running SeparateEnvHur to generate it ...');
 
-    % Locate ScrubEra5 — subdirectory of GAHM2026
-    scrub_dir = fullfile(pwd, 'ScrubEra5');
-    if ~exist(fullfile(scrub_dir, 'ScrubEra5.m'), 'file')
-        error('Cannot find ScrubEra5.m in %s.', scrub_dir);
+    % Locate SeparateEnvHur — subdirectory of GAHM2026
+    sep_dir = fullfile(pwd, 'SeparateEnvHur');
+    if ~exist(fullfile(sep_dir, 'SeparateEnvHur.m'), 'file')
+        error('Cannot find SeparateEnvHur.m in %s.', sep_dir);
     end
-    addpath(scrub_dir);
+    addpath(sep_dir);
 
-    % Run ScrubEra5 with the scrub_info struct and pre-loaded track data
-    ScrubEra5(scrub_info, ATCF_data_in);
+    % Run SeparateEnvHur with the sepenvhur struct and pre-loaded track data
+    SeparateEnvHur(sepenvhur, ATCF_data_in);
 
-    % ScrubEra5 saves its output as <storm_name>_<storm_year>.mat in its
+    % SeparateEnvHur saves its output as <storm_name>_<storm_year>.mat in its
     % own working directory.  Move it here if needed.
     expected_mat = [env_info.file_name '.mat'];
     if ~exist(expected_mat, 'file')
-        error('ScrubEra5 completed but %s was not found.', expected_mat);
+        error('SeparateEnvHur completed but %s was not found.', expected_mat);
     end
-    logMsg(fid, 'INFO', 'ScrubEra5 complete. %s is ready.', expected_mat);
+    logMsg(fid, 'INFO', 'SeparateEnvHur complete. %s is ready.', expected_mat);
 else
-    logMsg(fid, 'INFO', 'EnvField file %s from ScrubEra5 already exists.  Using.', [env_info.file_name '.mat']);
+    logMsg(fid, 'INFO', 'EnvField file %s from SeparateEnvHur already exists.  Using.', [env_info.file_name '.mat']);
 end
 
 %% compute and output final TC wind/pressure fields as well as additional diagnostic information

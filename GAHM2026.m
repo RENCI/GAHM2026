@@ -110,10 +110,10 @@ if WAF_flag
     [WAF_data,WAF_metadata]=readgeoraster(WAF_info.file_name);    
 end
 
-%% Master time loop
+%% Main time loop
 
 nBTtime=ATCF_endline-ATCF_startline+1;
-logMsg(fid, 'INFO', 'Beginning master time loop: %d track time steps', nBTtime);
+logMsg(fid, 'INFO', 'Beginning main time loop: %d track time steps', nBTtime);
 i=0;
 otime=0;
 VEnvrad_10_10 = [];
@@ -250,7 +250,7 @@ for itime=1:nBTtime
     otime=otime+1;
     GAHM_out(otime)=GAHM_t2;
 
-end  % end master time loop
+end  % end main time loop
 
 logMsg(fid, 'INFO', 'Completed calculations on radial grid. Preparing output');
 if debug, logMsg(fid, 'DEBUG', 'Master time loop complete: %d output time steps produced', i); end

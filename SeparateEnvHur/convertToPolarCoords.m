@@ -1,6 +1,14 @@
 function [Xq, Yq, hr_u, hr_v] = convertToPolarCoords( ...
-        lon, lat, u, v, psl, wind, LatIdx, LonIdx, cx, cy, CONFIG)
-    
+          lon, lat, u, v, LonIdx, LatIdx, cx, cy, CONFIG)
+    % lon
+    % lat
+    % u
+    % v
+    % LonIdx
+    % LatIdx
+    % cx
+    % cy
+
     half = CONFIG.grid_half_size;
     rows = LatIdx-half : LatIdx+half;
     cols = LonIdx-half : LonIdx+half;

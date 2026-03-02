@@ -15,14 +15,14 @@ MATLAB codebase for computing hurricane wind and pressure fields using the Gener
 
 ## Current State
 
-All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization fully modernized with the `GAHM2026Plotter` class (7 build phases complete). ScrubEra5 subproject fully integrated: shared IBTrACS file, shared track reader (`util/read_IBTrACS.m`), unified config with `<year>` placeholder, track loaded once in `run_GAHM2026.m` and passed to both subsystems. All `fprintf` logging converted to `logMsg` across `util/` and `GAHM2026.m`. GitHub Pages site created in `docs/`.
+All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization fully modernized with the `GAHM2026Plotter` class (7 build phases complete). SeparateEnvHur subproject fully integrated: shared IBTrACS file, shared track reader (`util/read_IBTrACS.m`), unified config with `<year>` placeholder, track loaded once in `run_GAHM2026.m` and passed to both subsystems. All `fprintf` logging converted to `logMsg` across `util/` and `GAHM2026.m`. GitHub Pages site created in `docs/`.
 
 ### Active Files
 
 | Role | Files |
 |------|-------|
 | Driver | `run_GAHM2026.m` (returns `Result` struct) |
-| Configuration | `config/config_GAHM2026_default.m` (Florence 2018, unified: ScrubEra5 + GAHM2026) |
+| Configuration | `config/config_GAHM2026_default.m` (Florence 2018, unified: SeparateEnvHur + GAHM2026) |
 | Configuration | `config/config_Florence.m` (short Florence run for testing) |
 | Orchestrator | `GAHM2026.m` |
 | GAHM pipeline | `util/GAHM2026_prep.m`, `util/GAHM2026_consistency.m`, `util/GAHM2026_solve.m` |
@@ -45,7 +45,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | `output/` | NetCDF output files (`stormname_year.nc`) |
 | `documentation/` | Call tree, data structure reference, refactoring notes, this file |
 | `tools/` | Regression testing harness |
-| `ScrubEra5/` | ERA5 environmental field extraction subproject (uses shared config from `config/`, shared track reader from `util/`) |
+| `SeparateEnvHur/` | ERA5 environmental field extraction subproject (uses shared config from `config/`, shared track reader from `util/`) |
 | `docs/` | GitHub Pages site (`_config.yml`, `index.md`) |
 | `PlotEvalScripts/` | Plotting class, legacy scripts, helpers |
 
@@ -154,33 +154,33 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 - `radplot_GAHM2026.m` — Rewritten to accept `VPrad` struct; accepts optional `opts`
 - `run_conplot_GAHM2026.m`, `run_radplot_GAHM2026.m` — Updated
 
-### ScrubEra5 Integration (Feb 16, 2026)
-- Moved the IBTrACS CSV from `ScrubEra5/` to `input/` so both GAHM2026 and ScrubEra5 use the same file.
+### SeparateEnvHur Integration (Feb 16, 2026)
+- Moved the IBTrACS CSV from `SeparateEnvHur/` to `input/` so both GAHM2026 and SeparateEnvHur use the same file.
 
 ### Unified Config (Feb 16, 2026)
-- Promoted the unified config pattern to the default `config/config_GAHM2026_default.m`. Every config now includes both `scrub_info` (ScrubEra5 parameters) and the GAHM2026 parameter structs, with shared storm identity defined once at the top.
-- Deleted `ScrubEra5/config.m` — ScrubEra5 is now driven from config files in `config/`.
+- Promoted the unified config pattern to the default `config/config_GAHM2026_default.m`. Every config now includes both `sepenvhur` (SeparateEnvHur parameters) and the GAHM2026 parameter structs, with shared storm identity defined once at the top.
+- Deleted `SeparateEnvHur/config.m` — SeparateEnvHur is now driven from config files in `config/`.
 
 ### Logging, Naming, and Integration Cleanup (Feb 18–19, 2026)
 
 1. **`logMsg` adoption**: Converted all `fprintf` statements to `logMsg(fid, level, fmt, varargin)` across `util/` and `GAHM2026.m`. The `tools/` directory intentionally still uses `fprintf` (standalone utilities).
 2. **Renamed `nplot` → `fign`** throughout `@GAHM2026Plotter` class methods, standalone plotting scripts in `PlotEvalScripts/`, and documentation.
 3. **Renamed `read_IBTrACS2.m` → `read_IBTrACS.m`** and updated all call sites and documentation.
-4. **Removed `ScrubEra5/loadTrackData.m`**: `ScrubEra5.m` now uses `util/read_IBTrACS.m` as fallback for standalone usage.
-5. **Renamed `scrub_info.nc_file` → `scrub_info.background_file`** throughout code and documentation.
-6. **Renamed `storm_info.file_name` → `storm_info.track_file`** throughout: config files, `run_GAHM2026.m`, `GAHM2026.m`, `util/read_IBTrACS.m`, `ScrubEra5/ScrubEra5.m`, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `documentation/README_config.md`.
-7. **Generalized `<year>` placeholder**: `scrub_info.background_file` in config files uses `<year>` instead of a hard-coded year. `ScrubEra5/getERA5Data.m` resolves via `strrep(CONFIG.background_file, '<year>', num2str(CONFIG.storm_year))`.
+4. **Removed `SeparateEnvHur/loadTrackData.m`**: `SeparateEnvHur.m` now uses `util/read_IBTrACS.m` as fallback for standalone usage.
+5. **Renamed `sepenvhur.nc_file` → `sepenvhur.background_file`** throughout code and documentation.
+6. **Renamed `storm_info.file_name` → `storm_info.track_file`** throughout: config files, `run_GAHM2026.m`, `GAHM2026.m`, `util/read_IBTrACS.m`, `SeparateEnvHur/SeparateEnvHur.m`, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `documentation/README_config.md`.
+7. **Generalized `<year>` placeholder**: `sepenvhur.background_file` in config files uses `<year>` instead of a hard-coded year. `SeparateEnvHur/getERA5Data.m` resolves via `strrep(CONFIG.background_file, '<year>', num2str(CONFIG.storm_year))`.
 8. **Storm year validation**: Added `storm_year` vs `storm_start`/`storm_end` consistency checks in `run_GAHM2026.m` (ERROR on mismatch with `storm_start`, WARNING for `storm_end` to allow year-boundary storms).
-9. **Consolidated track loading**: Track is now read once in `run_GAHM2026.m` (via `read_IBTrACS` or `read_ATCF_fort22`) with storm name validation, then passed to both `ScrubEra5(scrub_info, ATCF_data_in)` and `GAHM2026(storm_info, ATCF_data_in, ...)`. `GAHM2026.m` signature now takes `ATCF_data_in` as 2nd arg. The old `readAndSliceTrack` local function was renamed to `sliceTrack` (time slicing only, no I/O). `ScrubEra5.m` accepts optional 2nd arg for pre-loaded track data.
+9. **Consolidated track loading**: Track is now read once in `run_GAHM2026.m` (via `read_IBTrACS` or `read_ATCF_fort22`) with storm name validation, then passed to both `SeparateEnvHur(sepenvhur, ATCF_data_in)` and `GAHM2026(storm_info, ATCF_data_in, ...)`. `GAHM2026.m` signature now takes `ATCF_data_in` as 2nd arg. The old `readAndSliceTrack` local function was renamed to `sliceTrack` (time slicing only, no I/O). `SeparateEnvHur.m` accepts optional 2nd arg for pre-loaded track data.
 10. **URL validation for remote datasets**: Created `util/check_url.m` (HTTP HEAD request via `matlab.net.http`, uses `logMsg`). `getERA5Data.m` checks if `bg_file` starts with `'http'` and calls `check_url([bg_file '.html'])`; local files use `exist()`.
-11. **GitHub Pages site**: Created `docs/_config.yml` (minimal theme) and `docs/index.md` (landing page with project overview, GAHM equations, pipeline diagram, quick start, ScrubEra5 description, configuration, output structures, references).
+11. **GitHub Pages site**: Created `docs/_config.yml` (minimal theme) and `docs/index.md` (landing page with project overview, GAHM equations, pipeline diagram, quick start, SeparateEnvHur description, configuration, output structures, references).
 12. **README.md updates**: Added Brian Blanton as co-author, corrected default config filename, documented `Result` struct, added Plotting subsection, fixed field names (`storm_info.track_file`), expanded `<year>` placeholder docs, new Logging and Shared Utilities sections, clickable reference links.
 13. **Documentation updates**: Updated `CALL_TREE.md`, `GAHM2026_workflow.md`, `README_config.md`, `SESSION_CONTEXT.md` with all changes above.
 
-### ScrubEra5 Naming, Logging, and Bug Fixes (Feb 25, 2026)
+### SeparateEnvHur Naming, Logging, and Bug Fixes (Feb 25, 2026)
 
-1. **Renamed `34` → `inner` in ScrubEra5 variables**: `mask34`→`mask_inner`, `distance_34`→`distance_inner`, `in_34`→`in_inner`, `count_34`→`count_inner`, `Vortex_mask34`→`Vortex_mask_inner`. Updated across `ScrubEra5.m`, `initializeOutputArrays.m`, `storeResults.m`, `createOutputStruct.m`, and consumer `util/read_Env_and_Hurr_fields2.m` (code + comments). Debug log messages updated to say "Inner cutline" instead of "34-kt cutline". Documentation updated in `README_config.md`.
-2. **Renamed `distance` → `distance_outer`** in ScrubEra5: bare `distance` variable (outer cutline) renamed to `distance_outer` for consistency with `distance_inner`. Output struct field `distance_10` renamed to `distance_outer`. Updated across `ScrubEra5.m`, `storeResults.m`, `initializeOutputArrays.m`, `createOutputStruct.m`.
+1. **Renamed `34` → `inner` in SeparateEnvHur variables**: `mask34`→`mask_inner`, `distance_34`→`distance_inner`, `in_34`→`in_inner`, `count_34`→`count_inner`, `Vortex_mask34`→`Vortex_mask_inner`. Updated across `SeparateEnvHur.m`, `initializeOutputArrays.m`, `storeResults.m`, `createOutputStruct.m`, and consumer `util/read_Env_and_Hurr_fields2.m` (code + comments). Debug log messages updated to say "Inner cutline" instead of "34-kt cutline". Documentation updated in `README_config.md`.
+2. **Renamed `distance` → `distance_outer`** in SeparateEnvHur: bare `distance` variable (outer cutline) renamed to `distance_outer` for consistency with `distance_inner`. Output struct field `distance_10` renamed to `distance_outer`. Updated across `SeparateEnvHur.m`, `storeResults.m`, `initializeOutputArrays.m`, `createOutputStruct.m`.
 3. **Renamed `output_info.warnings` → `output_info.diagnostics`**: Filename changed from `NAME_YEAR_GAHM2026_warnings.dat` to `NAME_DESIG_YEAR_GAHM2026_diagnostics.dat` (adds storm designation). Updated in all 3 config files, `tools/generate_baseline.m`, `tools/compare_to_baseline.m`, `documentation/README_config.md`.
 4. **Unified diagnostics file logging**: Diagnostics file now opened early in `run_GAHM2026.m` (right after config loads). All `logMsg(-1, ...)` calls in `run_GAHM2026.m` changed to `logMsg(fid, ...)` so messages go to both screen and file from the start. File closed at end of `run_GAHM2026.m`. `GAHM2026.m` changed from `fopen(output.warnings,'wt')` to `fopen(output.diagnostics,'at')` (append mode).
 5. **Fixed epoch parsing bug in `getERA5Data.m`**: The timezone-offset stripping regex (`\s*[+-]\d{1,2}(:\d{2})?$`) was incorrectly matching the day portion of date-only strings like `"1970-01-01"` (stripping `-01` → `"1970-01"`). Fixed by guarding the regex with `if contains(epoch_str, ':')` so it only runs when a time component is present.
@@ -188,19 +188,19 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 ### Adaptive Longitude Convention (Mar 1, 2026)
 
 1. **Detect ERA5 longitude convention in `getERA5Data.m`**: After reading `era5.lon`, the code inspects the range to determine whether the grid uses 0–360 or −180–180. The detected convention is stored in `era5.lon_convention` and logged.
-2. **Convention-aware track shifting in `ScrubEra5.m`**: Replaced the hardcoded `+ 360` shift with conditional logic that only shifts track longitudes when the ERA5 grid uses 0–360. No shift is applied for −180–180 grids.
-3. **Grid-based index computation in `ScrubEra5.m`**: Replaced the hardcoded `round(real_lon * 4)` and `round((90 - real_lat) * 4)` with `interp1`-based lookups into the actual ERA5 coordinate vectors. This eliminates both the 0.25° resolution assumption and the longitude-origin assumption. The ERA5 data is now loaded before index computation (reordered from original).
+2. **Convention-aware track shifting in `SeparateEnvHur.m`**: Replaced the hardcoded `+ 360` shift with conditional logic that only shifts track longitudes when the ERA5 grid uses 0–360. No shift is applied for −180–180 grids.
+3. **Grid-based index computation in `SeparateEnvHur.m`**: Replaced the hardcoded `round(real_lon * 4)` and `round((90 - real_lat) * 4)` with `interp1`-based lookups into the actual ERA5 coordinate vectors. This eliminates both the 0.25° resolution assumption and the longitude-origin assumption. The ERA5 data is now loaded before index computation (reordered from original).
 4. **Conditional output normalization in `createOutputStruct.m`**: Replaced the blanket `- 360` with conditional normalization (`lon > 180` → subtract 360) so output is always −180–180 regardless of input convention.
-5. **Removed TODO**: Deleted the `% TODO: fix longitude shift in createOutputStruct` comment in `ScrubEra5.m`.
+5. **Removed TODO**: Deleted the `% TODO: fix longitude shift in createOutputStruct` comment in `SeparateEnvHur.m`.
 
 ### Plot Script Rename (Feb 26, 2026)
 
 1. **Removed `_blend` from plot script filenames**: `conplot_blend_GAHM2026.m` → `conplot_GAHM2026.m`, `radplot_blend_GAHM2026.m` → `radplot_GAHM2026.m`, `run_conplot_blend_GAHM2026.m` → `run_conplot_GAHM2026.m`, `run_radplot_blend_GAHM2026.m` → `run_radplot_GAHM2026.m`. Updated all internal call references in run scripts and all documentation (`PlotEvalScripts/README.md`, `SESSION_CONTEXT.md`).
 
-### ScrubEra5 and Plotter Cleanup (Feb 19, 2026)
+### SeparateEnvHur and Plotter Cleanup (Feb 19, 2026)
 
-1. **Renamed `cfg` → `CONFIG`** in all ScrubEra5 sub-functions (`getERA5Data.m`, `computeBasicField.m`, `initializeOutputArrays.m`, `findCutline.m`, `convertToPolarCoords.m`, `storeResults.m`) and documentation (`ScrubEra5/README.md`, `GAHM2026_workflow.md`, `SESSION_CONTEXT.md`). Now consistent with the `CONFIG` variable used in `ScrubEra5.m` itself.
-2. **Renamed `wei` → `LatIdx` and `jing` → `LonIdx`** in all ScrubEra5 sub-functions (`findPressureCenter.m`, `computeBasicField.m`, `convertToPolarCoords.m`, `storeResults.m`, `findCutline.m`). Callers in `ScrubEra5.m` already used `lat_idx`/`lon_idx`.
+1. **Renamed `cfg` → `CONFIG`** in all SeparateEnvHur sub-functions (`getERA5Data.m`, `computeBasicField.m`, `initializeOutputArrays.m`, `findCutline.m`, `convertToPolarCoords.m`, `storeResults.m`) and documentation (`SeparateEnvHur/README.md`, `GAHM2026_workflow.md`, `SESSION_CONTEXT.md`). Now consistent with the `CONFIG` variable used in `SeparateEnvHur.m` itself.
+2. **Renamed `wei` → `LatIdx` and `jing` → `LonIdx`** in all SeparateEnvHur sub-functions (`findPressureCenter.m`, `computeBasicField.m`, `convertToPolarCoords.m`, `storeResults.m`, `findCutline.m`). Callers in `SeparateEnvHur.m` already used `lat_idx`/`lon_idx`.
 3. **Added `'prequiv'` plot type** to `GAHM2026Plotter`: pressure contours with wind velocity vectors overlaid. Updated `contourMap.m` (new `showQuiv` flag), `animate.m` (default filename `GAHM_PQ`), and class docstring. Usage: `obj.contourMap('prequiv', 1, 5)`.
 
 ### GAHM2026Plotter Class (Feb 17, 2026)

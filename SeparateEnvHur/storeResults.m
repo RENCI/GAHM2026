@@ -1,5 +1,5 @@
 function OUTPUT = storeResults(OUTPUT, i, lon, lat, basic_slp, basic_u, basic_v, ...
-        psl, u, v, in, in_inner, distance_outer, distance_inner, LatIdx, LonIdx, CONFIG)
+        psl, u, v, in, in_inner, distance_outer, distance_inner, LonIdx, LatIdx, CONFIG)
     
     half = CONFIG.output_half_size;
     rows = LatIdx-half : LatIdx+half;

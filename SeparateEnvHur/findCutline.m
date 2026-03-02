@@ -1,6 +1,6 @@
 function [count, in, distance] = findCutline( ...
         hr_u, hr_v, Xq, Yq, cx, cy, real_lon, real_lat, ...
-        lonn, latt, LatIdx, LonIdx, wind_threshold, CONFIG)
+        lonn, latt, LonIdx, LatIdx, wind_threshold, CONFIG)
     
     half = CONFIG.grid_half_size;
     num_radial = CONFIG.num_radial_points;

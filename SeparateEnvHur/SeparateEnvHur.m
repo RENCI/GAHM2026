@@ -1,25 +1,25 @@
-function env_vals = ScrubEra5(config_input, ATCF_data_in)
-%SCRUBERA5  Extract environmental fields from ERA5 data for a tropical cyclone.
-%   env_vals = ScrubEra5(config_file) runs the vortex removal using the
+function env_vals = SeparateEnvHur(config_input, ATCF_data_in)
+%SeparateEnvHur  Extract environmental fields from ERA5 data for a tropical cyclone.
+%   env_vals = SeparateEnvHur(config_file) runs the vortex removal using the
 %   configuration specified in config_file (a .m file that defines CONFIG).
 %
-%   env_vals = ScrubEra5(config_input, ATCF_data_in) uses pre-loaded track
+%   env_vals = SeparateEnvHur(config_input, ATCF_data_in) uses pre-loaded track
 %   data instead of reading the track file.
 %
 %   config_input can be:
 %     - a string/char path to a .m file that defines a CONFIG struct
-%       (original ScrubEra5 config) or a scrub_info struct (unified config)
-%     - a struct with all required ScrubEra5 fields (passed directly)
+%       (original SeparateEnvHur config) or a sepenvhur struct (unified config)
+%     - a struct with all required SeparateEnvHur fields (passed directly)
 
 %% Configuration
 if isstruct(config_input)
     CONFIG = config_input;
 else
     run(config_input);
-    % Support unified config: if scrub_info exists (but CONFIG does not),
-    % use scrub_info as CONFIG
-    if ~exist('CONFIG','var') && exist('scrub_info','var')
-        CONFIG = scrub_info;
+    % Support unified config: if sepenvhur exists (but CONFIG does not),
+    % use sepenvhur as CONFIG
+    if ~exist('CONFIG','var') && exist('sepenvhur','var')
+        CONFIG = sepenvhur;
     end
 end
 
@@ -115,35 +115,39 @@ for i = 1:num_times
     ThisWind = abs(ThisU+1i*ThisV);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Step %d/%d: field extraction done (SLP range=%.1f-%.1f mb, max wind=%.1f m/s)', i, num_times, min(ThisMsl(:)), max(ThisMsl(:)), max(ThisWind(:))); end
 
-    [era5_lon(i), era5_lat(i)] = findPressureCenter(ThisMsl, era5.lon_grid, ...
-        era5.lat_grid, lat_idx(i), lon_idx(i));
+    [era5_lon(i), era5_lat(i)] = findPressureCenter(ThisMsl, ...
+                                 era5.lon_grid, era5.lat_grid, ...
+                                 lat_idx(i), lon_idx(i));
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Pressure center found at (%.4f, %.4f), track position (%.4f, %.4f)', era5_lon(i), era5_lat(i), real_lon(i), real_lat(i)); end
     
     [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5.lon_grid, era5.lat_grid, ...
-        ThisU, ThisV, ThisMsl, ThisWind, ...
-        lat_idx(i), lon_idx(i), era5_lon(i), era5_lat(i), CONFIG);
+                                                ThisU, ThisV, ...
+                                                lon_idx(i), lat_idx(i),...
+                                                era5_lon(i), era5_lat(i), CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Polar coordinate interpolation done (grid size=%dx%d)', size(Xq,1), size(Xq,2)); end
     
     [count_inner, in_inner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
-        lat_idx(i), lon_idx(i), CONFIG.wind_threshold_inner, CONFIG);
+        lon_idx(i), lat_idx(i), CONFIG.wind_threshold_inner, CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Inner cutline found: mean radius=%.1f km, points inside=%d', mean(distance_inner), sum(in_inner)); end
     
     [~, in, distance_outer] = findCutline(hr_u, hr_v, Xq, Yq, ...
         era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
-        lat_idx(i), lon_idx(i), CONFIG.wind_threshold_outer, CONFIG);
+         lon_idx(i), lat_idx(i), CONFIG.wind_threshold_outer, CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Outer cutline found: mean radius=%.1f km, points inside=%d', mean(distance_outer), sum(in)); end
     
     tem_ave_r = mean(count_inner, "all") * 10 / 1000;
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Mean inner vortex radius=%.4f deg', tem_ave_r); end
     
     [basic_slp, basic_u, basic_v] = computeBasicField(ThisMsl, ThisU, ThisV, ...
-        lat_idx(i), lon_idx(i), tem_ave_r, CONFIG);
+                                                      lon_idx(i), lat_idx(i), ...
+                                                      tem_ave_r, CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Basic field computed (filter half-power wavelength=%.2f)', tem_ave_r / 0.04); end
     
     OUTPUT = storeResults(OUTPUT, i, era5.lon_grid, era5.lat_grid, basic_slp, ...
-        basic_u, basic_v, ThisMsl, ThisU, ThisV, in, in_inner,  ...
-        distance_outer, distance_inner, lat_idx(i), lon_idx(i), CONFIG);
+                          basic_u, basic_v, ThisMsl, ThisU, ThisV, ...
+                          in, in_inner, distance_outer, distance_inner, ...
+                          lon_idx(i), lat_idx(i), CONFIG);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Results stored for step %d (elapsed=%.2f s)', i, toc); end
 
 end

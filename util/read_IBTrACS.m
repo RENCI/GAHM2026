@@ -29,6 +29,7 @@ function ATCF2=read_IBTrACS(storm)
 % read the IBTrACS file
 
 IBTrACS_data=readtable(storm.track_file);
+IBTrACS_data(1,:)=[];
 
 % find the storm in the file
 sdesig_long=string([storm.designation storm.year]);
@@ -43,7 +44,7 @@ day_num=day(Adatetime);
 hour_num=hour(Adatetime);
 
 % load the ATCF2 data structure
-
+ATCF2=struct;
 for i=firstline:lastline
     j=i-firstline+1;
     ATCF2(j).runtimemin_str=string(minute(Adatetime(j)));

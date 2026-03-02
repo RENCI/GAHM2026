@@ -1,13 +1,13 @@
-# ScrubEra5
+# SeparateEnvHur
 
 ## amplified version of JC's AMS_env.m "code"
-## 17 Feb 2026
+## 02 Mar 2026
 
 Extracts and filters tropical cyclone fields from ERA5 reanalysis data. Separates storm-scale features from the background environmental flow using polar coordinate interpolation and spatial filtering techniques.
 
 ## Overview
 
-The main function `ScrubEra5.m` processes ERA5 reanalysis data for a specified tropical cyclone, computing:
+The main function `SeparateEnvHur.m` processes ERA5 reanalysis data for a specified tropical cyclone, computing:
 - Storm center location (based on minimum sea-level pressure)
 - Polar coordinate transformation of wind and pressure fields
 - Cutline detection at specified wind speed thresholds (10 m/s and 34 kt)
@@ -29,9 +29,9 @@ The main function `ScrubEra5.m` processes ERA5 reanalysis data for a specified t
 
 ### Recommended: unified config (shared with GAHM2026)
 
-ScrubEra5 shares a configuration file with GAHM2026.  The default config is `config/config_GAHM2026.m` in the project root; storm-specific configs follow the same pattern (e.g., `config/config_Florence.m`).
+SeparateEnvHur shares a configuration file with GAHM2026.  The default config is `config/config_GAHM2026.m` in the project root; storm-specific configs follow the same pattern (e.g., `config/config_Florence.m`).
 
-Running via `run_GAHM2026` is the simplest approach — it auto-runs ScrubEra5 when the `.mat` file is missing:
+Running via `run_GAHM2026` is the simplest approach — it auto-runs SeparateEnvHur when the `.mat` file is missing:
 
 ```matlab
 >> cd GAHM2026
@@ -39,12 +39,12 @@ Running via `run_GAHM2026` is the simplest approach — it auto-runs ScrubEra5 w
 >> run_GAHM2026('config_Florence')       % uses config/config_Florence.m
 ```
 
-To run ScrubEra5 standalone with a unified config:
+To run SeparateEnvHur standalone with a unified config:
 
 ```matlab
 >> cd GAHM2026
->> addpath('ScrubEra5')
->> env_vals = ScrubEra5('config/config_GAHM2026');
+>> addpath('SeparateEnvHur')
+>> env_vals = SeparateEnvHur('config/config_GAHM2026');
 ```
 
 You can also pass a struct directly:
@@ -59,7 +59,7 @@ You can also pass a struct directly:
 >>              'num_azimuth_points',360, 'max_radius_deg',10, ...
 >>              'wind_threshold_outer',10, 'wind_threshold_inner',34/1.944, ...
 >>              'debug',true);
->> env_vals = ScrubEra5(CONFIG);
+>> env_vals = SeparateEnvHur(CONFIG);
 ```
 
 Output is saved as `<STORM_NAME>_<YEAR>.mat` (e.g., `FLORENCE_2018.mat`).  If `output_dir` is set in the config, the file is saved there (e.g., `output/FLORENCE_2018.mat`).
@@ -104,7 +104,7 @@ The output `.mat` file contains a struct named env_vals with:
 - Cutline masks and distances at both wind thresholds
 
 
-#### DDS of ERA5 file
+<!--#### DDS of ERA5 file
 ```
 DDS:
 Dataset {
@@ -137,3 +137,4 @@ Dataset {
     } v10;
 } regional/wna/uvp/2018/2018.wna.nc;
 ```
+-->

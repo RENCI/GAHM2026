@@ -26,7 +26,7 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
 
     if nargin < 5 || isempty(theta_inc), theta_inc = 2; end
     if nargin < 4 || isempty(time), time = 1; end
-    if nargin < 3 || isempty(fign), fign = 1; end
+    if nargin < 3 , fign = 1; end
 
     VPr   = obj.VPrad;
     Tdata = obj.Trackdata;
@@ -44,17 +44,24 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
     hasEnv  = isfield(VPr, 'EnvVor');
     ntheta  = length(VPr.theta);
     nr      = length(VPr.r);
-
-    nploti = fign;
+    
+    if isempty(fign)
+        f=figure;
+        nploti=f.Number;
+    else
+        nploti = fign;
+    end
 
     %% radial velocity profiles
-
+    ax=[];
+    idx=0;
     if rad_Vplot
         for it = theta_inc:theta_inc:ntheta
+            idx=idx+1;
             fignum = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
             figure(fignum)
             splot = it/theta_inc - (fignum - nploti)*slotsPerFig;
-            subplot(opts.radial.layout(1), opts.radial.layout(2), splot)
+            ax(idx)=subplot(numel(theta_inc:theta_inc:ntheta)/opts.radial.layout(2), opts.radial.layout(2), splot);
 
             if hasEnv
                 S_envvor = 1.944*VPr.EnvVor(int).Speed(it,1:nr);
@@ -120,10 +127,11 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
 
     if rad_Pplot
         for it = theta_inc:theta_inc:ntheta
+            idx=idx+1;
             fignum = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
             figure(fignum)
             splot = it/theta_inc - (fignum - nploti)*slotsPerFig;
-            subplot(opts.radial.layout(1), opts.radial.layout(2), splot)
+            ax(idx)=subplot(opts.radial.layout(1), opts.radial.layout(2), splot);
 
             if hasEnv
                 P1 = VPr.EnvVor(int).Press(it,1:nr);
@@ -141,5 +149,7 @@ function radialProfile(obj, ptype, fign, time, theta_inc)
             lgd.Location = 'southeast';
         end
     end
+
+    linkaxes(ax)
 
 end

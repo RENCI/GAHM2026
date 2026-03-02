@@ -1,7 +1,7 @@
 %--------------------------------------------------------------------------
-% Unified configuration for ScrubEra5 and GAHM2026
+% Unified configuration for SeparateEnvHur and GAHM2026
 %
-% This script defines all input parameters needed by both ScrubEra5 and
+% This script defines all input parameters needed by both SeparateEnvHur and
 % run_GAHM2026.m.  Shared storm identity parameters are defined once at
 % the top and used to derive the project-specific structs.
 %
@@ -10,13 +10,13 @@
 %   run_GAHM2026('config_GAHM2026') — equivalent
 %
 % To create a config for a new storm, copy this file and update the
-% shared storm identity and ScrubEra5 sections.
+% shared storm identity and SeparateEnvHur sections.
 %
 %                        2/7/2026  Rick Luettich, UNC/IMS/CNHR/EMES 
 %                                  Brian Blanton, UNC/RENCI
 %--------------------------------------------------------------------------
 
-%% ===== Shared storm identity (used by both ScrubEra5 and GAHM2026) =====
+%% ===== Shared storm identity (used by both SeparateEnvHur and GAHM2026) =====
 storm_name        = 'FLORENCE';       % IBTrACS uses all caps for names
 storm_year        = 2018;
 track_file        = 'ibtracs.NA.list.v04r01.csv';
@@ -25,26 +25,26 @@ debug             = false;
 storm_start       = datetime(2018,9,14,0,0,0);
 storm_end         = datetime(2018,9,15,0,0,0);
 
-%% ===== ScrubEra5 parameters =====
-% scrub_info.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.nc';  % <year> is replaced with storm_year at runtime
-scrub_info.background_file    = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/<year>/<year>.nc';
-scrub_info.storm_start        = storm_start;
-scrub_info.storm_end          = storm_end;
-scrub_info.grid_half_size     = 40;
-scrub_info.output_half_size   = 40;
-scrub_info.filter_domain_size = 120;
-scrub_info.num_radial_points  = 1000;
-scrub_info.num_azimuth_points = 360;
-scrub_info.max_radius_deg     = 10;
-scrub_info.wind_threshold_outer  = 20/1.944; % 20 kts -> m/s
-scrub_info.wind_threshold_inner  = 34/1.944; % 34 kts -> m/s
-scrub_info.debug              = debug;
-scrub_info.output_dir         = 'output';
-% Populate shared fields into scrub_info for ScrubEra5 consumption
-scrub_info.storm_name        = storm_name;
-scrub_info.storm_year        = storm_year;
-scrub_info.storm_designation = storm_designation;
-scrub_info.track_file        = 'input/ibtracs.NA.list.v04r01.csv';
+%% ===== SeparateEnvHur parameters =====
+% sepenvhur.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.nc';  % <year> is replaced with storm_year at runtime
+sepenvhur.background_file    = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/<year>/<year>.nc';
+sepenvhur.storm_start        = storm_start;
+sepenvhur.storm_end          = storm_end;
+sepenvhur.grid_half_size     = 40;
+sepenvhur.output_half_size   = 40;
+sepenvhur.filter_domain_size = 120;
+sepenvhur.num_radial_points  = 1000;
+sepenvhur.num_azimuth_points = 360;
+sepenvhur.max_radius_deg     = 10;
+sepenvhur.wind_threshold_outer  = 20/1.944; % 20 kts -> m/s
+sepenvhur.wind_threshold_inner  = 34/1.944; % 34 kts -> m/s
+sepenvhur.debug              = debug;
+sepenvhur.output_dir         = 'output';
+% Populate shared fields into sepenvhur for SeparateEnvHur consumption
+sepenvhur.storm_name        = storm_name;
+sepenvhur.storm_year        = storm_year;
+sepenvhur.storm_designation = storm_designation;
+sepenvhur.track_file        = 'input/ibtracs.NA.list.v04r01.csv';
 
 %% ===== GAHM2026 storm / track file info =====
 storm_info.track_file  = 'input/ibtracs.NA.list.v04r01.csv';
@@ -81,7 +81,7 @@ WAF_info.file_name = 'input/WAF_15deg_10km_6km_raster_test.tif'; % ignored if WA
 
 %% ===== Environmental field info =====
 % env_info.file_name is derived from the shared storm identity so it
-% automatically matches the .mat file produced by ScrubEra5.
+% automatically matches the .mat file produced by SeparateEnvHur.
 env_info.type             = 3;  % options are 1, 2 or 3.  If 1 or 2 are selected, the remainder of this section is ignored
 env_info.file_name        = fullfile('output', sprintf('%s_%s_%s', storm_name, storm_designation, num2str(storm_year))); % e.g. 'output/FLORENCE_AL06_2018'
 env_info.taper_flag       = true;
