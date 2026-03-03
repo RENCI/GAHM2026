@@ -52,33 +52,20 @@ if isempty(ATCF_data)
 end
 
 % Generate hourly time vector and interpolate positions
-raw_time   = [ATCF_data.datetime];
-raw_lon    = [ATCF_data.lon];   % track lons (typically -180 to 180)
-raw_lat    = [ATCF_data.lat];
-start_time = raw_time(1);
-end_time   = raw_time(end);
-time       = start_time:hours(1):end_time;
-num_times  = length(time);
-logMsg(-1, 'INFO', 'Track loaded: %d hourly times from %s to %s', num_times, string(start_time), string(end_time));
+track.raw_time   = [ATCF_data.datetime];
+track.raw_lon    = [ATCF_data.lon];   % track lons (typically -180 to 180)
+track.raw_lat    = [ATCF_data.lat];
+track.start_time = track.raw_time(1);
+track.end_time   = track.raw_time(end);
+track.time       = track.start_time:hours(1):track.end_time;
+track.lon = interp1(track.raw_time, track.raw_lon, track.time);
+track.lat = interp1(track.raw_time, track.raw_lat, track.time);
+logMsg(-1, 'INFO', 'Track loaded: %d hourly times from %s to %s', length(track.time), string(track.start_time), string(track.end_time));
 
 % Load ERA5 data (detects longitude convention)
-logMsg(-1, 'INFO', 'Loading ERA5 data from %s ...', ...
-    replace(CONFIG.background_file,'<year>',string(CONFIG.storm_year)));
-era5 = getERA5Data(CONFIG,time);
-logMsg(-1, 'INFO', 'ERA5 data loaded: grid=%dx%d, %d time steps', ...
-    length(era5.lon), length(era5.lat), length(era5.time));
-
-% Shift track longitudes to match the ERA5 longitude convention
-if strcmp(era5.lon_convention, '0_360')
-    raw_lon(raw_lon < 0) = raw_lon(raw_lon < 0) + 360;
-end
-real_lon = interp1(raw_time, raw_lon, time);
-real_lat = interp1(raw_time, raw_lat, time);
-
-% Compute grid indices from the actual ERA5 coordinate vectors
-lon_idx = interp1(era5.lon, 1:length(era5.lon), real_lon, 'nearest', 'extrap');
-lat_idx = interp1(era5.lat, 1:length(era5.lat), real_lat, 'nearest', 'extrap');
-
+logMsg(-1, 'INFO', 'Loading ERA5 data from %s ...', replace(CONFIG.background_file,'<year>',string(CONFIG.storm_year)));
+era5 = getERA5Data(CONFIG,track.time);
+logMsg(-1, 'INFO', 'ERA5 data loaded: grid=%dx%d, %d time steps', length(era5.lon), length(era5.lat), length(era5.time));
 % era5 = 
 %   struct with fields:
 % 
@@ -91,21 +78,32 @@ lat_idx = interp1(era5.lat, 1:length(era5.lat), real_lat, 'nearest', 'extrap');
 %     lon_grid: [721×1440 double]
 %     lat_grid: [721×1440 double]
 
+% Shift track longitudes to match the ERA5 longitude convention
+if strcmp(era5.lon_convention, '0_360')
+    track.lon(track.lon < 0) = track.lon(track.lon < 0) + 360;
+end
+
+% Compute grid indices from the actual ERA5 coordinate vectors
+track.lon_idx = interp1(era5.lon, 1:length(era5.lon), track.lon, 'nearest', 'extrap');
+track.lat_idx = interp1(era5.lat, 1:length(era5.lat), track.lat, 'nearest', 'extrap');
+track.search_range = CONFIG.search_range;
+
+
 %% Initialize output arrays
-OUTPUT = initializeOutputArrays(num_times, CONFIG);
-era5_lon = zeros(1, num_times);
-era5_lat = zeros(1, num_times);
+OUTPUT = initializeOutputArrays(length(track.time), CONFIG);
+era5.vortex.lon = zeros(1, length(track.time));
+era5.vortex.lat = zeros(1, length(track.time));
 if CONFIG.debug
     grid_size = 2 * CONFIG.output_half_size + 1;
-    logMsg(-1, 'DEBUG', 'Output arrays initialized: %d times, %dx%d grid', num_times, grid_size, grid_size);
+    logMsg(-1, 'DEBUG', 'Output arrays initialized: %d times, %dx%d grid', length(track.time), grid_size, grid_size);
 end
 
 %% Main processing loop
-if CONFIG.debug, logMsg(-1, 'DEBUG', 'Beginning main processing loop over %d time steps', num_times); end
+if CONFIG.debug, logMsg(-1, 'DEBUG', 'Beginning main processing loop over %d time steps', length(track.time)); end
 
-for i = 1:num_times
+for i = 1:length(track.time)
     
-    logMsg(-1, 'INFO', 'Analyzing %s',string(time(i)))
+    logMsg(-1, 'INFO', 'Analyzing %s',string(track.time(i)))
     if CONFIG.debug, tic; end
 
     % extract at time level i
@@ -113,47 +111,41 @@ for i = 1:num_times
     ThisU = squeeze(era5.u10(:,:,i))';
     ThisV = squeeze(era5.v10(:,:,i))';
     ThisWind = abs(ThisU+1i*ThisV);
-    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Step %d/%d: field extraction done (SLP range=%.1f-%.1f mb, max wind=%.1f m/s)', i, num_times, min(ThisMsl(:)), max(ThisMsl(:)), max(ThisWind(:))); end
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Step %d/%d: field extraction done (SLP range=%.1f-%.1f mb, max wind=%.1f m/s)', i, length(track.time), min(ThisMsl(:)), max(ThisMsl(:)), max(ThisWind(:))); end
 
-    [era5_lon(i), era5_lat(i)] = findPressureCenter(ThisMsl, ...
-                                 era5.lon_grid, era5.lat_grid, ...
-                                 lat_idx(i), lon_idx(i));
-    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Pressure center found at (%.4f, %.4f), track position (%.4f, %.4f)', era5_lon(i), era5_lat(i), real_lon(i), real_lat(i)); end
+    [era5.vortex.lon(i), era5.vortex.lat(i)] = findPressureCenter(era5, track, i);
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Pressure center found at (%.4f, %.4f), track position (%.4f, %.4f)', era5.vortex.lon(i), era5.vortex.lat(i), track.lon(i), track.lat(i)); end
     
-    [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5.lon_grid, era5.lat_grid, ...
-                                                ThisU, ThisV, ...
-                                                lon_idx(i), lat_idx(i),...
-                                                era5_lon(i), era5_lat(i), CONFIG);
+    [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Polar coordinate interpolation done (grid size=%dx%d)', size(Xq,1), size(Xq,2)); end
     
     [count_inner, in_inner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
-        era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
-        lon_idx(i), lat_idx(i), CONFIG.wind_threshold_inner, CONFIG);
+                                                          era5, track, CONFIG, i, ...
+                                                          CONFIG.wind_threshold_inner);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Inner cutline found: mean radius=%.1f km, points inside=%d', mean(distance_inner), sum(in_inner)); end
     
     [~, in, distance_outer] = findCutline(hr_u, hr_v, Xq, Yq, ...
-        era5_lon(i), era5_lat(i), real_lon(i), real_lat(i), era5.lon, era5.lat, ...
-         lon_idx(i), lat_idx(i), CONFIG.wind_threshold_outer, CONFIG);
+                                          era5, track, CONFIG, i, ...
+                                          CONFIG.wind_threshold_outer);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Outer cutline found: mean radius=%.1f km, points inside=%d', mean(distance_outer), sum(in)); end
     
     tem_ave_r = mean(count_inner, "all") * 10 / 1000;
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Mean inner vortex radius=%.4f deg', tem_ave_r); end
     
-    [basic_slp, basic_u, basic_v] = computeBasicField(ThisMsl, ThisU, ThisV, ...
-                                                      lon_idx(i), lat_idx(i), ...
-                                                      tem_ave_r, CONFIG);
+    %TODO: the 0.04 factor needs to be documented, moved to config
+    basic = computeBasicField(ThisMsl, ThisU, ThisV, ...
+                              track, CONFIG, i, tem_ave_r);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Basic field computed (filter half-power wavelength=%.2f)', tem_ave_r / 0.04); end
     
-    OUTPUT = storeResults(OUTPUT, i, era5.lon_grid, era5.lat_grid, basic_slp, ...
-                          basic_u, basic_v, ThisMsl, ThisU, ThisV, ...
-                          in, in_inner, distance_outer, distance_inner, ...
-                          lon_idx(i), lat_idx(i), CONFIG);
+    OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
+                          basic, ThisMsl, ThisU, ThisV, ...
+                          in, in_inner, distance_outer, distance_inner);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Results stored for step %d (elapsed=%.2f s)', i, toc); end
 
 end
 
 %% Save output
-env_vals = createOutputStruct(OUTPUT, time, real_lon, real_lat, era5_lon, era5_lat);
+env_vals = createOutputStruct(OUTPUT, track, era5);
 outfile = string(CONFIG.storm_name)+"_"+string(CONFIG.storm_designation)+"_"+string(CONFIG.storm_year)+".mat";
 if isfield(CONFIG, 'output_dir')
     if ~exist(CONFIG.output_dir, 'dir'), mkdir(CONFIG.output_dir); end

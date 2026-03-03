@@ -29,7 +29,9 @@ fprintf('\n=== GAHM26 Regression Comparison ===\n\n')
 
 toolsdir = fileparts(mfilename('fullpath'));
 projdir  = fileparts(toolsdir);
+addpath(projdir)
 addpath(fullfile(projdir, 'util'))
+addpath(fullfile(projdir, 'SeparateEnvHur'))
 
 velocity_tol  = 1e-10;
 pressure_tol  = 1e-10;
@@ -50,6 +52,9 @@ storm_info.starttime   = datetime(2018,9,13,12,0,0);
 storm_info.endtime     = datetime(2018,9,15,0,0,0);
 
 ATCF_data_in = read_IBTrACS(storm_info);
+
+env_file_base = fullfile(toolsdir, sprintf('%s_%s_%s', ...
+    storm_info.name, storm_info.designation, storm_info.year));
 
 GAHM_param_info.Vmax_multiplier    = 1;
 GAHM_param_info.one2tenF           = 0.89;
@@ -123,7 +128,7 @@ if exist(baseline_file_3, 'file')
     fprintf('\n--- Test 2: env_type=3 (gridded env + taper + WAF) ---\n')
 
     env_info_3.type             = 3;
-    env_info_3.file_name        = 'Florence';
+    env_info_3.file_name        = env_file_base;
     env_info_3.taper_flag       = true;
     env_info_3.taper_mindelr2r1 = 0.1;
     env_info_3.taper_a          = 2;
@@ -133,15 +138,6 @@ if exist(baseline_file_3, 'file')
     fprintf('  Baseline generated: %s\n', char(bl.generated));
 
     WAF_info_3.flag = false;
-    if isfield(bl.config, 'WAF_flag') && bl.config.WAF_flag
-        waf_file = fullfile(projdir, 'WAF_15deg_10km_6km_raster_test.tif');
-        if exist(waf_file, 'file')
-            WAF_info_3.flag      = true;
-            WAF_info_3.file_name = waf_file;
-        else
-            fprintf('  WARNING: baseline used WAF but raster not found\n');
-        end
-    end
 
     try
         tic;
@@ -171,7 +167,7 @@ if exist(baseline_file_florence, 'file')
     fprintf('\n--- Test 3: Full Florence (351x351 grid, WAF, env_type=3) ---\n')
 
     env_info_full.type             = 3;
-    env_info_full.file_name        = 'Florence';
+    env_info_full.file_name        = env_file_base;
     env_info_full.taper_flag       = true;
     env_info_full.taper_mindelr2r1 = 0.1;
     env_info_full.taper_a          = 2;
@@ -181,15 +177,6 @@ if exist(baseline_file_florence, 'file')
     fprintf('  Baseline generated: %s\n', char(bl.generated));
 
     WAF_info_full.flag = false;
-    if isfield(bl.config, 'WAF_flag') && bl.config.WAF_flag
-        waf_file = fullfile(projdir, 'WAF_15deg_10km_6km_raster_test.tif');
-        if exist(waf_file, 'file')
-            WAF_info_full.flag      = true;
-            WAF_info_full.file_name = waf_file;
-        else
-            fprintf('  WARNING: baseline used WAF but raster not found\n');
-        end
-    end
 
     output_info_full.diagnostics    = fullfile(toolsdir, 'compare_florence_diagnostics.dat');
     output_info_full.NetCDFfilename = fullfile(toolsdir, 'compare_florence');

@@ -35,6 +35,7 @@ sepenvhur.filter_domain_size = 120;
 sepenvhur.num_radial_points  = 1000;
 sepenvhur.num_azimuth_points = 360;
 sepenvhur.max_radius_deg     = 10;
+sepenvhur.search_range       = 6;
 sepenvhur.wind_threshold_outer  = 20/1.944; % 20 kts -> m/s
 sepenvhur.wind_threshold_inner  = 34/1.944; % 34 kts -> m/s
 sepenvhur.debug              = true;

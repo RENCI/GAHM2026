@@ -1,12 +1,13 @@
 function [count, in, distance] = findCutline( ...
-        hr_u, hr_v, Xq, Yq, cx, cy, real_lon, real_lat, ...
-        lonn, latt, LonIdx, LatIdx, wind_threshold, CONFIG)
+        hr_u, hr_v, Xq, Yq, era5, track, CONFIG, i, wind_threshold)
     
     half = CONFIG.grid_half_size;
     num_radial = CONFIG.num_radial_points;
     max_search = num_radial / 10 * 6;
     
-    start_dist = 2 * hypot(cx - real_lon, cy - real_lat);
+    cx = era5.vortex.lon(i);
+    cy = era5.vortex.lat(i);
+    start_dist = 2 * hypot(cx - track.lon(i), cy - track.lat(i));
     start_idx = max(100, round(start_dist / 10 * num_radial));
     
     count = zeros(24, 1);
@@ -34,11 +35,11 @@ function [count, in, distance] = findCutline( ...
     lat_newv = [lat_newv, lat_newv(1)];
     
     [domain_lon, domain_lat] = meshgrid( ...
-        lonn(LonIdx-half : LonIdx+half), ...
-        latt(LatIdx-half : LatIdx+half));
+        era5.lon(track.lon_idx(i)-half : track.lon_idx(i)+half), ...
+        era5.lat(track.lat_idx(i)-half : track.lat_idx(i)+half));
     
     in = inpolygon(domain_lon(:), domain_lat(:), lon_newv', lat_newv');
     
     count_deg = count * 10 / CONFIG.num_radial_points;
-    distance = computeDistanceKm(count_deg, real_lat);
+    distance = computeDistanceKm(count_deg, track.lat(i));
 end

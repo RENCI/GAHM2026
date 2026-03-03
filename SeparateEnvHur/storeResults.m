@@ -1,20 +1,21 @@
-function OUTPUT = storeResults(OUTPUT, i, lon, lat, basic_slp, basic_u, basic_v, ...
-        psl, u, v, in, in_inner, distance_outer, distance_inner, LonIdx, LatIdx, CONFIG)
+function OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
+        basic, psl, u, v, ...
+        in, in_inner, distance_outer, distance_inner)
     
     half = CONFIG.output_half_size;
-    rows = LatIdx-half : LatIdx+half;
-    cols = LonIdx-half : LonIdx+half;
+    rows = track.lat_idx(i)-half : track.lat_idx(i)+half;
+    cols = track.lon_idx(i)-half : track.lon_idx(i)+half;
     grid_size = length(rows);
     
-    OUTPUT.lon(i,:,:) = lon(rows, cols);
-    OUTPUT.lat(i,:,:) = lat(rows, cols);
-    OUTPUT.slp(i,:,:) = basic_slp(rows, cols);
-    OUTPUT.u(i,:,:) = basic_u(rows, cols);
-    OUTPUT.v(i,:,:) = basic_v(rows, cols);
+    OUTPUT.lon(i,:,:) = era5.lon_grid(rows, cols);
+    OUTPUT.lat(i,:,:) = era5.lat_grid(rows, cols);
+    OUTPUT.slp(i,:,:) = basic.slp(rows, cols);
+    OUTPUT.u(i,:,:) = basic.u(rows, cols);
+    OUTPUT.v(i,:,:) = basic.v(rows, cols);
     
-    OUTPUT.dis_slp(i,:,:) = psl(rows, cols) - basic_slp(rows, cols);
-    OUTPUT.dis_u(i,:,:) = u(rows, cols) - basic_u(rows, cols);
-    OUTPUT.dis_v(i,:,:) = v(rows, cols) - basic_v(rows, cols);
+    OUTPUT.dis_slp(i,:,:) = psl(rows, cols) - basic.slp(rows, cols);
+    OUTPUT.dis_u(i,:,:) = u(rows, cols) - basic.u(rows, cols);
+    OUTPUT.dis_v(i,:,:) = v(rows, cols) - basic.v(rows, cols);
     
     OUTPUT.mask(i,:,:) = reshape(in, [grid_size, grid_size]);
     OUTPUT.mask_inner(i,:,:) = reshape(in_inner, [grid_size, grid_size]);

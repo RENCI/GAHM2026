@@ -6,17 +6,19 @@
 % used by compare_to_baseline.m to verify that refactoring has not changed
 % numerical results.
 %
-% Two test configurations are run:
+% Three test configurations are run:
 %   1. env_type=1 (ADCIRC/ASWIP, no gridded env file needed, fast)
-%   2. env_type=3 (gridded env, requires Florence.mat, full pipeline)
+%   2. env_type=3 (gridded env, 51x51 grid — auto-runs SeparateEnvHur)
+%   3. env_type=3 (full Florence 351x351 — auto-runs SeparateEnvHur)
 %
 % Usage:
 %   cd into the GAHM26 directory, then run:
 %     >> generate_baseline
 %
 % Output:
-%   tools/baseline_env1.mat  - baseline for env_type=1 test
-%   tools/baseline_env3.mat  - baseline for env_type=3 test (if Florence.mat exists)
+%   tools/baseline_env1.mat      - baseline for env_type=1 test
+%   tools/baseline_env3.mat      - baseline for env_type=3 test
+%   tools/baseline_florence.mat  - baseline for full Florence test
 %
 %                    February 2026
 %--------------------------------------------------------------------------
@@ -27,7 +29,9 @@ fprintf('\n=== GAHM26 Baseline Generator ===\n\n')
 
 toolsdir = fileparts(mfilename('fullpath'));
 projdir  = fileparts(toolsdir);
+addpath(projdir)
 addpath(fullfile(projdir, 'util'))
+addpath(fullfile(projdir, 'SeparateEnvHur'))
 
 %% Common parameters (match run_GAHM2026.m)
 
@@ -40,6 +44,29 @@ storm_info.starttime  = datetime(2018,9,13,12,0,0);
 storm_info.endtime    = datetime(2018,9,15,0,0,0);
 
 ATCF_data_in = read_IBTrACS(storm_info);
+
+% SeparateEnvHur config for auto-generating env fields
+sepenvhur.background_file      = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global.1/uvp/<year>/<year>.nc';
+sepenvhur.storm_start           = storm_info.starttime;
+sepenvhur.storm_end             = storm_info.endtime;
+sepenvhur.grid_half_size        = 40;
+sepenvhur.output_half_size      = 40;
+sepenvhur.filter_domain_size    = 120;
+sepenvhur.num_radial_points     = 1000;
+sepenvhur.num_azimuth_points    = 360;
+sepenvhur.max_radius_deg        = 10;
+sepenvhur.search_range          = 6;
+sepenvhur.wind_threshold_outer  = 20/1.944;
+sepenvhur.wind_threshold_inner  = 34/1.944;
+sepenvhur.debug                 = false;
+sepenvhur.output_dir            = toolsdir;
+sepenvhur.storm_name            = storm_info.name;
+sepenvhur.storm_year            = str2double(storm_info.year);
+sepenvhur.storm_designation     = storm_info.designation;
+sepenvhur.track_file            = storm_info.track_file;
+
+env_file_base = fullfile(toolsdir, sprintf('%s_%s_%s', ...
+    storm_info.name, storm_info.designation, storm_info.year));
 
 GAHM_param_info.Vmax_multiplier    = 1;
 GAHM_param_info.one2tenF           = 0.89;
@@ -102,114 +129,97 @@ catch ME
     fprintf('  FAILED: %s\n', ME.message);
 end
 
-%% Test 2: env_type = 3 (full pipeline, requires Florence.mat)
+%% Auto-generate env fields if needed (shared by Tests 2 and 3)
 
-florence_file = fullfile(projdir, 'Florence.mat');
-if exist(florence_file, 'file')
-    fprintf('\n--- Test 2: env_type=3 (gridded env + taper + WAF) ---\n')
-
-    env_info_3.type             = 3;
-    env_info_3.file_name        = 'Florence';
-    env_info_3.taper_flag       = true;
-    env_info_3.taper_mindelr2r1 = 0.1;
-    env_info_3.taper_a          = 2;
-
-    WAF_info_3.flag = false;
-    waf_file = fullfile(projdir, 'WAF_15deg_10km_6km_raster_test.tif');
-    if exist(waf_file, 'file')
-        WAF_info_3.flag      = true;
-        WAF_info_3.file_name = waf_file;
-    else
-        fprintf('  WAF raster not found, running without WAF\n');
-    end
-
-    try
-        tic;
-        [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
-            Trackdata, GAHM_out] = GAHM2026(storm_info, ATCF_data_in, GAHM_param_info, ...
-            GAHM_compute_info, WAF_info_3, env_info_3, output_info);
-        elapsed = toc;
-
-        baseline = extract_baseline_fields(Reggrid_out, Reggrid_TC_out, ...
-                                           Reggrid_Env_out, GAHM_out, Trackdata);
-        baseline.elapsed_seconds = elapsed;
-        baseline.generated = datetime('now');
-        baseline.config.env_type = 3;
-        baseline.config.GAHM_version = GAHM_param_info.version;
-        baseline.config.starttime = storm_info.starttime;
-        baseline.config.endtime = storm_info.endtime;
-        baseline.config.WAF_flag = WAF_info_3.flag;
-
-        outfile3 = fullfile(toolsdir, 'baseline_env3.mat');
-        save(outfile3, 'baseline', '-v7.3');
-        fprintf('  Saved: %s (%.1f seconds)\n', outfile3, elapsed);
-        fprintf('  Timesteps: %d\n', baseline.nt);
-    catch ME
-        fprintf('  FAILED: %s\n', ME.message);
-    end
-else
-    fprintf('\n--- Test 2: SKIPPED (Florence.mat not found) ---\n')
+if ~exist([env_file_base '.mat'], 'file')
+    fprintf('--- Generating env fields via SeparateEnvHur ---\n')
+    SeparateEnvHur(sepenvhur, ATCF_data_in);
+    fprintf('  Saved: %s.mat\n', env_file_base);
 end
 
-%% Test 3: Full Florence case (matches run_GAHM2026.m exactly)
+%% Test 2: env_type = 3 (full pipeline, 51x51 grid)
 
-if exist(florence_file, 'file')
-    fprintf('\n--- Test 3: Full Florence (351x351 grid, WAF, env_type=3) ---\n')
+fprintf('\n--- Test 2: env_type=3 (gridded env + taper, 51x51) ---\n')
 
-    env_info_full.type             = 3;
-    env_info_full.file_name        = 'Florence';
-    env_info_full.taper_flag       = true;
-    env_info_full.taper_mindelr2r1 = 0.1;
-    env_info_full.taper_a          = 2;
+env_info_3.type             = 3;
+env_info_3.file_name        = env_file_base;
+env_info_3.taper_flag       = true;
+env_info_3.taper_mindelr2r1 = 0.1;
+env_info_3.taper_a          = 2;
 
-    WAF_info_full.flag = false;
-    waf_file = fullfile(projdir, 'WAF_15deg_10km_6km_raster_test.tif');
-    if exist(waf_file, 'file')
-        WAF_info_full.flag      = true;
-        WAF_info_full.file_name = waf_file;
-    else
-        fprintf('  WAF raster not found, running without WAF\n');
-    end
+WAF_info_3.flag = false;
 
-    output_info_full.diagnostics    = fullfile(toolsdir, 'baseline_florence_diagnostics.dat');
-    output_info_full.NetCDFfilename = fullfile(toolsdir, 'baseline_florence');
-    output_info_full.timeinc        = 1;
-    output_info_full.type           = "grid";
-    output_info_full.nlon           = 351;
-    output_info_full.nlat           = 351;
-    output_info_full.dellon         = 0.05;
-    output_info_full.dellat         = 0.05;
+try
+    tic;
+    [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
+        Trackdata, GAHM_out] = GAHM2026(storm_info, ATCF_data_in, GAHM_param_info, ...
+        GAHM_compute_info, WAF_info_3, env_info_3, output_info);
+    elapsed = toc;
 
-    try
-        tic;
-        [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
-            Trackdata, GAHM_out] = GAHM2026(storm_info, ATCF_data_in, GAHM_param_info, ...
-            GAHM_compute_info, WAF_info_full, env_info_full, output_info_full);
-        elapsed = toc;
+    baseline = extract_baseline_fields(Reggrid_out, Reggrid_TC_out, ...
+                                       Reggrid_Env_out, GAHM_out, Trackdata);
+    baseline.elapsed_seconds = elapsed;
+    baseline.generated = datetime('now');
+    baseline.config.env_type = 3;
+    baseline.config.GAHM_version = GAHM_param_info.version;
+    baseline.config.starttime = storm_info.starttime;
+    baseline.config.endtime = storm_info.endtime;
 
-        baseline = extract_baseline_fields(Reggrid_out, Reggrid_TC_out, ...
-                                           Reggrid_Env_out, GAHM_out, Trackdata);
-        baseline.elapsed_seconds = elapsed;
-        baseline.generated = datetime('now');
-        baseline.config.env_type = 3;
-        baseline.config.GAHM_version = GAHM_param_info.version;
-        baseline.config.starttime = storm_info.starttime;
-        baseline.config.endtime = storm_info.endtime;
-        baseline.config.WAF_flag = WAF_info_full.flag;
-        baseline.config.nlon = 351;
-        baseline.config.nlat = 351;
-        baseline.config.dellon = 0.05;
-        baseline.config.dellat = 0.05;
+    outfile3 = fullfile(toolsdir, 'baseline_env3.mat');
+    save(outfile3, 'baseline', '-v7.3');
+    fprintf('  Saved: %s (%.1f seconds)\n', outfile3, elapsed);
+    fprintf('  Timesteps: %d\n', baseline.nt);
+catch ME
+    fprintf('  FAILED: %s\n', ME.message);
+end
 
-        outfile_florence = fullfile(toolsdir, 'baseline_florence.mat');
-        save(outfile_florence, 'baseline', '-v7.3');
-        fprintf('  Saved: %s (%.1f seconds)\n', outfile_florence, elapsed);
-        fprintf('  Timesteps: %d\n', baseline.nt);
-    catch ME
-        fprintf('  FAILED: %s\n', ME.message);
-    end
-else
-    fprintf('\n--- Test 3: SKIPPED (Florence.mat not found) ---\n')
+%% Test 3: Full Florence case (351x351 grid, env_type=3)
+
+fprintf('\n--- Test 3: Full Florence (351x351 grid, env_type=3) ---\n')
+
+env_info_full.type             = 3;
+env_info_full.file_name        = env_file_base;
+env_info_full.taper_flag       = true;
+env_info_full.taper_mindelr2r1 = 0.1;
+env_info_full.taper_a          = 2;
+
+WAF_info_full.flag = false;
+
+output_info_full.diagnostics    = fullfile(toolsdir, 'baseline_florence_diagnostics.dat');
+output_info_full.NetCDFfilename = fullfile(toolsdir, 'baseline_florence');
+output_info_full.timeinc        = 1;
+output_info_full.type           = "grid";
+output_info_full.nlon           = 351;
+output_info_full.nlat           = 351;
+output_info_full.dellon         = 0.05;
+output_info_full.dellat         = 0.05;
+
+try
+    tic;
+    [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
+        Trackdata, GAHM_out] = GAHM2026(storm_info, ATCF_data_in, GAHM_param_info, ...
+        GAHM_compute_info, WAF_info_full, env_info_full, output_info_full);
+    elapsed = toc;
+
+    baseline = extract_baseline_fields(Reggrid_out, Reggrid_TC_out, ...
+                                       Reggrid_Env_out, GAHM_out, Trackdata);
+    baseline.elapsed_seconds = elapsed;
+    baseline.generated = datetime('now');
+    baseline.config.env_type = 3;
+    baseline.config.GAHM_version = GAHM_param_info.version;
+    baseline.config.starttime = storm_info.starttime;
+    baseline.config.endtime = storm_info.endtime;
+    baseline.config.nlon = 351;
+    baseline.config.nlat = 351;
+    baseline.config.dellon = 0.05;
+    baseline.config.dellat = 0.05;
+
+    outfile_florence = fullfile(toolsdir, 'baseline_florence.mat');
+    save(outfile_florence, 'baseline', '-v7.3');
+    fprintf('  Saved: %s (%.1f seconds)\n', outfile_florence, elapsed);
+    fprintf('  Timesteps: %d\n', baseline.nt);
+catch ME
+    fprintf('  FAILED: %s\n', ME.message);
 end
 
 fprintf('\n=== Baseline generation complete ===\n')

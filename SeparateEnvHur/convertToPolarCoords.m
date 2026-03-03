@@ -1,22 +1,15 @@
-function [Xq, Yq, hr_u, hr_v] = convertToPolarCoords( ...
-          lon, lat, u, v, LonIdx, LatIdx, cx, cy, CONFIG)
-    % lon
-    % lat
-    % u
-    % v
-    % LonIdx
-    % LatIdx
-    % cx
-    % cy
+function [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i)
 
     half = CONFIG.grid_half_size;
-    rows = LatIdx-half : LatIdx+half;
-    cols = LonIdx-half : LonIdx+half;
+    rows = track.lat_idx(i)-half : track.lat_idx(i)+half;
+    cols = track.lon_idx(i)-half : track.lon_idx(i)+half;
     
-    lon_dc = lon(rows, cols) - cx;
-    lat_dc = lat(rows, cols) - cy;
-    u_dc = u(rows, cols);
-    v_dc = v(rows, cols);
+    cx = era5.vortex.lon(i);
+    cy = era5.vortex.lat(i);
+    lon_dc = era5.lon_grid(rows, cols) - cx;
+    lat_dc = era5.lat_grid(rows, cols) - cy;
+    u_dc = squeeze(era5.u10(cols, rows, i))';
+    v_dc = squeeze(era5.v10(cols, rows, i))';
     
     r = linspace(0, CONFIG.max_radius_deg, CONFIG.num_radial_points);
     th = linspace(0, 2*pi, CONFIG.num_azimuth_points);

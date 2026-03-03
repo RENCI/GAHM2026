@@ -3,12 +3,12 @@ baseline_env1.mat
 baseline_env3.mat
 baseline_florence.mat
 
+# Auto-generated env fields
+FLORENCE_AL06_2018.mat
+
 # Temporary files from comparison runs
-compare_warnings.dat
-baseline_warnings.dat
+*_diagnostics.dat
 compare_test.nc
 baseline_test.nc
-compare_florence_warnings.dat
-baseline_florence_warnings.dat
 compare_florence.nc
 baseline_florence.nc
