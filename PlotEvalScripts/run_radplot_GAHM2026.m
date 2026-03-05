@@ -3,9 +3,11 @@
 %
 %  After running run_GAHM2026.m, the VPrad struct contains:
 %     VPrad.r, VPrad.theta  - radial grid coordinates
-%     VPrad.VVor(i)         - vortex-only radial fields
+%     VPrad.VVor_bt(i)      - vortex fields before taper
+%     VPrad.VVor_at(i)      - vortex fields after taper
 %     VPrad.Env(i)          - environmental radial fields (if env_type=3)
-%     VPrad.EnvVor(i)       - combined env+vortex radial fields (if env_type=3)
+%     VPrad.EnvVor_bt(i)    - combined env+vortex before taper (if env_type=3)
+%     VPrad.EnvHur_final(i) - final blended output on radial grid
 %
 %  An optional opts struct can be passed to override defaults.
 %  See plot_defaults.m for all available options.

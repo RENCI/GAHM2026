@@ -31,7 +31,7 @@ R = run_GAHM2026('config_GAHM2026_default');
 | `R.Reggrid_VVor_invtapHur_out` | GAHM vortex + inverse-tapered hurricane (env_type=3 only) |
 | `R.Trackdata` | Storm track data with Rmax, Vmax, quadrant info |
 | `R.GAHM_out` | Per-timestep GAHM parameters |
-| `R.VPrad` | Radial grid data: `.r`, `.theta`, `.VVor(i)`, `.Env(i)`, `.EnvVor(i)` |
+| `R.VPrad` | Radial grid data: `.r`, `.theta`, `.VVor_bt(i)`, `.VVor_at(i)`, `.Env(i)`, `.EnvVor_bt(i)`, `.EnvHur_final(i)` |
 | `R.storm_info` | Storm identity (name, year, designation) |
 | `R.env_info` | Environmental field configuration |
 

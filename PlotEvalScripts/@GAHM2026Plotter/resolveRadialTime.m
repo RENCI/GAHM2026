@@ -4,7 +4,7 @@ function ip = resolveRadialTime(obj, time)
 %   ip = resolveRadialTime(obj, 5)                 — integer index
 %   ip = resolveRadialTime(obj, datetime(2024,...)) — matched via Trackdata
 
-    itot = length(obj.VPrad.VVor);
+    itot = length(obj.VPrad.VVor_bt);
 
     if isnumeric(time) && isscalar(time)
         ip = round(time);

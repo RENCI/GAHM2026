@@ -1,6 +1,6 @@
 # GAHM2026 Refactoring Session Context
 
-**Last updated**: March 1, 2026  
+**Last updated**: March 5, 2026  
 **Purpose**: Continuity document for resuming work in a new session.
 
 ---
@@ -91,13 +91,13 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | `Result.Reggrid_VVor_invtapHur_out` | GAHM vortex + inverse-tapered hurricane (env_type=3 only; 0 for env_type 1,2) |
 | `Result.Trackdata` | Storm track data with `.Rmax_t1`, `.Vmax_t1`, `.RQuad_t1`, quadrant info |
 | `Result.GAHM_out` | Per-timestep GAHM parameters |
-| `Result.VPrad` | Radial grid data: `.r`, `.theta`, `.VVor(i)`, `.Env(i)`, `.EnvVor(i)` |
+| `Result.VPrad` | Radial grid data: `.r`, `.theta`, `.VVor_bt(i)`, `.VVor_at(i)`, `.Env(i)`, `.EnvVor_bt(i)`, `.EnvHur_final(i)` |
 | `Result.storm_info` | Storm identity (name, year, designation) |
 | `Result.env_info` | Environmental field configuration |
 | `Result.Points_TC_out` | (if output_type="points") Point TC output |
 | `Result.Points_Env_out` | (if output_type="points") Point environmental output |
 
-The `VPrad` struct packages radial-grid data for plotting. `.Env` and `.EnvVor` sub-structs are populated only when `env_info.type = 3`.
+The `VPrad` struct packages radial-grid data for plotting. `.VVor_bt` = before taper, `.VVor_at` = after taper, `.EnvHur_final` = final blended output interpolated back onto radial grid. `.Env`, `.EnvVor_bt` are populated only when `env_info.type = 3`.
 
 ---
 
@@ -193,6 +193,21 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 4. **Conditional output normalization in `createOutputStruct.m`**: Replaced the blanket `- 360` with conditional normalization (`lon > 180` → subtract 360) so output is always −180–180 regardless of input convention.
 5. **Removed TODO**: Deleted the `% TODO: fix longitude shift in createOutputStruct` comment in `SeparateEnvHur.m`.
 
+### SeparateEnvHur Struct Consolidation and GAHM2026 VPrad Extensions (Mar 5, 2026)
+
+1. **Consolidated `basic_slp`, `basic_u`, `basic_v` → `basic` struct** in SeparateEnvHur: `computeBasicField.m` now returns a single `basic` struct with `.slp`, `.u`, `.v` fields. Updated `storeResults.m` to accept `basic` struct, and `SeparateEnvHur.m` call sites.
+2. **Simplified `createOutputStruct` signature**: Changed from `(OUTPUT, time, real_lon, real_lat, era5_lon, era5_lat)` to `(OUTPUT, track, era5)`. Extracts `track.time`, `track.lon`, `track.lat`, `era5.vortex.lon`, `era5.vortex.lat` internally.
+3. **Extended VPrad diagnostic output in `GAHM2026.m`**:
+   - Added `VPrad.VVor_bt(i)` — saves radial vortex fields **before** taper is applied (captured inside main time loop)
+   - Renamed `VPrad.VVor` → `VPrad.VVor_at` — vortex fields **after** taper
+   - Added post-taper speed recomputation (`VSpeed_VPrad_10_10` recalculated after taper modifies velocity)
+   - Added `VPrad.EnvHur_final(i)` — interpolates final blended regular-grid output back onto the radial grid using `griddedInterpolant` + `reckon` for direct radial comparison
+   - Renamed `VPrad.EnvVor` → `VPrad.EnvVor_bt` — env + vortex combined before taper (uses `VVor_bt`)
+   - Added `r_arc = nm2deg(r/1852)` for radius-to-arclength conversion
+4. **Updated all VPrad field name consumers**: `resolveRadialTime.m` (`VVor` → `VVor_bt`), `radialProfile.m`, `radplot_GAHM2026.m`, `run_radplot_GAHM2026.m`, `PlotEvalScripts/README.md`.
+5. **Added `ftype` parameter to `radialProfile.m`**: New second argument (`'envhur'`, `'hur'`, `'env'`) enables selective plotting of env+vortex combined, vortex-only, or env-only fields. Default `'envhur'` preserves backward compatibility. Three-way plotting logic for both velocity and pressure sections. Data-adaptive pressure label positioning. Merged from Rick's temp version with our improvements (auto-figure, `linkaxes`, `'--r'` env line, `'EV'`/`'Vortex'` labels).
+6. **Copied `radplot_GAHM2026_RL.m`**: Rick's expanded standalone radplot script from `temp/` with `ftype` cell-array input (`"envhur"`, `"vor_bt"`, `"vor_at"`, `"env"`, `"envvor_bt"`, `"trackdata"`) and `timeinds` parameter for specific timestep selection.
+
 ### Plot Script Rename (Feb 26, 2026)
 
 1. **Removed `_blend` from plot script filenames**: `conplot_blend_GAHM2026.m` → `conplot_GAHM2026.m`, `radplot_blend_GAHM2026.m` → `radplot_GAHM2026.m`, `run_conplot_blend_GAHM2026.m` → `run_conplot_GAHM2026.m`, `run_radplot_blend_GAHM2026.m` → `run_radplot_GAHM2026.m`. Updated all internal call references in run scripts and all documentation (`PlotEvalScripts/README.md`, `SESSION_CONTEXT.md`).
@@ -222,7 +237,7 @@ Built an object-oriented plotting and evaluation class in 7 phases. The class li
 |------|--------|-------|-------------|
 | `contourMap.m` | `contourMap(ptype, fign, time, plotdata)` | 2 | Single-timestep pcolor map (wind or pressure); ptypes: `velcon`, `precon`, `prequiv`, `mvelcon`, `mprecon` |
 | `addQuiver.m` | `addQuiver(time, plotdata)` | 3 | Standalone velocity vector overlay |
-| `radialProfile.m` | `radialProfile(ptype, fign, time, theta_inc)` | 4 | Radial wind/pressure profiles in subplots |
+| `radialProfile.m` | `radialProfile(ptype, ftype, fign, time, theta_inc)` | 4 | Radial wind/pressure profiles in subplots; ftype: `'envhur'`, `'hur'`, `'env'` |
 | `scatterCompare.m` | `scatterCompare(X, Y, fign, ...)` | 5 | 1:1 scatter (by-quadrant N×4 or by-series N×K) |
 | `syncDatetime.m` | `syncDatetime(A, B)` | 5 | Match two struct arrays by `.datetime` field |
 | `animate.m` | `animate(ptype, fign, plotdata, filename)` | 6 | GIF/MP4 animation loop over all timesteps |
@@ -270,7 +285,8 @@ PlotEvalScripts/
 │   └── openMp4.m                 (private)
 ├── README.md                     (rewritten — Florence 2018 demo)
 ├── conplot_GAHM2026.m             (legacy, unchanged)
-├── radplot_GAHM2026.m             (legacy, unchanged)
+├── radplot_GAHM2026.m             (legacy, updated for VPrad field names)
+├── radplot_GAHM2026_RL.m          (Rick's expanded version with ftype/timeinds)
 ├── GAHM2026_ASWIP_compare.m      (legacy, unchanged)
 ├── Rmax_compare.m                 (legacy, unchanged)
 ├── plot_defaults.m                (shared options)

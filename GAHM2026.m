@@ -206,6 +206,13 @@ for itime=1:nBTtime
             VPress_VPrad(i,it,1:nr+1)=VPress_VPrad_t1(it,1:nr+1)*tfac1 + VPress_VPrad_t2(it,1:nr+1)*tfac2;
         end
 
+        % save radial results before applying taper for diagnostic output
+
+        VPrad.VVor_bt(i).VelU  = squeeze(VVel_VPrad_10_10(i,:,:,1));
+        VPrad.VVor_bt(i).VelV  = squeeze(VVel_VPrad_10_10(i,:,:,2));
+        VPrad.VVor_bt(i).Speed = squeeze(VSpeed_VPrad_10_10(i,:,:));
+        VPrad.VVor_bt(i).Press = squeeze(VPress_VPrad(i,:,:));
+
         % interpolate environmental field on radial grid at output times
 
         [VEnvrad_10_10, PEnvrad, VHurrad_10_10, PHurrad, BlendingMasksrad] = ...
@@ -229,6 +236,10 @@ for itime=1:nBTtime
                     env_type, taper_constants, ...
                     BlendingMasksrad, datetimeint, fid, ...
                     VVel_VPrad_10_10, VPress_VPrad, VHurrad_10_10, PHurrad);
+            for it=1:ntheta
+               VSpeed_VPrad_10_10(i,it,1:nr+1)=squeeze(vecnorm(permute ...
+                            (VVel_VPrad_10_10(i,it,1:nr+1,1:2),[4 1 2 3])));
+            end
         end
         
         % save track information
@@ -275,20 +286,37 @@ logMsg(-1, 'INFO', 'Regular grid interpolation complete.');
 
 VPrad.r = r;
 VPrad.theta = theta;
+r_arc=nm2deg(r/1852);  %convert r to nautical miles and then arclength (deg)
 for ii = 1:itot
-    VPrad.VVor(ii).VelU  = squeeze(VVel_VPrad_10_10(ii,:,:,1));
-    VPrad.VVor(ii).VelV  = squeeze(VVel_VPrad_10_10(ii,:,:,2));
-    VPrad.VVor(ii).Speed = squeeze(VSpeed_VPrad_10_10(ii,:,:));
-    VPrad.VVor(ii).Press = squeeze(VPress_VPrad(ii,:,:));
+    VPrad.VVor_at(ii).VelU  = squeeze(VVel_VPrad_10_10(ii,:,:,1));
+    VPrad.VVor_at(ii).VelV  = squeeze(VVel_VPrad_10_10(ii,:,:,2));
+    VPrad.VVor_at(ii).Speed = squeeze(VSpeed_VPrad_10_10(ii,:,:));
+    VPrad.VVor_at(ii).Press = squeeze(VPress_VPrad(ii,:,:));
+
+    % Interpolate final (blended) output back onto radial grid for diagnostic output
+    FU=griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).VelU');
+    FV=griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).VelV');
+    FP=griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).Press');
+    for it=1:length(theta)
+        az=90-theta(it);  %compute the bearing angle cw from N
+        if az<0
+            az=az+360;
+        end
+        [rad_lat,rad_lon] = reckon("rh",LatNS(ii),LonEW(ii),r_arc,az);
+        VPrad.EnvHur_final(ii).VelU(it,:)=FU(rad_lon',rad_lat');
+        VPrad.EnvHur_final(ii).VelV(it,:)=FV(rad_lon',rad_lat');
+        VPrad.EnvHur_final(ii).Speed(it,:)=hypot(VPrad.EnvHur_final(ii).VelU(it,:),VPrad.EnvHur_final(ii).VelV(it,:));
+        VPrad.EnvHur_final(ii).Press(it,:)=FP(rad_lon',rad_lat');
+    end
     if ~isempty(VEnvrad_10_10)
         VPrad.Env(ii).VelU  = squeeze(VEnvrad_10_10(ii,:,:,1));
         VPrad.Env(ii).VelV  = squeeze(VEnvrad_10_10(ii,:,:,2));
         VPrad.Env(ii).Speed = hypot(VPrad.Env(ii).VelU, VPrad.Env(ii).VelV);
         VPrad.Env(ii).Press = squeeze(PEnvrad(ii,:,:));
-        VPrad.EnvVor(ii).VelU  = VPrad.VVor(ii).VelU + VPrad.Env(ii).VelU;
-        VPrad.EnvVor(ii).VelV  = VPrad.VVor(ii).VelV + VPrad.Env(ii).VelV;
-        VPrad.EnvVor(ii).Speed = hypot(VPrad.EnvVor(ii).VelU, VPrad.EnvVor(ii).VelV);
-        VPrad.EnvVor(ii).Press = VPrad.VVor(ii).Press + VPrad.Env(ii).Press;
+        VPrad.EnvVor_bt(ii).VelU  = VPrad.VVor_bt(ii).VelU + VPrad.Env(ii).VelU;
+        VPrad.EnvVor_bt(ii).VelV  = VPrad.VVor_bt(ii).VelV + VPrad.Env(ii).VelV;
+        VPrad.EnvVor_bt(ii).Speed = hypot(VPrad.EnvVor_bt(ii).VelU, VPrad.EnvVor_bt(ii).VelV);
+        VPrad.EnvVor_bt(ii).Press = VPrad.VVor_bt(ii).Press + VPrad.Env(ii).Press;
     end
 end
 

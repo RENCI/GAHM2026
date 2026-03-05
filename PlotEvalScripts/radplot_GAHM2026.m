@@ -5,9 +5,11 @@
 %  Inputs:
 %    VPrad      - radial grid data struct from GAHM2026.m containing:
 %                   .r, .theta  - radial grid coordinates
-%                   .VVor(i)    - vortex fields (.Speed, .Press, .VelU, .VelV)
+%                   .VVor_bt(i) - vortex fields before taper (.Speed, .Press, .VelU, .VelV)
+%                   .VVor_at(i) - vortex fields after taper
 %                   .Env(i)     - environmental fields (if available)
-%                   .EnvVor(i)  - combined env+vortex fields (if available)
+%                   .EnvVor_bt(i) - combined env+vortex before taper (if available)
+%                   .EnvHur_final(i) - final blended output on radial grid
 %    Trackdata  - track data with Rmax, Vmax, quadrant info
 %    theta_inc  - plot every Nth radial angle (e.g., 2 = every other)
 %    ptype      - 'velrad' for velocity or 'prerad' for pressure
@@ -30,9 +32,9 @@ slotsPerFig = opts.radial.layout(1) * opts.radial.layout(2);
 rad_Vplot = strcmp(ptype,'velrad');
 rad_Pplot = strcmp(ptype,'prerad');
 
-hasEnv = isfield(VPrad, 'EnvVor');
+hasEnv = isfield(VPrad, 'EnvVor_bt');
 
-itot = length(VPrad.VVor);
+itot = length(VPrad.VVor_bt);
 ntheta = length(VPrad.theta);
 nr = length(VPrad.r);
 
@@ -48,11 +50,11 @@ if rad_Vplot
             subplot(opts.radial.layout(1), opts.radial.layout(2), splot)
 
             if hasEnv
-                S_envvor(:) = 1.944*VPrad.EnvVor(int).Speed(it,1:nr);
+                S_envvor(:) = 1.944*VPrad.EnvVor_bt(int).Speed(it,1:nr);
                 S_env(:) = 1.944*VPrad.Env(int).Speed(it,1:nr);
                 plot(VPrad.r, S_envvor', 'k', VPrad.r, S_env, '--k')
             else
-                S_vor(:) = 1.944*VPrad.VVor(int).Speed(it,1:nr);
+                S_vor(:) = 1.944*VPrad.VVor_bt(int).Speed(it,1:nr);
                 plot(VPrad.r, S_vor', 'k')
             end
             hold on
@@ -111,12 +113,12 @@ if rad_Pplot
             splot = it/theta_inc - (fign-nploti)*slotsPerFig;
             subplot(opts.radial.layout(1), opts.radial.layout(2), splot)
             if hasEnv
-                P1 = VPrad.EnvVor(int).Press(it,1:nr);
+                P1 = VPrad.EnvVor_bt(int).Press(it,1:nr);
                 P2 = VPrad.Env(int).Press(it,1:nr);
                 hp = plot(VPrad.r, P1, 'k', VPrad.r, P2, '--k');
                 lgd = legend('Total Pres','Env Pres');
             else
-                P1 = VPrad.VVor(int).Press(it,1:nr);
+                P1 = VPrad.VVor_bt(int).Press(it,1:nr);
                 hp = plot(VPrad.r, P1, 'k');
                 lgd = legend('Vortex Pres');
             end
