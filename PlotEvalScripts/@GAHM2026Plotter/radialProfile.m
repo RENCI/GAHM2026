@@ -3,12 +3,14 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
 %  To use this, must first issue command: 
 %      obj = GAHM2026Plotter(R);
 %  where R is the datastructure from
-%      R=run_GAHM2026( );
+%      R=run_GAHM2026(<config>);
 %
 %   obj.radialProfile(ptype, ftype)
 %   obj.radialProfile(ptype, ftype, fign)
 %   obj.radialProfile(ptype, ftype, fign, time)
 %   obj.radialProfile(ptype, ftype, fign, time, theta_inc)
+%
+%   Required parameters:
 %
 %   ptype:
 %     'velrad' - radial velocity profiles with isotach & Vmax markers
@@ -17,6 +19,8 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
 %     'envhur' - env + vortex combined fields
 %     'hur'    - vortex fields only
 %     'env'    - environmental fields only
+%
+%   Optional parameters:
 %
 %   fign      - starting figure number (defaults to 1; [] = auto)
 %   time      - integer index, datetime, or [] (defaults to 1)
