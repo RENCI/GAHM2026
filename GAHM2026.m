@@ -288,6 +288,13 @@ VPrad.r = r;
 VPrad.theta = theta;
 r_arc=nm2deg(r/1852);  %convert r to nautical miles and then arclength (deg)
 for ii = 1:itot
+
+    % this is the previous VVor variable.  We need it for the moment so that the radialProfile code still works. 
+    VPrad.VVor(ii).VelU  = squeeze(VVel_VPrad_10_10(ii,:,:,1));
+    VPrad.VVor(ii).VelV  = squeeze(VVel_VPrad_10_10(ii,:,:,2));
+    VPrad.VVor(ii).Speed = squeeze(VSpeed_VPrad_10_10(ii,:,:));
+    VPrad.VVor(ii).Press = squeeze(VPress_VPrad(ii,:,:));
+
     VPrad.VVor_at(ii).VelU  = squeeze(VVel_VPrad_10_10(ii,:,:,1));
     VPrad.VVor_at(ii).VelV  = squeeze(VVel_VPrad_10_10(ii,:,:,2));
     VPrad.VVor_at(ii).Speed = squeeze(VSpeed_VPrad_10_10(ii,:,:));
@@ -313,6 +320,12 @@ for ii = 1:itot
         VPrad.Env(ii).VelV  = squeeze(VEnvrad_10_10(ii,:,:,2));
         VPrad.Env(ii).Speed = hypot(VPrad.Env(ii).VelU, VPrad.Env(ii).VelV);
         VPrad.Env(ii).Press = squeeze(PEnvrad(ii,:,:));
+        % this is the previous EnvVor variable.  We need it for the moment so that the radialProfile code still works. 
+        VPrad.EnvVor(ii).VelU  = VPrad.VVor(ii).VelU + VPrad.Env(ii).VelU;
+        VPrad.EnvVor(ii).VelV  = VPrad.VVor(ii).VelV + VPrad.Env(ii).VelV;
+        VPrad.EnvVor(ii).Speed = hypot(VPrad.EnvVor(ii).VelU, VPrad.EnvVor(ii).VelV);
+        VPrad.EnvVor(ii).Press = VPrad.VVor(ii).Press + VPrad.Env(ii).Press;
+
         VPrad.EnvVor_bt(ii).VelU  = VPrad.VVor_bt(ii).VelU + VPrad.Env(ii).VelU;
         VPrad.EnvVor_bt(ii).VelV  = VPrad.VVor_bt(ii).VelV + VPrad.Env(ii).VelV;
         VPrad.EnvVor_bt(ii).Speed = hypot(VPrad.EnvVor_bt(ii).VelU, VPrad.EnvVor_bt(ii).VelV);
