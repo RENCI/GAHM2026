@@ -46,7 +46,6 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
 
     one2ten     = opts.radial.one2ten;
     SQuad_1_10  = opts.radial.isotachs;
-    slotsPerFig = opts.radial.layout(1) * opts.radial.layout(2);
 
     rad_Vplot = strcmp(ptype,'velrad');
     rad_Pplot = strcmp(ptype,'prerad');
@@ -61,6 +60,11 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
 
     ntheta  = length(VPr.theta);
     nr      = length(VPr.r);
+
+    slotsPerFig = min(length(theta_inc:theta_inc:ntheta),...
+        opts.radial.layout(1) * opts.radial.layout(2));
+    np.rows=slotsPerFig/opts.radial.layout(2);
+    np.cols=opts.radial.layout(2);
 
     if isempty(fign)
         f=figure;
@@ -153,39 +157,52 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
     end
 
     %% radial pressure profiles
-
+    tl=tiledlayout(np.rows,np.cols);
+    tl.Padding='compact';
+    tl.TileSpacing='compact';
     if rad_Pplot
         for it = theta_inc:theta_inc:ntheta
             idx=idx+1;
-            fignum = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
-            figure(fignum)
-            splot = it/theta_inc - (fignum - nploti)*slotsPerFig;
-            ax(idx)=subplot(opts.radial.layout(1), opts.radial.layout(2), splot);
-
+            % fignum = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
+            % figure(fignum)
+            % %splot = it/theta_inc - (fignum - nploti)*slotsPerFig;
+            % ax(idx)=subplot(opts.radial.layout(1), opts.radial.layout(2), splot);
+            ax(idx)=nexttile;
+            x=VPr.r/1000;
             if rad_EnvVor
-                P1 = VPr.EnvVor_bt(int).Press(it,1:nr);
-                hp = plot(VPr.r, P1, 'k');
-                hold on
+                y = VPr.EnvVor_bt(int).Press(it,1:nr);
                 if hasEnv
-                    P2 = VPr.Env(int).Press(it,1:nr);
-                    plot(VPr.r, P2, '--r');
+                    y = [y;VPr.Env(int).Press(it,1:nr)];
                 end
-                lgd = legend('Total Pres','Env Pres');
+                lgds = {'Total Pres','Env Pres'};
             elseif rad_Vor
-                P1 = VPr.VVor_bt(int).Press(it,1:nr);
-                hp = plot(VPr.r, P1, 'k');
-                hold on
-                lgd = legend('Vortex Pres');
+                y = VPr.VVor_bt(int).Press(it,1:nr);
+                lgds = {'Vortex Pres'};
             elseif rad_Env
-                P1 = VPr.Env(int).Press(it,1:nr);
-                hp = plot(VPr.r, P1, '--r');
-                hold on
-                lgd = legend('Env Pres');
+                y = VPr.Env(int).Press(it,1:nr);
+                lgds = {'Env Pres'};
             end
-
-            yloc = min(hp.YData) + 0.85*(max(hp.YData) - min(hp.YData));
-            text(3e5, yloc, ['theta=' num2str(VPr.theta(it),'%.1f')])
+            hp = plot(x, y',linewidth=2);
+            %title(['theta=' num2str(VPr.theta(it),'%.1f')])
+            yloc = min(hp(1).YData(:)) + 0.05*(max(hp(1).YData(:)) - min(hp(1).YData(:)));
+            text(3e5/1000, yloc, ['theta=' num2str(VPr.theta(it),'%.1f')])
+            lgd=legend(lgds);
             lgd.Location = 'southeast';
+            [col,row] = ind2sub([np.cols np.rows],idx);
+            if row<np.rows 
+                set(gca,'XTickLabel',[])
+            else
+                xlabel('km')
+            end
+            if col>1
+                 set(gca,'YTickLabel',[])
+            else
+                ylabel('mb')     
+            end
+            if col~=np.cols || row~=np.rows
+                legend off
+            end
+            gm
         end
     end
 
