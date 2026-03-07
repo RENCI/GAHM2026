@@ -168,7 +168,7 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
             if col>1
                  set(gca,'YTickLabel',[])
             else
-                ylabel('[m/s]')     
+                ylabel({'Speed','[m/s]'})     
             end
             gm
         end
@@ -210,7 +210,7 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
             if col>1
                  set(gca,'YTickLabel',[])
             else
-                ylabel('mb')     
+                 ylabel({'Pres','[mb]'})
             end
             if col==np.cols && row==np.rows
                 lgd=legend(lgds);

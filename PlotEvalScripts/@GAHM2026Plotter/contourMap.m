@@ -7,8 +7,8 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
 %      R=run_GAHM2026( );
 %
 %   fig = obs.contourMap(ptype)                  - defaults to figure #1
-%   fig = obj.contourMap(ptype, fign)            — plots first timestep
-%   fig = obj.contourMap(ptype, fign, time)      — plots specified time
+%   fig = obj.contourMap(ptype, fign)            - plots first timestep
+%   fig = obj.contourMap(ptype, fign, time)      - plots specified time
 %   fig = obj.contourMap(ptype, fign, time, plotdata)
 %
 %   time can be:
