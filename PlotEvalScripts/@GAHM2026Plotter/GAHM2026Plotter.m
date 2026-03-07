@@ -137,7 +137,7 @@ classdef GAHM2026Plotter < handle
 
         fig = contourMap(obj, ptype, fign, time, plotdata)
         addQuiver(obj, time, plotdata)
-        radialProfile(obj, ptype, fign, time, theta_inc)
+        radialProfile(obj, ptype, ftype, fign, time, theta_inc)
         fig = scatterCompare(obj, X, Y, fign, titleStr, xlabelStr, ylabelStr, legendLabels)
         [idxA, idxB] = syncDatetime(obj, A, B)
         animate(obj, ptype, fign, plotdata, filename)
