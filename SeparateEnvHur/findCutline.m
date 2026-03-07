@@ -29,8 +29,10 @@ function [count, in, distance] = findCutline( ...
     count = ensureConvexCutline(count, Xq, Yq);
     
     [lon_newv, lat_newv] = extractCutlineCoords(count, Xq, Yq);
+    % move back to vortex center
     lon_newv = lon_newv + cx;
     lat_newv = lat_newv + cy;
+    % close polygon
     lon_newv = [lon_newv, lon_newv(1)];
     lat_newv = [lat_newv, lat_newv(1)];
     
