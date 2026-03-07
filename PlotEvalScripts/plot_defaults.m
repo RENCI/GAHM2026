@@ -60,6 +60,19 @@ opts.mask.show = false;            % overlay mask contours
 opts.mask.color = 'm';
 opts.mask.linewidth = 2;
 
+%% Difference map
+opts.diffmap.colormap = 'rdbu';    % diverging colormap
+opts.diffmap.clims = [];           % [] = auto-symmetric
+
+%% Scatter plots
+opts.scatter.showMetrics = false;  % annotate bias/RMSE/R^2 on scatter plots
+opts.scatter.csvFile = '';         % CSV file for metrics export ('' = none)
+
+%% Time-series plots
+opts.timeseries.linewidth = 1.5;
+opts.timeseries.marker = 'o';
+opts.timeseries.markersize = 4;
+
 %% Time
 opts.time.format='dd MMM yyyy HH:mm';
 end
