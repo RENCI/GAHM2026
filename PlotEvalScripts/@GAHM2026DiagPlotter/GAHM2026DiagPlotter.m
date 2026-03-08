@@ -11,29 +11,29 @@ classdef GAHM2026DiagPlotter < handle
 %   obj = GAHM2026DiagPlotter.fromSepEnvHur(sepfile_or_struct, opts)
 %
 % PLOTTING METHODS
-%   contourMap(ptype, fign, time, plotdata)
+%   contourMap(plotType, figNum, time, plotdata)
 %       Contour map (pcolor) of wind speed or pressure at one timestep.
-%       ptype: 'velcon','precon','prequiv','mvelcon','mprecon'
+%       plotType: 'velcon','precon','prequiv','mvelcon','mprecon'
 %
 %   addQuiver(time, plotdata)
 %       Overlay velocity vectors on the current axes.
 %
-%   radialProfile(ptype, ftype, fign, time, theta_inc)
+%   radialProfile(plotType, fieldType, figNum, time, theta_inc)
 %       Radial profiles of wind or pressure at one timestep in subplots.
-%       ptype: 'velrad' or 'prerad'
-%       ftype: string or cell array of strings from:
+%       plotType: 'velrad' or 'prerad'
+%       fieldType: string or cell array of strings from:
 %         'envhur','vor_bt','vor_at','env','envvor_bt','envhur_final','trackdata'
 %
-%   timeSeriesPlot(fields, fign)
+%   timeSeriesPlot(fields, figNum)
 %       Time-series of storm parameters (Vmax, Pc, Rmax, etc.).
 %
-%   differenceMap(fieldA, fieldB, variable, fign, time)
+%   differenceMap(fieldA, fieldB, variable, figNum, time)
 %       Difference map between two gridded field sets.
 %
-%   scatterCompare(X, Y, fign, titleStr, xlabelStr, ylabelStr, legendLabels)
+%   scatterCompare(X, Y, figNum, titleStr, xlabelStr, ylabelStr, legendLabels)
 %       1:1 scatter plot with optional metrics annotation.
 %
-%   animate(ptype, fign, plotdata, filename)
+%   animate(plotType, figNum, plotdata, filename)
 %       GIF/MP4 animation over all timesteps.
 %
 %   exportFigure(fig, filename)
@@ -164,17 +164,17 @@ classdef GAHM2026DiagPlotter < handle
 
         %% Plotting methods (in separate files)
 
-        fig = contourMap(obj, ptype, fign, time, plotdata)
+        fig = contourMap(obj, plotType, figNum, time, plotdata)
         addQuiver(obj, time, plotdata)
-        radialProfile(obj, ptype, ftype, fign, time, theta_inc)
-        fig = scatterCompare(obj, X, Y, fign, titleStr, xlabelStr, ylabelStr, legendLabels)
+        radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
+        fig = scatterCompare(obj, X, Y, figNum, titleStr, xlabelStr, ylabelStr, legendLabels)
         [idxA, idxB] = syncDatetime(obj, A, B)
-        animate(obj, ptype, fign, plotdata, filename)
+        animate(obj, plotType, figNum, plotdata, filename)
         exportFigure(obj, fig, filename)
 
         % New methods
-        fig = timeSeriesPlot(obj, fields, fign)
-        fig = differenceMap(obj, fieldA, fieldB, variable, fign, time)
+        fig = timeSeriesPlot(obj, fields, figNum)
+        fig = differenceMap(obj, fieldA, fieldB, variable, figNum, time)
         metrics = computeMetrics(obj, X, Y, varName)
 
     end
@@ -185,12 +185,12 @@ classdef GAHM2026DiagPlotter < handle
 
     methods (Access = private)
 
-        ip = resolveTime(obj, time)
-        ip = resolveRadialTime(obj, time)
-        [minX, maxX, minY, maxY] = getDomain(obj, datagrid, ip)
-        plotTrack(obj, Tdata, ip, itot)
-        plotMaskContours(obj, datagrid, ip)
-        captureGifFrame(obj, fig, ip, istart, filename)
+        tidx = resolveTime(obj, time)
+        tidx = resolveRadialTime(obj, time)
+        [minX, maxX, minY, maxY] = getDomain(obj, datagrid, tidx)
+        plotTrack(obj, Track, tidx, ntimes)
+        plotMaskContours(obj, datagrid, tidx)
+        captureGifFrame(obj, fig, tidx, istart, filename)
         vw = openMp4(obj, filename)
 
     end

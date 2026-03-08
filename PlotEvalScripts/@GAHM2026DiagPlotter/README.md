@@ -58,13 +58,13 @@ obj.differenceMap(obj.EnvData, obj.HurData, 'speed', 3, 5);
 
 | Method | Description |
 |---|---|
-| `contourMap(ptype, fign, time, plotdata)` | Contour map: `'velcon'`, `'precon'`, `'prequiv'`, `'mvelcon'`, `'mprecon'` |
+| `contourMap(plotType, figNum, time, plotdata)` | Contour map: `'velcon'`, `'precon'`, `'prequiv'`, `'mvelcon'`, `'mprecon'` |
 | `addQuiver(time, plotdata)` | Overlay velocity vectors |
-| `radialProfile(ptype, ftype, fign, time, theta_inc)` | Radial profiles with multi-overlay support |
-| `timeSeriesPlot(fields, fign)` | Storm parameter time-series |
-| `differenceMap(fieldA, fieldB, variable, fign, time)` | Difference map between two field sets |
-| `scatterCompare(X, Y, fign, ...)` | 1:1 scatter with optional metrics annotation |
-| `animate(ptype, fign, plotdata, filename)` | GIF/MP4 animation |
+| `radialProfile(plotType, fieldType, figNum, time, theta_inc)` | Radial profiles with multi-overlay support |
+| `timeSeriesPlot(fields, figNum)` | Storm parameter time-series |
+| `differenceMap(fieldA, fieldB, variable, figNum, time)` | Difference map between two field sets |
+| `scatterCompare(X, Y, figNum, ...)` | 1:1 scatter with optional metrics annotation |
+| `animate(plotType, figNum, plotdata, filename)` | GIF/MP4 animation |
 | `exportFigure(fig, filename)` | Save to PNG or PDF |
 
 ### Diagnostics
@@ -93,11 +93,11 @@ obj.differenceMap(obj.EnvData, obj.HurData, 'speed', 3, 5);
 | `HurData` | Hurricane-only fields (SepEnvHur) |
 | `HasVPrad` | Boolean: radial data available? |
 
-## radialProfile — ftype Options
+## radialProfile — fieldType Options
 
-`ftype` can be a single string or a cell array for multi-overlay:
+`fieldType` can be a single string or a cell array for multi-overlay:
 
-| ftype | Data source | Legend label |
+| fieldType | Data source | Legend label |
 |---|---|---|
 | `'envhur'` | `EnvVor_bt` | E+H |
 | `'envhur_final'` | `EnvHur_final` | E+H Final |
