@@ -21,12 +21,12 @@ track_file        = 'ibtracs.NA.list.v04r01.csv';
 storm_designation = 'AL09';
 debug             = true;
 storm_start       = datetime(2022,9,23,0,0,0);
-storm_end         = datetime(2022,9,24,0,0,0);
+storm_end         = datetime(2022,9,23,3,0,0);
 
 %% ===== SeparateEnvHur parameters =====
 %sepenvhur.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.nc';
 % sepenvhur.background_file    = 'input/09.nc';
-sepenvhur.background_file      = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/<year>/<year>.nc';
+sepenvhur.background_file      = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/2022/09_2.nc';
 sepenvhur.storm_start          = storm_start;
 sepenvhur.storm_end            = storm_end;
 sepenvhur.grid_half_size       = 40;
