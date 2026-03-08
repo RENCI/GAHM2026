@@ -88,10 +88,10 @@ obj.differenceMap(obj.EnvData, obj.HurData, 'speed', 3, 5);
 | `PlotData` | Default TC fields (`Reggrid_TC_out`) |
 | `DataGrid` | Grid coordinates (`Reggrid_out`) |
 | `Trackdata` | Storm track data |
-| `VPrad` | Radial grid data (empty for SepEnvHur) |
+| `RadialGrid` | Radial grid data (empty for SepEnvHur) |
 | `EnvData` | Environmental fields |
 | `HurData` | Hurricane-only fields (SepEnvHur) |
-| `HasVPrad` | Boolean: radial data available? |
+| `HasRadialGrid` | Boolean: radial data available? |
 
 ## radialProfile — fieldType Options
 

@@ -1,10 +1,10 @@
 function tidx = resolveRadialTime(obj, time)
-% resolveRadialTime  Convert a time argument to a VPrad timestep index.
+% resolveRadialTime  Convert a time argument to a RadialGrid timestep index.
 %
 %   tidx = resolveRadialTime(obj, 5)                 — integer index
 %   tidx = resolveRadialTime(obj, datetime(2024,...)) — matched via Trackdata
 
-    ntimes = length(obj.VPrad.VVor_bt);
+    ntimes = length(obj.RadialGrid.VVor_bt);
 
     if isnumeric(time) && isscalar(time)
         tidx = round(time);

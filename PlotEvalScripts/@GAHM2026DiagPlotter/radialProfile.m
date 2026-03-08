@@ -71,8 +71,8 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
     if nargin < 4 || isempty(figNum), figNum = 1; end
     if nargin < 3 || isempty(fieldType), fieldType = 'envhur'; end
 
-    assert(obj.HasVPrad, 'GAHM2026DiagPlotter:noVPrad', ...
-        'Radial grid data (VPrad) is not available in this Result struct.')
+    assert(obj.HasRadialGrid, 'GAHM2026DiagPlotter:noRadialGrid', ...
+        'Radial grid data (RadialGrid) is not available in this Result struct.')
 
     if ischar(fieldType) || isstring(fieldType)
         fieldType = {char(fieldType)};
@@ -82,7 +82,7 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
     MS2KT = phys.ms2kt;
     NM2M  = phys.nm2m;
 
-    Vrad  = obj.VPrad;
+    Vrad  = obj.RadialGrid;
     Track = obj.Trackdata;
     opts  = obj.Opts;
 
@@ -91,8 +91,8 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
     min1to10    = opts.radial.one2ten;
     isotach_kts = opts.radial.isotachs;
 
-    rad_Vplot = strcmp(plotType,'velrad');
-    rad_Pplot = strcmp(plotType,'prerad');
+    isVelRadial = strcmp(plotType,'velrad');
+    isPresRadial = strcmp(plotType,'prerad');
 
     hasEnvHur_final = isfield(Vrad, 'EnvHur_final');
     hasVor_bt       = isfield(Vrad, 'VVor_bt');
@@ -100,23 +100,23 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
     hasEnv          = isfield(Vrad, 'Env');
     hasEnvVor_bt    = isfield(Vrad, 'EnvVor_bt');
 
-    rad_EnvHur_final = false;
-    rad_Vor_bt       = false;
-    rad_Vor_at       = false;
-    rad_Env          = false;
-    rad_EnvVor_bt    = false;
-    rad_EnvHur       = false;
-    rad_track        = false;
+    showEnvHurFinal = false;
+    showVorBt       = false;
+    showVorAt       = false;
+    showEnv         = false;
+    showEnvVorBt    = false;
+    showEnvHur      = false;
+    showTrack       = false;
 
     for i = 1:length(fieldType)
         switch fieldType{i}
-            case 'envhur_final', if hasEnvHur_final, rad_EnvHur_final = true; end
-            case 'vor_bt',       if hasVor_bt,       rad_Vor_bt       = true; end
-            case 'vor_at',       if hasVor_at,       rad_Vor_at       = true; end
-            case 'env',          if hasEnv,           rad_Env          = true; end
-            case 'envvor_bt',    if hasEnvVor_bt,     rad_EnvVor_bt    = true; end
-            case 'envhur',       if hasEnvVor_bt,     rad_EnvHur       = true; end
-            case 'trackdata',    rad_track = true;
+            case 'envhur_final', if hasEnvHur_final, showEnvHurFinal = true; end
+            case 'vor_bt',       if hasVor_bt,       showVorBt       = true; end
+            case 'vor_at',       if hasVor_at,       showVorAt       = true; end
+            case 'env',          if hasEnv,           showEnv         = true; end
+            case 'envvor_bt',    if hasEnvVor_bt,     showEnvVorBt    = true; end
+            case 'envhur',       if hasEnvVor_bt,     showEnvHur      = true; end
+            case 'trackdata',    showTrack = true;
         end
     end
 
@@ -139,87 +139,87 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
     tl.Padding     = 'compact';
     tl.TileSpacing = 'compact';
 
-    ax  = [];
-    idx = 0;
-    x   = Vrad.r / 1000;
+    ax      = [];
+    tileIdx = 0;
+    x       = Vrad.r / 1000;
 
     %% radial velocity profiles
-    if rad_Vplot
+    if isVelRadial
         for itheta = theta_inc:theta_inc:ntheta
-            idx = idx + 1;
-            ax(idx) = nexttile; %#ok<AGROW>
+            tileIdx = tileIdx + 1;
+            ax(tileIdx) = nexttile; %#ok<AGROW>
             hold on
 
-            legind  = 0;
-            legtext = {};
+            nleg      = 0;
+            legLabels = {};
 
-            if rad_EnvHur_final
+            if showEnvHurFinal
                 plot(x, MS2KT*Vrad.EnvHur_final(tidx).Speed(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'E+H Final';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'E+H Final';
             end
-            if rad_Vor_bt
+            if showVorBt
                 plot(x, MS2KT*Vrad.VVor_bt(tidx).Speed(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'Vor b/t';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'Vor b/t';
             end
-            if rad_Vor_at
+            if showVorAt
                 plot(x, MS2KT*Vrad.VVor_at(tidx).Speed(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'Vor a/t';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'Vor a/t';
             end
-            if rad_EnvVor_bt
+            if showEnvVorBt
                 plot(x, MS2KT*Vrad.EnvVor_bt(tidx).Speed(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'E+V b/t';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'E+V b/t';
             end
-            if rad_EnvHur
+            if showEnvHur
                 plot(x, MS2KT*Vrad.EnvVor_bt(tidx).Speed(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'E+H';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'E+H';
             end
-            if rad_Env
+            if showEnv
                 plot(x, MS2KT*Vrad.Env(tidx).Speed(itheta,1:nr), '--k', linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'Env';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'Env';
             end
 
-            if rad_track
+            if showTrack
                 plot(Track(tidx).Rmax_t1*NM2M/1000, Track(tidx).Vmax_t1*min1to10, 'b*')
-                legind = legind + 1;
-                legtext{legind} = 'Vmax t1';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'Vmax t1';
                 if Track(tidx).Vmax_t2 ~= 0
                     plot(Track(tidx).Rmax_t2*NM2M/1000, Track(tidx).Vmax_t2*min1to10, 'r*')
-                    legind = legind + 1;
-                    legtext{legind} = 'Vmax t2';
+                    nleg = nleg + 1;
+                    legLabels{nleg} = 'Vmax t2';
                 end
                 for ii = 1:length(isotach_kts)
                     if Track(tidx).RQuad_t1(Track(tidx).RP1(itheta),ii) ~= 0
                         plot(Track(tidx).RQuad_t1(Track(tidx).RP1(itheta),ii)/1000, isotach_kts(ii)*min1to10, 'bo')
                         if ii == 1
-                            legind = legind + 1;
-                            legtext{legind} = ['RPQ' num2str(Track(tidx).RP1(itheta)) ' t1'];
+                            nleg = nleg + 1;
+                            legLabels{nleg} = ['RPQ' num2str(Track(tidx).RP1(itheta)) ' t1'];
                         end
                     end
                     if Track(tidx).RQuad_t1(Track(tidx).RP2(itheta),ii) ~= 0
                         plot(Track(tidx).RQuad_t1(Track(tidx).RP2(itheta),ii)/1000, isotach_kts(ii)*min1to10, 'bx')
                         if ii == 1
-                            legind = legind + 1;
-                            legtext{legind} = ['RPQ' num2str(Track(tidx).RP2(itheta)) ' t1'];
+                            nleg = nleg + 1;
+                            legLabels{nleg} = ['RPQ' num2str(Track(tidx).RP2(itheta)) ' t1'];
                         end
                     end
                     if Track(tidx).RQuad_t2(Track(tidx).RP1(itheta),ii) ~= 0
                         plot(Track(tidx).RQuad_t2(Track(tidx).RP1(itheta),ii)/1000, isotach_kts(ii)*min1to10, 'ro')
                         if ii == 1
-                            legind = legind + 1;
-                            legtext{legind} = ['RPQ' num2str(Track(tidx).RP1(itheta)) ' t2'];
+                            nleg = nleg + 1;
+                            legLabels{nleg} = ['RPQ' num2str(Track(tidx).RP1(itheta)) ' t2'];
                         end
                     end
                     if Track(tidx).RQuad_t2(Track(tidx).RP2(itheta),ii) ~= 0
                         plot(Track(tidx).RQuad_t2(Track(tidx).RP2(itheta),ii)/1000, isotach_kts(ii)*min1to10, 'rx')
                         if ii == 1
-                            legind = legind + 1;
-                            legtext{legind} = ['RPQ' num2str(Track(tidx).RP2(itheta)) ' t2'];
+                            nleg = nleg + 1;
+                            legLabels{nleg} = ['RPQ' num2str(Track(tidx).RP2(itheta)) ' t2'];
                         end
                     end
                 end
@@ -228,9 +228,9 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
             yloc = min(ylim) + 0.95*(max(ylim) - min(ylim));
             text(4e5/1000, yloc, ['theta=' num2str(Vrad.theta(itheta),'%.1f')])
 
-            [col,row] = ind2sub([tileGrid.cols tileGrid.rows], idx);
+            [col,row] = ind2sub([tileGrid.cols tileGrid.rows], tileIdx);
             if col == tileGrid.cols && row == tileGrid.rows
-                lgd = legend(legtext);
+                lgd = legend(legLabels);
                 lgd.Location = 'northeast';
             end
             if row < tileGrid.rows
@@ -248,52 +248,52 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
     end
 
     %% radial pressure profiles
-    if rad_Pplot
+    if isPresRadial
         for itheta = theta_inc:theta_inc:ntheta
-            idx = idx + 1;
-            ax(idx) = nexttile; %#ok<AGROW>
+            tileIdx = tileIdx + 1;
+            ax(tileIdx) = nexttile; %#ok<AGROW>
             hold on
 
-            legind  = 0;
-            legtext = {};
+            nleg      = 0;
+            legLabels = {};
 
-            if rad_EnvHur_final
+            if showEnvHurFinal
                 plot(x, Vrad.EnvHur_final(tidx).Press(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'E+H Final';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'E+H Final';
             end
-            if rad_Vor_bt
+            if showVorBt
                 plot(x, Vrad.VVor_bt(tidx).Press(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'Vor b/t';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'Vor b/t';
             end
-            if rad_Vor_at
+            if showVorAt
                 plot(x, Vrad.VVor_at(tidx).Press(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'Vor a/t';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'Vor a/t';
             end
-            if rad_EnvVor_bt
+            if showEnvVorBt
                 plot(x, Vrad.EnvVor_bt(tidx).Press(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'E+V b/t';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'E+V b/t';
             end
-            if rad_EnvHur
+            if showEnvHur
                 plot(x, Vrad.EnvVor_bt(tidx).Press(itheta,1:nr), linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'E+H';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'E+H';
             end
-            if rad_Env
+            if showEnv
                 plot(x, Vrad.Env(tidx).Press(itheta,1:nr), '--k', linewidth=2);
-                legind = legind + 1;
-                legtext{legind} = 'Env';
+                nleg = nleg + 1;
+                legLabels{nleg} = 'Env';
             end
 
             yloc = min(ylim) + 0.05*(max(ylim) - min(ylim));
             text(3e5/1000, yloc, ['theta=' num2str(Vrad.theta(itheta),'%.1f')])
 
-            [col,row] = ind2sub([tileGrid.cols tileGrid.rows], idx);
+            [col,row] = ind2sub([tileGrid.cols tileGrid.rows], tileIdx);
             if col == tileGrid.cols && row == tileGrid.rows
-                lgd = legend(legtext);
+                lgd = legend(legLabels);
                 lgd.Location = 'southeast';
             end
             if row < tileGrid.rows

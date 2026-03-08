@@ -78,10 +78,10 @@ classdef GAHM2026DiagPlotter < handle
         PlotData    % default gridded TC fields (Reggrid_TC_out)
         DataGrid    % grid coordinates (Reggrid_out)
         Trackdata   % track data
-        VPrad       % radial grid data (empty for sepenvhur source)
+        RadialGrid  % radial grid data (empty for sepenvhur source)
         EnvData     % environmental fields (Reggrid_Env_out)
         HurData     % hurricane-only fields (Reggrid_Hur_out, sepenvhur only)
-        HasVPrad    % true if radial grid data is available
+        HasRadialGrid % true if radial grid data is available
     end
 
     methods
@@ -121,7 +121,7 @@ classdef GAHM2026DiagPlotter < handle
             val = obj.Result.Trackdata;
         end
 
-        function val = get.VPrad(obj)
+        function val = get.RadialGrid(obj)
             if isfield(obj.Result, 'VPrad')
                 val = obj.Result.VPrad;
             else
@@ -145,7 +145,7 @@ classdef GAHM2026DiagPlotter < handle
             end
         end
 
-        function val = get.HasVPrad(obj)
+        function val = get.HasRadialGrid(obj)
             val = isfield(obj.Result, 'VPrad') && ~isempty(obj.Result.VPrad);
         end
 

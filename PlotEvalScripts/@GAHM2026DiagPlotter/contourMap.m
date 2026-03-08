@@ -43,8 +43,8 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
     ThisTime=datagrid(tidx).datetime;
     ThisTime.Format='yyyy-MM-dd HH:mm';
 
-    con_Vplot = strcmp(plotType,'velcon') || strcmp(plotType,'mvelcon');
-    con_Pplot = strcmp(plotType,'precon') || strcmp(plotType,'mprecon') || strcmp(plotType,'prequiv');
+    isWindPlot = strcmp(plotType,'velcon') || strcmp(plotType,'mvelcon');
+    isPresPlot = strcmp(plotType,'precon') || strcmp(plotType,'mprecon') || strcmp(plotType,'prequiv');
     showMask  = strcmp(plotType,'mvelcon') || strcmp(plotType,'mprecon');
     showQuiv  = strcmp(plotType,'velcon') || strcmp(plotType,'prequiv');
 
@@ -60,7 +60,7 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
 
     %% velocity contour
 
-    if con_Vplot
+    if isWindPlot
         Speed = hypot(plotdata(tidx).VelU, plotdata(tidx).VelV);
         pcolor(datagrid(tidx).Lon, datagrid(tidx).Lat, MS2KT*Speed);
         shading interp
@@ -76,7 +76,7 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
 
     %% pressure contour
 
-    if con_Pplot
+    if isPresPlot
         pcolor(datagrid(tidx).Lon, datagrid(tidx).Lat, plotdata(tidx).Press);
         shading interp
         colormap(gca, opts.pres.colormap);
