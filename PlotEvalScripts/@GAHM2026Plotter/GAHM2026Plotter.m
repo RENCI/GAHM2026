@@ -11,22 +11,22 @@ classdef GAHM2026Plotter < handle
 %     and optionally .Points_TC_out, .Points_Env_out (for point output)
 %
 % PLOTTING METHODS
-%   contourMap(ptype, fign, time, plotdata)
+%   contourMap(plotType, figNum, time, plotdata)
 %       Contour map (pcolor) of wind speed or pressure at one timestep.
-%       ptype: 'velcon','precon','prequiv','mvelcon','mprecon'
+%       plotType: 'velcon','precon','prequiv','mvelcon','mprecon'
 %       time:  integer index, datetime, or [] (default 1)
 %
 %   addQuiver(time, plotdata)
 %       Overlay velocity vectors on the current axes at one timestep.
 %
-%   radialProfile(ptype, fign, time, theta_inc)
+%   radialProfile(plotType, fieldType, figNum, time, theta_inc)
 %       Radial profiles of wind or pressure at one timestep in subplots.
-%       ptype: 'velrad' or 'prerad'
+%       plotType: 'velrad' or 'prerad'
 %
-%   scatterCompare(X, Y, fign, titleStr, xlabelStr, ylabelStr, legendLabels)
+%   scatterCompare(X, Y, figNum, titleStr, xlabelStr, ylabelStr, legendLabels)
 %       1:1 scatter plot.  N×4 → by-quadrant; N×K → by-series.
 %
-%   animate(ptype, fign, plotdata, filename)
+%   animate(plotType, figNum, plotdata, filename)
 %       GIF/MP4 animation over all timesteps via contourMap.
 %
 %   exportFigure(fig, filename)
@@ -44,7 +44,7 @@ classdef GAHM2026Plotter < handle
 %   opts.quiver   — .stride, .scale, .color
 %   opts.coast    — .show, .color, .linewidth
 %   opts.track    — .color, .linewidth, .progressive
-%   opts.radial   — .isotachs, .one2ten, .layout
+%   opts.radial   — .isotachs, .min1to10, .layout
 %   opts.mask     — .show, .color, .linewidth
 %   opts.anim     — .gif, .mp4, .frameRate
 %   opts.export   — .dir, .format, .dpi
@@ -62,7 +62,7 @@ classdef GAHM2026Plotter < handle
 %   obj.animate('mvelcon', 1);
 %
 %   % radial velocity profiles at timestep 3
-%   obj.radialProfile('velrad', 20, 3);
+%   obj.radialProfile('velrad', 'envhur', 20, 3);
 %
 %   % scatter comparison
 %   obj.scatterCompare(X, Y, 1, 'Rmax 34kt', 'GAHM (nm)', 'ASWIP (nm)');
@@ -135,24 +135,24 @@ classdef GAHM2026Plotter < handle
 
         %% Plotting methods (in separate files)
 
-        fig = contourMap(obj, ptype, fign, time, plotdata)
+        fig = contourMap(obj, plotType, figNum, time, plotdata)
         addQuiver(obj, time, plotdata)
-        radialProfile(obj, ptype, ftype, fign, time, theta_inc)
-        fig = scatterCompare(obj, X, Y, fign, titleStr, xlabelStr, ylabelStr, legendLabels)
+        radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
+        fig = scatterCompare(obj, X, Y, figNum, titleStr, xlabelStr, ylabelStr, legendLabels)
         [idxA, idxB] = syncDatetime(obj, A, B)
-        animate(obj, ptype, fign, plotdata, filename)
+        animate(obj, plotType, figNum, plotdata, filename)
         exportFigure(obj, fig, filename)
 
     end
 
     methods (Access = private)
 
-        ip = resolveTime(obj, time)
-        ip = resolveRadialTime(obj, time)
-        [minX, maxX, minY, maxY] = getDomain(obj, datagrid, ip)
-        plotTrack(obj, Tdata, ip, itot)
-        plotMaskContours(obj, datagrid, ip)
-        captureGifFrame(obj, fig, ip, istart, filename)
+        tidx = resolveTime(obj, time)
+        tidx = resolveRadialTime(obj, time)
+        [minX, maxX, minY, maxY] = getDomain(obj, datagrid, tidx)
+        plotTrack(obj, Track, tidx, ntimes)
+        plotMaskContours(obj, datagrid, tidx)
+        captureGifFrame(obj, fig, tidx, istart, filename)
         vw = openMp4(obj, filename)
 
     end

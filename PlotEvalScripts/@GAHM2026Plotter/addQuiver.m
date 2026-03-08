@@ -18,7 +18,7 @@ function addQuiver(obj, time, plotdata)
     if nargin < 3, plotdata = obj.PlotData; end
     if nargin < 2 || isempty(time), time = 1; end
 
-    ip = resolveTime(obj, time);
+    tidx = resolveTime(obj, time);
 
     datagrid = obj.DataGrid;
     opts     = obj.Opts;
@@ -26,10 +26,10 @@ function addQuiver(obj, time, plotdata)
     scl      = opts.quiver.scale;
     clr      = opts.quiver.color;
 
-    lon = datagrid(ip).Lon;
-    lat = datagrid(ip).Lat;
-    u   = plotdata(ip).VelU;
-    v   = plotdata(ip).VelV;
+    lon = datagrid(tidx).Lon;
+    lat = datagrid(tidx).Lat;
+    u   = plotdata(tidx).VelU;
+    v   = plotdata(tidx).VelV;
 
     lon_s = lon(1:stride:end, 1:stride:end);
     lat_s = lat(1:stride:end, 1:stride:end);

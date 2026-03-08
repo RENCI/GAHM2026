@@ -46,9 +46,8 @@ numiso=GAHM_in.numiso;
 GAHM_out=GAHM_in;
 GAHM_out.flag_exit=0;
 
-omega = 0.00007272; % rad / s
-%TODO: get from constants
-% omega = c.omega;
+c = GAHM_physical_constants();
+omega = c.omega;
 f=2*omega*sind(LatNS);   % 1/s
 
 VVorQuaduv_tbl = quadrantUnitVectors(LatNS);

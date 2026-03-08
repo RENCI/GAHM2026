@@ -1,11 +1,11 @@
-function captureGifFrame(obj, fig, ip, istart, filename)
+function captureGifFrame(obj, fig, tidx, istart, filename)
 % captureGifFrame  Append the current figure as a GIF frame.
 
     frame = getframe(fig);
     im = frame2im(frame);
     [A, maps] = rgb2ind(im, 256);
 
-    if ip == istart
+    if tidx == istart
         imwrite(A, maps, filename, 'gif', 'LoopCount', Inf, ...
             'DelayTime', 1/obj.Opts.anim.frameRate);
     else

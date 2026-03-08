@@ -1,11 +1,11 @@
-function [minX, maxX, minY, maxY] = getDomain(obj, datagrid, ip)
-% getDomain  Compute axis limits for timestep ip.
+function [minX, maxX, minY, maxY] = getDomain(obj, datagrid, tidx)
+% getDomain  Compute axis limits for timestep tidx.
 
     if strcmp(obj.Opts.domain.mode, 'moving')
-        minX = min(datagrid(ip).Lon(:));
-        maxX = max(datagrid(ip).Lon(:));
-        minY = min(datagrid(ip).Lat(:));
-        maxY = max(datagrid(ip).Lat(:));
+        minX = min(datagrid(tidx).Lon(:));
+        maxX = max(datagrid(tidx).Lon(:));
+        minY = min(datagrid(tidx).Lat(:));
+        maxY = max(datagrid(tidx).Lat(:));
     else
         lims = obj.Opts.domain.fixedLimits;
         if isempty(lims)

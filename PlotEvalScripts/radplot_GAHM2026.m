@@ -29,6 +29,8 @@ one2ten = opts.radial.one2ten;
 SQuad_1_10 = opts.radial.isotachs;
 slotsPerFig = opts.radial.layout(1) * opts.radial.layout(2);
 
+MS2KT = GAHM_physical_constants().ms2kt;
+
 rad_Vplot = strcmp(ptype,'velrad');
 rad_Pplot = strcmp(ptype,'prerad');
 
@@ -50,17 +52,17 @@ if rad_Vplot
             subplot(opts.radial.layout(1), opts.radial.layout(2), splot)
 
             if hasEnv
-                S_envvor(:) = 1.944*VPrad.EnvVor_bt(int).Speed(it,1:nr);
-                S_env(:) = 1.944*VPrad.Env(int).Speed(it,1:nr);
+                S_envvor(:) = MS2KT*VPrad.EnvVor_bt(int).Speed(it,1:nr);
+                S_env(:) = MS2KT*VPrad.Env(int).Speed(it,1:nr);
                 plot(VPrad.r, S_envvor', 'k', VPrad.r, S_env, '--k')
             else
-                S_vor(:) = 1.944*VPrad.VVor_bt(int).Speed(it,1:nr);
+                S_vor(:) = MS2KT*VPrad.VVor_bt(int).Speed(it,1:nr);
                 plot(VPrad.r, S_vor', 'k')
             end
             hold on
-            plot(Trackdata(int).Rmax_t1, Trackdata(int).Vmax_t1*1.944*one2ten, 'b*')
+            plot(Trackdata(int).Rmax_t1, Trackdata(int).Vmax_t1*MS2KT*one2ten, 'b*')
             if Trackdata(int).Vmax_t2 ~= 0
-                plot(Trackdata(int).Rmax_t2, Trackdata(int).Vmax_t2*1.944*one2ten, 'r*')
+                plot(Trackdata(int).Rmax_t2, Trackdata(int).Vmax_t2*MS2KT*one2ten, 'r*')
             end
             for ii = 1:length(SQuad_1_10)
                 if Trackdata(int).RQuad_t1(Trackdata(int).RP1(it),ii) ~= 0

@@ -69,7 +69,9 @@
 %
 function ATCF2=read_ATCF_fort22(input_file,input_file_type)
 
-earthRadiusInMeters=6371000;
+c = GAHM_physical_constants();
+earthRadiusInMeters = c.earthRadiusM;
+MS2KT = c.ms2kt;
 
 ft_ATCF=false;
 ft_ASWIP=false;
@@ -553,7 +555,7 @@ while ATCF_line <= rows
                 VTspeed_10_10=distance('rh', ATCF2(newATCF_line-1).lat, ...
                     ATCF2(newATCF_line-1).lon, ATCF2(newATCF_line).lat, ...
                     ATCF2(newATCF_line).lon, earthRadiusInMeters)/delts; %translation speed from backward difference m/s
-                VTspeed_10_10=VTspeed_10_10*1.944; % convert to knots
+                VTspeed_10_10=VTspeed_10_10*MS2KT; % convert to knots
                 ATCF2(newATCF_line).transpd=VTspeed_10_10;
             end
             if isnan(VTspeed_10_10) || VTspeed_10_10 == 0 

@@ -13,12 +13,10 @@ theta=squeeze(theta);  % this gets rid of a bogus leading dimension of 1, i.e., 
 Vel=squeeze(Vel);
 Press=squeeze(Press);
 
-%TODO:
-% need to switch to using the physical constants in the c datastructure
-%c.nm2m % = 1852 nautical miles to meters
+NM2M = GAHM_physical_constants().nm2m;
 
 % convert from r,theta coordinates to lon, lat coordinates
-    r_arc=nm2deg(r/1852);  %convert r to nautical miles and then arclength (deg)
+    r_arc=nm2deg(r/NM2M);  %convert r to nautical miles and then arclength (deg)
     nr_arc=length(r_arc);
 
 for it=1:length(theta)

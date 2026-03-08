@@ -19,7 +19,8 @@ mask=squeeze(mask);
 FM=griddedInterpolant(longrid',latgrid',mask');
 
 % convert radial values from r,theta coordinates to lon, lat coordinates
-    r_arc=nm2deg(r/1852);  %convert r to nautical miles and then arclength (deg)
+    NM2M = GAHM_physical_constants().nm2m;
+    r_arc=nm2deg(r/NM2M);  %convert r to nautical miles and then arclength (deg)
     nr=length(r_arc);
   
 for it=1:length(theta)

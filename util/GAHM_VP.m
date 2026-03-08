@@ -51,9 +51,8 @@ function [Press,VVorRadProf_10_10] = GAHM_VP(r,q,iso,GAHM_constants,GAHM)
 
 LatNS=GAHM.Eye(2);
 BLF = GAHM_constants.BLF;
-omega = 0.00007272;    % rad / s
-%TODO: get omega from GAHM_Physical_constants.m
-%omega = c.omega:
+c = GAHM_physical_constants();
+omega = c.omega;
 f=2*omega*sind(LatNS);
 
 % Compute unit vectors & rotation matricies

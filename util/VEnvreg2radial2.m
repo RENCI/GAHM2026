@@ -15,7 +15,8 @@
 function [VEnvrad PEnvrad]=VEnvreg2radial2(itime,VEnv,eyeLon,eyeLat,r,theta)
 
 theta=squeeze(theta);  % this gets rid of a bogus leading dimension of 1, i.e., (1,:,:) = (:,:) 
-r_arc=nm2deg(r/1852);  %convert r to nautical miles and then arclength (deg)
+NM2M = GAHM_physical_constants().nm2m;
+r_arc=nm2deg(r/NM2M);  %convert r to nautical miles and then arclength (deg)
 nr=length(r_arc);
 
 mask=false;       % interpolate u,v,p onto radial grid

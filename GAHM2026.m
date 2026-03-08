@@ -286,7 +286,8 @@ logMsg(-1, 'INFO', 'Regular grid interpolation complete.');
 
 VPrad.r = r;
 VPrad.theta = theta;
-r_arc=nm2deg(r/1852);  %convert r to nautical miles and then arclength (deg)
+NM2M = GAHM_physical_constants().nm2m;
+r_arc=nm2deg(r/NM2M);  %convert r to nautical miles and then arclength (deg)
 for ii = 1:itot
 
     % this is the previous VVor variable.  We need it for the moment so that the radialProfile code still works. 

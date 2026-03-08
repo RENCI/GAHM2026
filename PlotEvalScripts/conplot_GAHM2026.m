@@ -22,6 +22,8 @@ if nargin < 6
     opts = plot_defaults();
 end
 
+MS2KT = GAHM_physical_constants().ms2kt;
+
 con_Vplot = strcmp(ptype,'velcon') || strcmp(ptype,'mvelcon');
 con_Pplot = strcmp(ptype,'precon') || strcmp(ptype,'mprecon');
 opts.mask.show = strcmp(ptype,'mvelcon') || strcmp(ptype,'mprecon');
@@ -47,7 +49,7 @@ if con_Vplot
         fign = fign + 1;
         fig = figure(fign);
         Speed = hypot(plotdata(ip).VelU, plotdata(ip).VelV);
-        hs = pcolor(datagrid(ip).Lon, datagrid(ip).Lat, 1.944*Speed);
+        hs = pcolor(datagrid(ip).Lon, datagrid(ip).Lat, MS2KT*Speed);
         hold on
         shading interp
         colormap(gca, sky);

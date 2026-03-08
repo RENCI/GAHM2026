@@ -1,4 +1,4 @@
-function fig = contourMap(obj, ptype, fign, time, plotdata)
+function fig = contourMap(obj, plotType, figNum, time, plotdata)
 % contourMap  Contour plot of a gridded wind or pressure field at one time.
 %
 %  To use this, must first issue command: 
@@ -6,24 +6,24 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
 %  where R is the datastructure from
 %      R=run_GAHM2026( );
 %
-%   fig = obs.contourMap(ptype)                  - defaults to figure #1
-%   fig = obj.contourMap(ptype, fign)            - plots first timestep
-%   fig = obj.contourMap(ptype, fign, time)      - plots specified time
-%   fig = obj.contourMap(ptype, fign, time, plotdata)
+%   fig = obs.contourMap(plotType)                  - defaults to figure #1
+%   fig = obj.contourMap(plotType, figNum)            - plots first timestep
+%   fig = obj.contourMap(plotType, figNum, time)      - plots specified time
+%   fig = obj.contourMap(plotType, figNum, time, plotdata)
 %
 %   time can be:
 %     integer index   — e.g. 5  (5th timestep)
-%     datetime        — matched to nearest datagrid(ip).datetime
+%     datetime        — matched to nearest datagrid(tidx).datetime
 %     []              — defaults to timestep 1
 %
-%   ptype options:
+%   plotType options:
 %     'velcon'  - wind speed contours with velocity vectors
 %     'precon'  - pressure contours
 %     'prequiv' - pressure contours with velocity vectors
 %     'mvelcon' - wind speed contours with mask boundary lines
 %     'mprecon' - pressure contours with mask boundary lines
 %
-%   fign     - figure number
+%   figNum     - figure number
 %   plotdata - (optional) gridded field struct array to plot instead of
 %              the default Result.Reggrid_TC_out
 %
@@ -31,52 +31,54 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
 
     if nargin < 5, plotdata = obj.PlotData; end
     if nargin < 4 || isempty(time), time = 1; end
-    if nargin < 3 || isempty(fign), fign = 1; end
+    if nargin < 3 || isempty(figNum), figNum = 1; end
 
     opts     = obj.Opts;
     datagrid = obj.DataGrid;
-    Tdata    = obj.Trackdata;
-    itot     = length(plotdata);
+    Track    = obj.Trackdata;
+    ntimes   = length(plotdata);
 
-    ip = resolveTime(obj, time);
-    ThisTime=datagrid(ip).datetime;
+    tidx = resolveTime(obj, time);
+    ThisTime=datagrid(tidx).datetime;
     ThisTime.Format='yyyy-MM-dd HH:mm';
 
-    con_Vplot = strcmp(ptype,'velcon') || strcmp(ptype,'mvelcon');
-    con_Pplot = strcmp(ptype,'precon') || strcmp(ptype,'mprecon') || strcmp(ptype,'prequiv');
-    showMask  = strcmp(ptype,'mvelcon') || strcmp(ptype,'mprecon');
-    showQuiv  = strcmp(ptype,'velcon') || strcmp(ptype,'prequiv');
+    isWindPlot = strcmp(plotType,'velcon') || strcmp(plotType,'mvelcon');
+    isPresPlot = strcmp(plotType,'precon') || strcmp(plotType,'mprecon') || strcmp(plotType,'prequiv');
+    showMask   = strcmp(plotType,'mvelcon') || strcmp(plotType,'mprecon');
+    showQuiv   = strcmp(plotType,'velcon') || strcmp(plotType,'prequiv');
 
-    [minX, maxX, minY, maxY] = getDomain(obj, datagrid, ip);
+    [minX, maxX, minY, maxY] = getDomain(obj, datagrid, tidx);
 
-    if isempty(fign)
+    if isempty(figNum)
         fig = figure(gcf);
     else
-        fig = figure(fign);
+        fig = figure(figNum);
     end
     clf(fig);
     hold on
 
+    MS2KT = GAHM_physical_constants().ms2kt;
+
     %% velocity contour
 
-    if con_Vplot
-        Speed = hypot(plotdata(ip).VelU, plotdata(ip).VelV);
-        pcolor(datagrid(ip).Lon, datagrid(ip).Lat, 1.944*Speed);
+    if isWindPlot
+        Speed = hypot(plotdata(tidx).VelU, plotdata(tidx).VelV);
+        pcolor(datagrid(tidx).Lon, datagrid(tidx).Lat, MS2KT*Speed);
         shading interp
         colormap(gca, opts.wind.colormap);
         colorbar
         clim(opts.wind.clims)
         alpha(opts.wind.alpha);
 
-        addQuiver(obj, ip, plotdata);
+        addQuiver(obj, tidx, plotdata);
 
         titleStr =  ['Wind Speed (kts) 10 min @ 10 m  ' char(string(ThisTime)) ' UTC'];
     end
 
     %% pressure contour
 
-    if con_Pplot
-        pcolor(datagrid(ip).Lon, datagrid(ip).Lat, plotdata(ip).Press);
+    if isPresPlot
+        pcolor(datagrid(tidx).Lon, datagrid(tidx).Lat, plotdata(tidx).Press);
         shading interp
         colormap(gca, opts.pres.colormap);
         colorbar
@@ -84,7 +86,7 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
         alpha(opts.pres.alpha);
 
         if showQuiv
-            addQuiver(obj, ip, plotdata);
+            addQuiver(obj, tidx, plotdata);
         end
 
         titleStr = ['Atm Pressure (mb)  ' char(string(ThisTime)) ' UTC'];
@@ -93,10 +95,10 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
     %% overlays common to both
 
     if showMask
-        plotMaskContours(obj, datagrid, ip);
+        plotMaskContours(obj, datagrid, tidx);
     end
 
-    plotTrack(obj, Tdata, ip, itot);
+    plotTrack(obj, Track, tidx, ntimes);
 
     title(titleStr)
     axis('equal')

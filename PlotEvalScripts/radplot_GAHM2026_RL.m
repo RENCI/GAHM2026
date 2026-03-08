@@ -44,6 +44,8 @@ one2ten = opts.radial.one2ten;
 SQuad_1_10 = opts.radial.isotachs;
 slotsPerFig = opts.radial.layout(1) * opts.radial.layout(2);
 
+c = GAHM_physical_constants(); MS2KT = c.ms2kt; NM2M = c.nm2m;
+
 Vplot = strcmp(ptype,'velrad');
 Pplot = strcmp(ptype,'prerad');
 
@@ -128,46 +130,46 @@ if Vplot
             subplot(opts.radial.layout(1), opts.radial.layout(2), splot)
             legind=0;
             if rad_EnvHur
-                ST_plot = 1.944*VPrad.EnvHur_final(int).Speed(it,1:nr);
+                ST_plot = MS2KT*VPrad.EnvHur_final(int).Speed(it,1:nr);
                 plot(VPrad.r, ST_plot')              
                 hold on               
                 legind=legind+1;
                 legtext{legind}='E+H Speed 10 10';
             end
             if rad_Vor_bt
-                ST_plot = 1.944*VPrad.VVor_bt(int).Speed(it,1:nr);
+                ST_plot = MS2KT*VPrad.VVor_bt(int).Speed(it,1:nr);
                 plot(VPrad.r, ST_plot')
                 hold on
                 legind=legind+1;
                 legtext{legind}='Vor_b_t Speed 10 10';                
             end
             if rad_Vor_at
-                ST_plot = 1.944*VPrad.VVor_at(int).Speed(it,1:nr);
+                ST_plot = MS2KT*VPrad.VVor_at(int).Speed(it,1:nr);
                 plot(VPrad.r, ST_plot')
                 hold on
                 legind=legind+1;
                 legtext{legind}='Vor_a_t Speed 10 10';                
             end  
             if rad_EnvVor_bt
-                ST_plot = 1.944*VPrad.EnvVor_bt(int).Speed(it,1:nr);
+                ST_plot = MS2KT*VPrad.EnvVor_bt(int).Speed(it,1:nr);
                 plot(VPrad.r, ST_plot')
                 hold on          
                 legind=legind+1;
                 legtext{legind}='E+V_b_t Speed 10 10';                
             end            
             if rad_Env
-                ST_plot = 1.944*VPrad.Env(int).Speed(it,1:nr);
+                ST_plot = MS2KT*VPrad.Env(int).Speed(it,1:nr);
                 plot(VPrad.r, ST_plot', '--k')
                 hold on         
                 legind=legind+1;
                 legtext{legind}='Env Speed 10 10';                
             end
             if rad_track
-                plot(Trackdata(int).Rmax_t1*1852, Trackdata(int).Vmax_t1*one2ten, 'b*')
+                plot(Trackdata(int).Rmax_t1*NM2M, Trackdata(int).Vmax_t1*one2ten, 'b*')
                 legind=legind+1;
                 legtext{legind}='Vmax t1';
                 if Trackdata(int).Vmax_t2 ~= 0
-                    plot(Trackdata(int).Rmax_t2*1852, Trackdata(int).Vmax_t2*one2ten, 'r*')
+                    plot(Trackdata(int).Rmax_t2*NM2M, Trackdata(int).Vmax_t2*one2ten, 'r*')
                     legind=legind+1;
                     legtext{legind}='Vmax t2';                    
                 end

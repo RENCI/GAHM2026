@@ -59,17 +59,11 @@
 function GAHM = GAHM2026_prep(GAHM_constants,env,ATCF_data_in,VEnv_10_10,...
                               PscaleEnv,ATCF_line,BTinterval,fid)
 
-% constants
-
-%TODO:
-% need to switch to using the physical constants in the c datastructure
-% here and in lines 222, 283
-%c.nm2m % = 1852 nautical miles to meters
-%c.kt2ms % = 0.514444 knots to m/s
-%c.ms2kt % = 1/0.514444 m/s to knots
-% earthRadiusInMeters=c.earthRadiusM;  % switch to using physical constants in the c datastructure
-
-earthRadiusInMeters=6371000;
+% physical constants
+c = GAHM_physical_constants();
+NM2M = c.nm2m;
+MS2KT = c.ms2kt;
+earthRadiusInMeters = c.earthRadiusM;
 BLF=GAHM_constants.BLF;
 one2tenF=GAHM_constants.one2tenF;
 rhoa=GAHM_constants.rhoa;
@@ -102,12 +96,12 @@ if skip_GAHM
     return
 end
 
-SMax_10_10=Vmax_mult*one2tenF*Vmax/1.944;           % SMax_10_10 in m/s
-Rmax_in=ATCF_data_in(ATCF_line).RMW*1852;           % Rmax in m
-RQuad(1:4,1)=ATCF_data_in(ATCF_line).R34(1:4)*1852; %34 kt isotachs in m
-RQuad(1:4,2)=ATCF_data_in(ATCF_line).R50(1:4)*1852; %50 kt isotachs in m
-RQuad(1:4,3)=ATCF_data_in(ATCF_line).R64(1:4)*1852; %64 kt isotachs in m   
-SQuad_10_10(1:3)=one2tenF*[34, 50, 64]/1.944; %isotach values 10 min avg in m/s
+SMax_10_10=Vmax_mult*one2tenF*Vmax/MS2KT;           % SMax_10_10 in m/s
+Rmax_in=ATCF_data_in(ATCF_line).RMW*NM2M;           % Rmax in m
+RQuad(1:4,1)=ATCF_data_in(ATCF_line).R34(1:4)*NM2M; %34 kt isotachs in m
+RQuad(1:4,2)=ATCF_data_in(ATCF_line).R50(1:4)*NM2M; %50 kt isotachs in m
+RQuad(1:4,3)=ATCF_data_in(ATCF_line).R64(1:4)*NM2M; %64 kt isotachs in m   
+SQuad_10_10(1:3)=one2tenF*[34, 50, 64]/MS2KT; %isotach values 10 min avg in m/s
 
 % Compute the translation velocity from backward difference
 
@@ -219,7 +213,7 @@ if isempty(itime)  % didn't find the specified time in the background Enviroment
     logMsg(-1, 'WARNING', 'Failed to find %s in the background Environmental Velocity file. VEnvAvg_out set = NaN', string(datetime));
     VEnvAvg_out(1:2)=NaN;
 else
-    rad_arc=nm2deg(rad/1852);  %convert rad to nautical miles and then arclength (deg)
+    rad_arc=nm2deg(rad/NM2M);  %convert rad to nautical miles and then arclength (deg)
     longrid=VEnv(itime).lon;
     latgrid=VEnv(itime).lat;
     dist=distance(eyeLon,eyeLat,longrid,latgrid);
@@ -280,7 +274,7 @@ else
             if isnan(RQuad(q,iso)) || RQuad(q,iso)==0
                 VEnvQuad(q,iso,1:2)=NaN;
             else
-                RQuad_arc=nm2deg(RQuad(q,iso)/1852);  %convert r to nautical miles and then arclength (deg)              
+                RQuad_arc=nm2deg(RQuad(q,iso)/NM2M);  %convert r to nautical miles and then arclength (deg)              
                 [RQuad_lat,RQuad_lon] = reckon("rh",eyeLat,eyeLon,RQuad_arc,az);  %might use track command here
                 VEnvRQuad(q,iso,1)=RQuad_lon;
                 VEnvRQuad(q,iso,2)=RQuad_lat;

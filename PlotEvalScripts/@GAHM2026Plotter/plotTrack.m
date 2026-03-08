@@ -1,12 +1,12 @@
-function plotTrack(obj, Tdata, ip, itot)
+function plotTrack(obj, Track, tidx, ntimes)
 % plotTrack  Overlay storm track line on the current axes.
 
     opts = obj.Opts;
 
     if opts.track.progressive
-        track = [Tdata(1:ip).Lon; Tdata(1:ip).Lat];
+        track = [Track(1:tidx).Lon; Track(1:tidx).Lat];
     else
-        track = [Tdata(1:itot).Lon; Tdata(1:itot).Lat];
+        track = [Track(1:ntimes).Lon; Track(1:ntimes).Lat];
     end
 
     plot(track(1,:), track(2,:), '-', 'Color', opts.track.color, ...

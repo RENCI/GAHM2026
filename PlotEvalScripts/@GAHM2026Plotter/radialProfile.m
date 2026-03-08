@@ -1,166 +1,159 @@
-function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
+function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
 % radialProfile  Radial profiles of wind speed or pressure at one timestep.
 %  To use this, must first issue command: 
 %      obj = GAHM2026Plotter(R);
 %  where R is the datastructure from
 %      R=run_GAHM2026(<config>);
 %
-%   obj.radialProfile(ptype, ftype)
-%   obj.radialProfile(ptype, ftype, fign)
-%   obj.radialProfile(ptype, ftype, fign, time)
-%   obj.radialProfile(ptype, ftype, fign, time, theta_inc)
+%   obj.radialProfile(plotType, fieldType)
+%   obj.radialProfile(plotType, fieldType, figNum)
+%   obj.radialProfile(plotType, fieldType, figNum, time)
+%   obj.radialProfile(plotType, fieldType, figNum, time, theta_inc)
 %
 %   Required parameters:
 %
-%   ptype:
+%   plotType:
 %     'velrad' - radial velocity profiles with isotach & Vmax markers
 %     'prerad' - radial pressure profiles
-%   ftype:
+%   fieldType:
 %     'envhur' - env + vortex combined fields
 %     'hur'    - vortex fields only
 %     'env'    - environmental fields only
 %
 %   Optional parameters:
 %
-%   fign      - starting figure number (defaults to 1; [] = auto)
+%   figNum    - starting figure number (defaults to 1; [] = auto)
 %   time      - integer index, datetime, or [] (defaults to 1)
 %   theta_inc - plot every Nth radial angle (default 2)
 %
 %   Produces subplot panels arranged according to opts.radial.layout.
 %
 %     Fixed Vmax to kts, Rmax to m, starting fig number  2/24/2026
-%     added ftype & made all plot types functional        3/2/2026
+%     added fieldType & made all plot types functional    3/2/2026
 %
 %-------------------------------------------------------------------
 
     if nargin < 6 || isempty(theta_inc), theta_inc = 2; end
     if nargin < 5 || isempty(time), time = 1; end
-    if nargin < 4 || isempty(fign), fign = 1; end
-    if nargin < 3 || isempty(ftype), ftype = 'envhur'; end
+    if nargin < 4 || isempty(figNum), figNum = 1; end
+    if nargin < 3 || isempty(fieldType), fieldType = 'envhur'; end
 
-    VPr   = obj.VPrad;
-    Tdata = obj.Trackdata;
+    c = GAHM_physical_constants(); MS2KT = c.ms2kt; NM2M = c.nm2m;
+
+    Vrad  = obj.VPrad;
+    Track = obj.Trackdata;
     opts  = obj.Opts;
 
-    int = resolveRadialTime(obj, time);
+    tidx = resolveRadialTime(obj, time);
 
-    one2ten     = opts.radial.one2ten;
-    SQuad_1_10  = opts.radial.isotachs;
+    min1to10    = opts.radial.one2ten;
+    isotach_kts = opts.radial.isotachs;
 
-    rad_Vplot = strcmp(ptype,'velrad');
-    rad_Pplot = strcmp(ptype,'prerad');
+    isVelRadial  = strcmp(plotType,'velrad');
+    isPresRadial = strcmp(plotType,'prerad');
 
-    hasVor    = isfield(VPr, 'VVor_bt');
-    hasEnv    = isfield(VPr, 'Env');
-    hasEnvVor = isfield(VPr, 'EnvVor_bt');
+    hasVor    = isfield(Vrad, 'VVor_bt');
+    hasEnv    = isfield(Vrad, 'Env');
+    hasEnvVor = isfield(Vrad, 'EnvVor_bt');
 
-    rad_EnvVor = strcmp(ftype,'envhur') && hasEnvVor;
-    rad_Vor    = strcmp(ftype,'hur')    && hasVor;
-    rad_Env    = strcmp(ftype,'env')    && hasEnv;
+    showEnvHur = strcmp(fieldType,'envhur') && hasEnvVor;
+    showVor    = strcmp(fieldType,'hur')    && hasVor;
+    showEnv    = strcmp(fieldType,'env')    && hasEnv;
 
-    ntheta  = length(VPr.theta);
-    nr      = length(VPr.r);
+    ntheta  = length(Vrad.theta);
+    nr      = length(Vrad.r);
 
     slotsPerFig = min(length(theta_inc:theta_inc:ntheta),...
         opts.radial.layout(1) * opts.radial.layout(2));
-    np.rows=slotsPerFig/opts.radial.layout(2);
-    np.cols=opts.radial.layout(2);
+    tileGrid.rows=slotsPerFig/opts.radial.layout(2);
+    tileGrid.cols=opts.radial.layout(2);
 
-    if isempty(fign)
+    if isempty(figNum)
         f=figure;
         nploti=f.Number;
     else
-        nploti = fign;
+        nploti = figNum;
     end
 
-    tl=tiledlayout(np.rows,np.cols);
+    tl=tiledlayout(tileGrid.rows,tileGrid.cols);
     tl.Padding='compact';
     tl.TileSpacing='compact';
 
     %% radial velocity profiles
     ax=[];
-    idx=0;
-    if rad_Vplot
-        for it = theta_inc:theta_inc:ntheta
-            idx=idx+1;
-            % fignum = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
-            % figure(fignum)
-            % splot = it/theta_inc - (fignum - nploti)*slotsPerFig;
-            % ax(idx)=subplot(numel(theta_inc:theta_inc:ntheta)/opts.radial.layout(2), opts.radial.layout(2), splot);
+    tileIdx=0;
+    if isVelRadial
+        for itheta = theta_inc:theta_inc:ntheta
+            tileIdx=tileIdx+1;
             
-            ax(idx)=nexttile;
-            x=VPr.r/1000;
+            ax(tileIdx)=nexttile;
+            x=Vrad.r/1000;
 
-            if rad_EnvVor
-                y = 1.944*VPr.EnvVor_bt(int).Speed(it,1:nr);
+            if showEnvHur
+                y = MS2KT*Vrad.EnvVor_bt(tidx).Speed(itheta,1:nr);
                 if hasEnv
-                     y = [y;1.944*VPr.Env(int).Speed(it,1:nr)];
+                     y = [y;MS2KT*Vrad.Env(tidx).Speed(itheta,1:nr)];
                 end
-            elseif rad_Vor
-                y = 1.944*VPr.VVor_bt(int).Speed(it,1:nr);
-            elseif rad_Env
-                y = 1.944*VPr.Env(int).Speed(it,1:nr);
+            elseif showVor
+                y = MS2KT*Vrad.VVor_bt(tidx).Speed(itheta,1:nr);
+            elseif showEnv
+                y = MS2KT*Vrad.Env(tidx).Speed(itheta,1:nr);
             end
             hp=plot(x, y,linewidth=2);
             hold on
-            plot(Tdata(int).Rmax_t1*1852/1000, Tdata(int).Vmax_t1*one2ten, 'b*')
-            if Tdata(int).Vmax_t2 ~= 0
-                plot(Tdata(int).Rmax_t2*1852/1000, Tdata(int).Vmax_t2*one2ten, 'r*')
+            plot(Track(tidx).Rmax_t1*NM2M/1000, Track(tidx).Vmax_t1*min1to10, 'b*')
+            if Track(tidx).Vmax_t2 ~= 0
+                plot(Track(tidx).Rmax_t2*NM2M/1000, Track(tidx).Vmax_t2*min1to10, 'r*')
             end
 
-            for ii = 1:length(SQuad_1_10)
-                if Tdata(int).RQuad_t1(Tdata(int).RP1(it),ii) ~= 0
-                    plot(Tdata(int).RQuad_t1(Tdata(int).RP1(it),ii)/1000, SQuad_1_10(ii)*one2ten, 'bo')
+            for ii = 1:length(isotach_kts)
+                if Track(tidx).RQuad_t1(Track(tidx).RP1(itheta),ii) ~= 0
+                    plot(Track(tidx).RQuad_t1(Track(tidx).RP1(itheta),ii)/1000, isotach_kts(ii)*min1to10, 'bo')
                 end
-                if Tdata(int).RQuad_t1(Tdata(int).RP2(it),ii) ~= 0
-                    plot(Tdata(int).RQuad_t1(Tdata(int).RP2(it),ii)/1000, SQuad_1_10(ii)*one2ten, 'bx')
+                if Track(tidx).RQuad_t1(Track(tidx).RP2(itheta),ii) ~= 0
+                    plot(Track(tidx).RQuad_t1(Track(tidx).RP2(itheta),ii)/1000, isotach_kts(ii)*min1to10, 'bx')
                 end
-                if Tdata(int).RQuad_t2(Tdata(int).RP1(it),ii) ~= 0
-                    plot(Tdata(int).RQuad_t2(Tdata(int).RP1(it),ii)/1000, SQuad_1_10(ii)*one2ten, 'ro')
+                if Track(tidx).RQuad_t2(Track(tidx).RP1(itheta),ii) ~= 0
+                    plot(Track(tidx).RQuad_t2(Track(tidx).RP1(itheta),ii)/1000, isotach_kts(ii)*min1to10, 'ro')
                 end
-                if Tdata(int).RQuad_t2(Tdata(int).RP2(it),ii) ~= 0
-                    plot(Tdata(int).RQuad_t2(Tdata(int).RP2(it),ii)/1000, SQuad_1_10(ii)*one2ten, 'rx')
+                if Track(tidx).RQuad_t2(Track(tidx).RP2(itheta),ii) ~= 0
+                    plot(Track(tidx).RQuad_t2(Track(tidx).RP2(itheta),ii)/1000, isotach_kts(ii)*min1to10, 'rx')
                 end
             end
 
             yloc = min(hp(1).YData(:)) + 0.95*(max(hp(1).YData(:)) - min(hp(1).YData(:)));
-            text(4e5/1000, yloc, ['theta=' num2str(VPr.theta(it),'%.1f')])
+            text(4e5/1000, yloc, ['theta=' num2str(Vrad.theta(itheta),'%.1f')])
 
-            QRP1_t1 = ['RPQ' num2str(Tdata(int).RP1(it)) ' t1'];
-            QRP2_t1 = ['RPQ' num2str(Tdata(int).RP2(it)) ' t1'];
-            QRP1_t2 = ['RPQ' num2str(Tdata(int).RP1(it)) ' t2'];
-            QRP2_t2 = ['RPQ' num2str(Tdata(int).RP2(it)) ' t2'];
+            QRP1_t1 = ['RPQ' num2str(Track(tidx).RP1(itheta)) ' t1'];
+            QRP2_t1 = ['RPQ' num2str(Track(tidx).RP2(itheta)) ' t1'];
+            QRP1_t2 = ['RPQ' num2str(Track(tidx).RP1(itheta)) ' t2'];
+            QRP2_t2 = ['RPQ' num2str(Track(tidx).RP2(itheta)) ' t2'];
 
-            [col,row] = ind2sub([np.cols np.rows],idx);
-            if col==np.cols && row==np.rows
-                % legend off
-            % lastSlotOnFig = (splot == slotsPerFig);
-            % lastSlotTotal = (splot == floor(ntheta/theta_inc) - (fignum - nploti)*slotsPerFig);
-            % if lastSlotOnFig || lastSlotTotal
-                if rad_EnvVor
-                    if Tdata(int).Vmax_t2 == 0
+            [col,row] = ind2sub([tileGrid.cols tileGrid.rows],tileIdx);
+            if col==tileGrid.cols && row==tileGrid.rows
+                if showEnvHur
+                    if Track(tidx).Vmax_t2 == 0
                         lgds = {'EV Speed 10 10','E Speed 10 10','Vmax t1',QRP1_t1,QRP2_t1};
                     else
                         lgds = {'EV Speed 10 10','E Speed 10 10','Vmax t1','Vmax t2',QRP1_t1,QRP2_t1,QRP1_t2,QRP2_t2};
                     end
-                elseif rad_Vor
-                    if Tdata(int).Vmax_t2 == 0
+                elseif showVor
+                    if Track(tidx).Vmax_t2 == 0
                         lgds = {'Vortex Speed','Vmax t1',QRP1_t1,QRP2_t1};
                     else
                         lgds = {'Vortex Speed','Vmax t1','Vmax t2',QRP1_t1,QRP2_t1,QRP1_t2,QRP2_t2};
                     end
-                elseif rad_Env
-                    if Tdata(int).Vmax_t2 == 0
+                elseif showEnv
+                    if Track(tidx).Vmax_t2 == 0
                         lgds = {'Env Speed','Vmax t1',QRP1_t1,QRP2_t1};
                     else
                         lgds = {'Env Speed','Vmax t1','Vmax t2',QRP1_t1,QRP2_t1,QRP1_t2,QRP2_t2};
                     end
                 end
                 lgd=legend(lgds);
-                % lgd.Location = 'southeast';
             end            
 
-            if row<np.rows 
+            if row<tileGrid.rows 
                 set(gca,'XTickLabel',[])
             else
                 xlabel('km')
@@ -175,34 +168,29 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
     end
 
     %% radial pressure profiles
-    if rad_Pplot
-        for it = theta_inc:theta_inc:ntheta
-            idx=idx+1;
-            % fignum = nploti + floor(((it-1)/theta_inc)/slotsPerFig);
-            % figure(fignum)
-            % %splot = it/theta_inc - (fignum - nploti)*slotsPerFig;
-            % ax(idx)=subplot(opts.radial.layout(1), opts.radial.layout(2), splot);
-            ax(idx)=nexttile;
-            x=VPr.r/1000;
-            if rad_EnvVor
-                y = VPr.EnvVor_bt(int).Press(it,1:nr);
+    if isPresRadial
+        for itheta = theta_inc:theta_inc:ntheta
+            tileIdx=tileIdx+1;
+            ax(tileIdx)=nexttile;
+            x=Vrad.r/1000;
+            if showEnvHur
+                y = Vrad.EnvVor_bt(tidx).Press(itheta,1:nr);
                 if hasEnv
-                    y = [y;VPr.Env(int).Press(it,1:nr)];
+                    y = [y;Vrad.Env(tidx).Press(itheta,1:nr)];
                 end
                 lgds = {'Total Pres','Env Pres'};
-            elseif rad_Vor
-                y = VPr.VVor_bt(int).Press(it,1:nr);
+            elseif showVor
+                y = Vrad.VVor_bt(tidx).Press(itheta,1:nr);
                 lgds = {'Vortex Pres'};
-            elseif rad_Env
-                y = VPr.Env(int).Press(it,1:nr);
+            elseif showEnv
+                y = Vrad.Env(tidx).Press(itheta,1:nr);
                 lgds = {'Env Pres'};
             end
             hp = plot(x, y',linewidth=2);
-            %title(['theta=' num2str(VPr.theta(it),'%.1f')])
             yloc = min(hp(1).YData(:)) + 0.05*(max(hp(1).YData(:)) - min(hp(1).YData(:)));
-            text(3e5/1000, yloc, ['theta=' num2str(VPr.theta(it),'%.1f')])
-            [col,row] = ind2sub([np.cols np.rows],idx);
-            if row<np.rows 
+            text(3e5/1000, yloc, ['theta=' num2str(Vrad.theta(itheta),'%.1f')])
+            [col,row] = ind2sub([tileGrid.cols tileGrid.rows],tileIdx);
+            if row<tileGrid.rows 
                 set(gca,'XTickLabel',[])
             else
                 xlabel('km')
@@ -212,7 +200,7 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
             else
                  ylabel({'Pres','[mb]'})
             end
-            if col==np.cols && row==np.rows
+            if col==tileGrid.cols && row==tileGrid.rows
                 lgd=legend(lgds);
                 lgd.Location = 'southeast';
             end

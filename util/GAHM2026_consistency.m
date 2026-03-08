@@ -132,12 +132,11 @@ function GAHM_out = GAHM2026_consistency(GAHM_constants,GAHM_in,fid)
 BLF=GAHM_constants.BLF;
 one2tenF=GAHM_constants.one2tenF;
 
-%TODO:
-% need to switch to using the physical constants in the c datastructure
-%c.kt2ms % = 0.514444 knots to m/s
+c = GAHM_physical_constants();
+MS2KT = c.ms2kt;
 
-SVorMax_10_tblmin=GAHM_constants.SVorMax_10_tblmin/1.944;   %convert to m/s
-SVorQuad_10_tblmin=GAHM_constants.SVorQuad_10_tblmin/1.944; %convert to m/s
+SVorMax_10_tblmin=GAHM_constants.SVorMax_10_tblmin/MS2KT;   %convert to m/s
+SVorQuad_10_tblmin=GAHM_constants.SVorQuad_10_tblmin/MS2KT; %convert to m/s
 Bmin=GAHM_constants.Bmin;
 Bmax=GAHM_constants.Bmax;
 

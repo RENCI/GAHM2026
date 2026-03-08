@@ -1,15 +1,15 @@
-function animate(obj, ptype, fign, plotdata, filename)
+function animate(obj, plotType, figNum, plotdata, filename)
 % animate  Generate GIF and/or MP4 animation of contour maps over all timesteps.
 %
-%   obj.animate(ptype, fign)
-%   obj.animate(ptype, fign, plotdata)
-%   obj.animate(ptype, fign, plotdata, filename)
+%   obj.animate(plotType, figNum)
+%   obj.animate(plotType, figNum, plotdata)
+%   obj.animate(plotType, figNum, plotdata, filename)
 %
 %   Loops over all timesteps, calling contourMap for each frame, and
 %   captures to GIF and/or MP4 according to opts.anim settings.
 %
-%   ptype    - 'velcon', 'precon', 'prequiv', 'mvelcon', or 'mprecon'
-%   fign    - figure number (reused each frame)
+%   plotType - 'velcon', 'precon', 'prequiv', 'mvelcon', or 'mprecon'
+%   figNum   - figure number (reused each frame)
 %   plotdata - (optional) gridded field struct array; defaults to
 %              Result.Reggrid_TC_out
 %   filename - (optional) base filename without extension; defaults to
@@ -20,8 +20,8 @@ function animate(obj, ptype, fign, plotdata, filename)
 
     if nargin < 4 || isempty(plotdata), plotdata = obj.PlotData; end
 
-    isVel = strcmp(ptype,'velcon') || strcmp(ptype,'mvelcon');
-    isPQ  = strcmp(ptype,'prequiv');
+    isVel = strcmp(plotType,'velcon') || strcmp(plotType,'mvelcon');
+    isPQ  = strcmp(plotType,'prequiv');
     if nargin < 5 || isempty(filename)
         if isVel
             filename = 'GAHM_V';
@@ -33,7 +33,7 @@ function animate(obj, ptype, fign, plotdata, filename)
     end
 
     opts = obj.Opts;
-    itot = length(plotdata);
+    ntimes = length(plotdata);
 
     gifFile = fullfile(opts.export.dir,string(filename)+".gif");
     mp4File = fullfile(opts.export.dir,string(filename)+".mp4");
@@ -43,12 +43,12 @@ function animate(obj, ptype, fign, plotdata, filename)
         vw = openMp4(obj, mp4File);
     end
 
-    for ip = 1:itot
-        fig = contourMap(obj, ptype, fign, ip, plotdata);
+    for tidx = 1:ntimes
+        fig = contourMap(obj, plotType, figNum, tidx, plotdata);
         drawnow
 
         if opts.anim.gif
-            captureGifFrame(obj, fig, ip, 1, gifFile);
+            captureGifFrame(obj, fig, tidx, 1, gifFile);
         end
 
         if opts.anim.mp4

@@ -37,8 +37,9 @@ sepenvhur.num_radial_points  = 1000;
 sepenvhur.num_azimuth_points = 360;
 sepenvhur.max_radius_deg     = 10;
 sepenvhur.search_range       = 6;
-sepenvhur.wind_threshold_outer  = 20/1.944; % 20 kts -> m/s
-sepenvhur.wind_threshold_inner  = 34/1.944; % 34 kts -> m/s
+MS2KT = GAHM_physical_constants().ms2kt;
+sepenvhur.wind_threshold_outer  = 20/MS2KT; % 20 kts -> m/s
+sepenvhur.wind_threshold_inner  = 34/MS2KT; % 34 kts -> m/s
 sepenvhur.debug              = debug;
 sepenvhur.output_dir         = 'output';
 % Populate shared fields into sepenvhur for SeparateEnvHur consumption
