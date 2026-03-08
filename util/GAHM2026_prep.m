@@ -205,6 +205,8 @@ end % main script end
 
 function VEnvAvg_out=VEnvAvg(datetime,eyeLon,eyeLat,VEnv,rad)
 
+NM2M = GAHM_physical_constants().nm2m;
+
 % find line in VEnv file correspoinding to the desired time
 
 itime=find(datetime==[VEnv.datetime]);
@@ -248,6 +250,8 @@ end  % function end
 %         coded by Rick Luettich 8/8/2024            
 
 function VEnvQuad=VEnvRQuad(datetime,eyeLon,eyeLat,VEnv,RQuad)
+
+NM2M = GAHM_physical_constants().nm2m;
 
 % assume working on standard 4 quadrants
  
