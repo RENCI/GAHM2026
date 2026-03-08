@@ -78,6 +78,10 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
         ftype = {char(ftype)};
     end
 
+    phys  = GAHM_physical_constants();
+    MS2KT = phys.ms2kt;
+    NM2M  = phys.nm2m;
+
     VPr   = obj.VPrad;
     Tdata = obj.Trackdata;
     opts  = obj.Opts;
@@ -150,42 +154,42 @@ function radialProfile(obj, ptype, ftype, fign, time, theta_inc)
             legtext = {};
 
             if rad_EnvHur_final
-                plot(x, 1.944*VPr.EnvHur_final(int).Speed(it,1:nr), linewidth=2);
+                plot(x, MS2KT*VPr.EnvHur_final(int).Speed(it,1:nr), linewidth=2);
                 legind = legind + 1;
                 legtext{legind} = 'E+H Final';
             end
             if rad_Vor_bt
-                plot(x, 1.944*VPr.VVor_bt(int).Speed(it,1:nr), linewidth=2);
+                plot(x, MS2KT*VPr.VVor_bt(int).Speed(it,1:nr), linewidth=2);
                 legind = legind + 1;
                 legtext{legind} = 'Vor b/t';
             end
             if rad_Vor_at
-                plot(x, 1.944*VPr.VVor_at(int).Speed(it,1:nr), linewidth=2);
+                plot(x, MS2KT*VPr.VVor_at(int).Speed(it,1:nr), linewidth=2);
                 legind = legind + 1;
                 legtext{legind} = 'Vor a/t';
             end
             if rad_EnvVor_bt
-                plot(x, 1.944*VPr.EnvVor_bt(int).Speed(it,1:nr), linewidth=2);
+                plot(x, MS2KT*VPr.EnvVor_bt(int).Speed(it,1:nr), linewidth=2);
                 legind = legind + 1;
                 legtext{legind} = 'E+V b/t';
             end
             if rad_EnvHur
-                plot(x, 1.944*VPr.EnvVor_bt(int).Speed(it,1:nr), linewidth=2);
+                plot(x, MS2KT*VPr.EnvVor_bt(int).Speed(it,1:nr), linewidth=2);
                 legind = legind + 1;
                 legtext{legind} = 'E+H';
             end
             if rad_Env
-                plot(x, 1.944*VPr.Env(int).Speed(it,1:nr), '--k', linewidth=2);
+                plot(x, MS2KT*VPr.Env(int).Speed(it,1:nr), '--k', linewidth=2);
                 legind = legind + 1;
                 legtext{legind} = 'Env';
             end
 
             if rad_track
-                plot(Tdata(int).Rmax_t1*1852/1000, Tdata(int).Vmax_t1*one2ten, 'b*')
+                plot(Tdata(int).Rmax_t1*NM2M/1000, Tdata(int).Vmax_t1*one2ten, 'b*')
                 legind = legind + 1;
                 legtext{legind} = 'Vmax t1';
                 if Tdata(int).Vmax_t2 ~= 0
-                    plot(Tdata(int).Rmax_t2*1852/1000, Tdata(int).Vmax_t2*one2ten, 'r*')
+                    plot(Tdata(int).Rmax_t2*NM2M/1000, Tdata(int).Vmax_t2*one2ten, 'r*')
                     legind = legind + 1;
                     legtext{legind} = 'Vmax t2';
                 end

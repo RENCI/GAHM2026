@@ -13,7 +13,7 @@ function fig = differenceMap(obj, fieldA, fieldB, variable, fign, time)
 %
 %   variable — 'speed' or 'press'
 %       'speed': diff = hypot(A.VelU,A.VelV) - hypot(B.VelU,B.VelV)
-%                converted to knots (* 1.944)
+%                converted to knots (* MS2KT)
 %       'press': diff = A.Press - B.Press
 %
 %   fign — figure number (default 1; [] = use current figure)
@@ -32,6 +32,7 @@ function fig = differenceMap(obj, fieldA, fieldB, variable, fign, time)
     if nargin < 6 || isempty(time), time = 1;  end
     if nargin < 5 || isempty(fign), fign = 1;  end
 
+    MS2KT    = GAHM_physical_constants().ms2kt;
     opts     = obj.Opts;
     datagrid = obj.DataGrid;
     Tdata    = obj.Trackdata;
@@ -50,7 +51,7 @@ function fig = differenceMap(obj, fieldA, fieldB, variable, fign, time)
     switch lower(variable)
         case 'speed'
             diff_field = (hypot(fieldA(ip).VelU, fieldA(ip).VelV) ...
-                        - hypot(fieldB(ip).VelU, fieldB(ip).VelV)) * 1.944;
+                        - hypot(fieldB(ip).VelU, fieldB(ip).VelV)) * MS2KT;
             titleStr = ['Speed Difference (kts) A-B  ' char(string(ThisTime)) ' UTC'];
         case 'press'
             diff_field = fieldA(ip).Press - fieldB(ip).Press;

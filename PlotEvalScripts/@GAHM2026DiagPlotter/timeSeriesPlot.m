@@ -29,11 +29,11 @@ function fig = timeSeriesPlot(obj, fields, fign)
 %     Trackdata is obtained from obj.Trackdata (struct array with one
 %     entry per timestep).  Fields used:
 %       .datetime   - MATLAB datetime for x-axis
-%       .Vmax_t1    - max wind speed in m/s (multiplied by 1.944 for kts)
+%       .Vmax_t1    - max wind speed in m/s (converted to kts via MS2KT)
 %       .MSLP or .Pc - central pressure in mb
 %       .Rmax_t1    - radius of maximum wind in nautical miles
 %       .RQuad_t1   - 4x3 matrix of isotach radii [34kt 50kt 64kt]
-%                     (divided by 1852 to convert metres to nmi)
+%                     (divided by NM2M to convert metres to nmi)
 %
 %   If a requested field is unavailable in the track data the
 %   corresponding tile is skipped and a warning is issued.
@@ -48,6 +48,10 @@ function fig = timeSeriesPlot(obj, fields, fign)
     %% Defaults
     if nargin < 2 || isempty(fields), fields = {'Vmax','Pc','Rmax'}; end
     if nargin < 3 || isempty(fign),   fign = 1; end
+
+    phys    = GAHM_physical_constants();
+    MS2KT   = phys.ms2kt;
+    NM2M    = phys.nm2m;
 
     Tdata   = obj.Trackdata;
     ntimes  = numel(Tdata);
@@ -87,7 +91,7 @@ function fig = timeSeriesPlot(obj, fields, fign)
                         'Vmax_t1 not found in Trackdata — skipping Vmax.');
                     continue
                 end
-                ydata  = [Tdata.Vmax_t1] * 1.944;
+                ydata  = [Tdata.Vmax_t1] * MS2KT;
                 ylab   = 'Vmax [kts]';
 
             case 'Pc'
@@ -121,7 +125,7 @@ function fig = timeSeriesPlot(obj, fields, fign)
                 for j = 1:ntimes
                     ydata(j) = max(Tdata(j).RQuad_t1(:, 1));
                 end
-                ydata = ydata / 1852;
+                ydata = ydata / NM2M;
                 ylab  = 'Rmax 34kt [nm]';
 
             case 'Rmax50'
@@ -134,7 +138,7 @@ function fig = timeSeriesPlot(obj, fields, fign)
                 for j = 1:ntimes
                     ydata(j) = max(Tdata(j).RQuad_t1(:, 2));
                 end
-                ydata = ydata / 1852;
+                ydata = ydata / NM2M;
                 ylab  = 'Rmax 50kt [nm]';
 
             case 'Rmax64'
@@ -147,7 +151,7 @@ function fig = timeSeriesPlot(obj, fields, fign)
                 for j = 1:ntimes
                     ydata(j) = max(Tdata(j).RQuad_t1(:, 3));
                 end
-                ydata = ydata / 1852;
+                ydata = ydata / NM2M;
                 ylab  = 'Rmax 64kt [nm]';
 
             otherwise

@@ -33,6 +33,7 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
     if nargin < 4 || isempty(time), time = 1; end
     if nargin < 3 || isempty(fign), fign = 1; end
 
+    MS2KT    = GAHM_physical_constants().ms2kt;
     opts     = obj.Opts;
     datagrid = obj.DataGrid;
     Tdata    = obj.Trackdata;
@@ -61,7 +62,7 @@ function fig = contourMap(obj, ptype, fign, time, plotdata)
 
     if con_Vplot
         Speed = hypot(plotdata(ip).VelU, plotdata(ip).VelV);
-        pcolor(datagrid(ip).Lon, datagrid(ip).Lat, 1.944*Speed);
+        pcolor(datagrid(ip).Lon, datagrid(ip).Lat, MS2KT*Speed);
         shading interp
         colormap(gca, opts.wind.colormap);
         colorbar
