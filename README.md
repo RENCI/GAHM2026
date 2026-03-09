@@ -2,7 +2,7 @@
 
 MATLAB codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). The pipeline reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with large-scale gridded environmental fields, and writes output to NetCDF.
 
-When using gridded environmental fields (`env_info.type = 3`), the companion project **SeparateEnvHur** separates storm-scale features from ERA5 reanalysis data to produce the required environmental input. A unified configuration file lets both projects share storm identity and run as a single pipeline.
+When using gridded environmental fields (`env_info.type = 3`), **SeparateEnvHur** separates storm-scale features from ERA5 reanalysis data to produce the required environmental input. One configuration file specifies the complete pipeline. 
 
 Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 
@@ -39,6 +39,23 @@ You can run SeparateEnvHur standalone using the same config file:
 >> addpath('SeparateEnvHur')
 >> env_vals = SeparateEnvHur('config/config_GAHM2026_default');  % default config
 >> env_vals = SeparateEnvHur('config/config_Florence');          % storm-specific config
+```
+
+### Plotting SeparateEnvHur output
+
+```matlab
+addpath('PlotEvalScripts')
+obj = GAHM2026Plotter.fromSepEnvHur(env_vals);
+
+% combined env + hurricane wind field
+obj.contourMap('mvelcon', 1, 5);
+
+% environmental component only
+obj.setOpts('wind', 'clims', [0 16]);
+obj.contourMap('velcon', 2, 5, obj.EnvData);
+
+% difference map: env minus hurricane wind speed
+obj.differenceMap(obj.EnvData, obj.HurData, 'speed', 3, 5);
 ```
 
 ---
