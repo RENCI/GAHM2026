@@ -8,8 +8,8 @@ function animate(obj, plotType, figNum, plotdata, filename)
 %   Loops over all timesteps, calling contourMap for each frame, and
 %   captures to GIF and/or MP4 according to opts.anim settings.
 %
-%   plotType - 'velcon', 'precon', 'prequiv', 'mvelcon', or 'mprecon'
-%   figNum   - figure number (reused each frame)
+%   plotType    - 'velcon', 'precon', 'prequiv', 'mvelcon', or 'mprecon'
+%   figNum    - figure number (reused each frame)
 %   plotdata - (optional) gridded field struct array; defaults to
 %              Result.Reggrid_TC_out
 %   filename - (optional) base filename without extension; defaults to

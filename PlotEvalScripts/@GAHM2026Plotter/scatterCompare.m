@@ -16,9 +16,12 @@ function fig = scatterCompare(obj, X, Y, figNum, titleStr, xlabelStr, ylabelStr,
 %
 %   A 1:1 reference line is always drawn.
 %
+%   If obj.Opts.scatter.showMetrics is true, bias / RMSE / R² statistics
+%   are computed via computeMetrics and annotated in the upper-left corner.
+%
 %   Inputs:
 %     X, Y         - data matrices (same size); zeros are treated as NaN
-%     figNum       - figure number
+%     figNum      - figure number
 %     titleStr     - figure title string
 %     xlabelStr    - x-axis label
 %     ylabelStr    - y-axis label
@@ -68,6 +71,21 @@ function fig = scatterCompare(obj, X, Y, figNum, titleStr, xlabelStr, ylabelStr,
     xlabel(xlabelStr)
     ylabel(ylabelStr)
     axis([0 lim 0 lim])
+
+    % Optional metrics annotation
+    if isfield(obj.Opts, 'scatter') && isfield(obj.Opts.scatter, 'showMetrics') ...
+            && obj.Opts.scatter.showMetrics
+        metrics = obj.computeMetrics(X(:), Y(:), titleStr);
+        metricsStr = sprintf('N = %d\nBias = %.4f\nRMSE = %.4f\nR^2 = %.4f', ...
+            metrics.N, metrics.bias, metrics.RMSE, metrics.R2);
+        text(0.05, 0.95, metricsStr, ...
+            'Units', 'normalized', ...
+            'VerticalAlignment', 'top', ...
+            'FontSize', 9, ...
+            'BackgroundColor', 'w', ...
+            'EdgeColor', [0.7 0.7 0.7]);
+    end
+
     hold off
 
 end

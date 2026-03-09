@@ -1,4 +1,4 @@
-# GAHM2026DiagPlotter — Unified Plotting & Diagnostics Class
+# GAHM2026Plotter — Unified Plotting & Diagnostics Class
 
 A `handle` class for plotting and evaluating GAHM2026 output. Accepts data from
 either `run_GAHM2026` (Result struct) or the SeparateEnvHur pipeline (.mat file
@@ -11,7 +11,7 @@ or pre-loaded struct).
 ```matlab
 addpath('PlotEvalScripts')
 R   = run_GAHM2026('config_GAHM2026_default');
-obj = GAHM2026DiagPlotter(R);
+obj = GAHM2026Plotter(R);
 
 % Contour map at timestep 5
 fig = obj.contourMap('mvelcon', 1, 5);
@@ -30,7 +30,7 @@ obj.exportFigure(fig, 'Florence_wind_t5');
 
 ```matlab
 addpath('PlotEvalScripts')
-obj = GAHM2026DiagPlotter.fromSepEnvHur('separated.mat');
+obj = GAHM2026Plotter.fromSepEnvHur('separated.mat');
 
 % Plot environmental + hurricane combined
 obj.contourMap('mvelcon', 1, 5);
@@ -47,10 +47,10 @@ obj.differenceMap(obj.EnvData, obj.HurData, 'speed', 3, 5);
 
 | Constructor | Description |
 |---|---|
-| `GAHM2026DiagPlotter(Result)` | From `run_GAHM2026` Result struct |
-| `GAHM2026DiagPlotter(Result, opts)` | With custom options |
-| `GAHM2026DiagPlotter.fromSepEnvHur(sepfile)` | From SeparateEnvHur `.mat` file or struct |
-| `GAHM2026DiagPlotter.fromSepEnvHur(sepfile, opts)` | With custom options |
+| `GAHM2026Plotter(Result)` | From `run_GAHM2026` Result struct |
+| `GAHM2026Plotter(Result, opts)` | With custom options |
+| `GAHM2026Plotter.fromSepEnvHur(sepfile)` | From SeparateEnvHur `.mat` file or struct |
+| `GAHM2026Plotter.fromSepEnvHur(sepfile, opts)` | With custom options |
 
 ## Public Methods
 
@@ -145,8 +145,8 @@ obj.radialProfile('velrad', {'envhur_final','vor_bt','env','trackdata'}, 1, 3, 2
 ## File Listing
 
 ```
-@GAHM2026DiagPlotter/
-├── GAHM2026DiagPlotter.m     (classdef)
+@GAHM2026Plotter/
+├── GAHM2026Plotter.m     (classdef)
 ├── contourMap.m              (public)
 ├── addQuiver.m               (public)
 ├── radialProfile.m           (public — multi-overlay merge)

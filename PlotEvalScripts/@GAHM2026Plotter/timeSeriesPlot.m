@@ -40,10 +40,10 @@ function fig = timeSeriesPlot(obj, fields, figNum)
 %
 %   Example:
 %     R   = run_GAHM2026('config_GAHM2026_default');
-%     obj = GAHM2026DiagPlotter(R);
+%     obj = GAHM2026Plotter(R);
 %     fig = obj.timeSeriesPlot({'Vmax','Pc','Rmax','Rmax34'}, 10);
 %
-%   See also GAHM2026DiagPlotter, contourMap, radialProfile
+%   See also GAHM2026Plotter, contourMap, radialProfile
 
     %% Defaults
     if nargin < 2 || isempty(fields), fields = {'Vmax','Pc','Rmax'}; end

@@ -57,7 +57,7 @@ function fig = differenceMap(obj, fieldA, fieldB, variable, figNum, time)
             diff_field = fieldA(tidx).Press - fieldB(tidx).Press;
             titleStr = ['Pressure Difference (mb) A-B  ' char(string(ThisTime)) ' UTC'];
         otherwise
-            error('GAHM2026DiagPlotter:differenceMap', ...
+            error('GAHM2026Plotter:differenceMap', ...
                   'variable must be ''speed'' or ''press'', got ''%s''', variable);
     end
 

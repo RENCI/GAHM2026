@@ -1,13 +1,33 @@
-# GAHM2026 Graphics and Visualization
+# GAHM2026 Graphics, Diagnostics, and Visualization
 
-Plotting and evaluation tools for GAHM2026 output fields, radial profiles, and parameter comparisons.
+Plotting and evaluation tools for GAHM2026 output fields, radial profiles, parameter comparisons, and objective diagnostics.
 
 There are two ways to produce plots:
 
-1. **`GAHM2026Plotter` class** (recommended) — object-oriented interface that receives the `Result` struct returned by `run_GAHM2026` and provides methods for contour maps, radial profiles, scatter comparisons, animation, and figure export.
-2. **Standalone scripts** — the original function-based scripts (`conplot_GAHM2026.m`, `radplot_GAHM2026.m`, etc.) that operate on individual workspace variables.
+1. **`GAHM2026Plotter` class** (recommended) — unified plotting and diagnostics class that accepts output from `run_GAHM2026` *or* from the SeparateEnvHur pipeline.  Provides contour maps, radial profiles (with multi-overlay), scatter comparisons, animation, figure export, time-series diagnostics, difference maps, objective metrics (bias, RMSE, MAE, R², scatter index), and CSV export.
+2. **Standalone scripts** (legacy) — the original function-based scripts (`conplot_GAHM2026.m`, `radplot_GAHM2026.m`, etc.) that operate on individual workspace variables.
 
 Both approaches share the same `plot_defaults.m` options struct.
+
+---
+
+## Table of Contents
+
+- [Quick Start — Florence 2018 Demonstration](#quick-start--florence-2018-demonstration)
+- [SeparateEnvHur Workflow](#separateenvhur-workflow)
+- [GAHM2026Plotter Constructors](#gahm2026plotter-constructors)
+- [GAHM2026Plotter Method Reference](#gahm2026plotter-method-reference)
+- [Plot Types](#plot-types)
+- [Radial Profile — fieldType Options](#radial-profile--fieldtype-options)
+- [Time-Series — Field Options](#time-series--field-options)
+- [Difference Map — variable Options](#difference-map--variable-options)
+- [Computed Metrics](#computed-metrics)
+- [Time Argument](#time-argument)
+- [Dependent Properties](#dependent-properties)
+- [Options Reference](#options-reference)
+- [Legacy Scripts](#legacy-scripts)
+- [File Listing](#file-listing)
+- [Dependencies](#dependencies)
 
 ---
 
@@ -63,12 +83,16 @@ fig = obj.contourMap('mvelcon', 1, datetime(2018,9,14,12,0,0));
 fig = obj.contourMap('mprecon', 2, 20);
 ```
 
-### 5. Wind vectors with velocity contours
-
-The `'velcon'` plot type includes quiver arrows automatically.  To add vectors to any existing plot use `addQuiver`:
+### 5. Pressure contours with wind vectors
 
 ```matlab
-fig = obj.contourMap('precon', 3, 20);    % pressure map, no vectors
+fig = obj.contourMap('prequiv', 3, 20);
+```
+
+To add vectors to any existing plot use `addQuiver`:
+
+```matlab
+fig = obj.contourMap('precon', 4, 20);    % pressure map, no vectors
 obj.addQuiver(20);                        % overlay wind vectors
 ```
 
@@ -78,27 +102,106 @@ Pass an alternate data struct as the last argument:
 
 ```matlab
 % environmental wind field
-fig = obj.contourMap('mvelcon', 4, 20, R.Reggrid_Env_out);
+fig = obj.contourMap('mvelcon', 5, 20, R.Reggrid_Env_out);
 
 % GAHM vortex + inverse-tapered hurricane field
-fig = obj.contourMap('mvelcon', 5, 20, R.Reggrid_VVor_invtapHur_out);
+fig = obj.contourMap('mvelcon', 6, 20, R.Reggrid_VVor_invtapHur_out);
 ```
 
-### 7. Radial profiles
+### 7. Radial profiles with multi-overlay
 
-Plot radial wind speed profiles at timestep 10 (every other azimuthal angle):
+Plot multiple field types overlaid on the same subplot panels.  Pass `fieldType` as a cell array:
 
 ```matlab
-obj.radialProfile('velrad', 10, 10);
+% env+hurricane final, vortex before taper, env-only, and track markers
+obj.radialProfile('velrad', {'envhur_final','vor_bt','env','trackdata'}, 1, 3, 2);
+```
+
+Single field type (backward compatible):
+
+```matlab
+obj.radialProfile('velrad', 'envhur', 2, 10);
 ```
 
 Pressure profiles (every 4th azimuth):
 
 ```matlab
-obj.radialProfile('prerad', 20, 10, 4);
+obj.radialProfile('prerad', {'envhur_final','env'}, 3, 20, 4);
 ```
 
-### 8. Animation
+### 8. Time-series diagnostics
+
+Plot storm parameters over time in a linked tiled layout:
+
+```matlab
+fig = obj.timeSeriesPlot({'Vmax','Pc','Rmax'}, 10);
+```
+
+Include isotach radii:
+
+```matlab
+fig = obj.timeSeriesPlot({'Vmax','Pc','Rmax','Rmax34','Rmax50','Rmax64'}, 11);
+```
+
+### 9. Difference maps
+
+Compare two gridded field sets (A minus B) on a diverging colormap:
+
+```matlab
+% wind speed difference between TC output and env-only
+fig = obj.differenceMap(R.Reggrid_TC_out, R.Reggrid_Env_out, 'speed', 1, 20);
+
+% pressure difference
+fig = obj.differenceMap(R.Reggrid_TC_out, R.Reggrid_Env_out, 'press', 2, 20);
+```
+
+Control the colormap and color limits:
+
+```matlab
+obj.setOpts('diffmap', 'colormap', 'rdbu');
+obj.setOpts('diffmap', 'clims', [-30 30]);
+fig = obj.differenceMap(R.Reggrid_TC_out, R.Reggrid_Env_out, 'speed', 3, 20);
+```
+
+### 10. Objective metrics
+
+Compute bias, RMSE, MAE, R, R², and scatter index between two datasets:
+
+```matlab
+metrics = obj.computeMetrics(observed, modeled, 'Wind Speed (kts)');
+```
+
+Output struct fields: `N`, `bias`, `RMSE`, `MAE`, `R`, `R2`, `SI`, `varName`.
+
+Export metrics to CSV by setting the scatter option:
+
+```matlab
+obj.setOpts('scatter', 'csvFile', 'metrics.csv');
+m1 = obj.computeMetrics(obsV, modV, 'Vmax');
+m2 = obj.computeMetrics(obsP, modP, 'Pc');
+% → rows appended to metrics.csv with header on first write
+```
+
+### 11. Scatter comparison with metrics annotation
+
+Enable automatic metrics annotation on scatter plots:
+
+```matlab
+obj.setOpts('scatter', 'showMetrics', true);
+fig = obj.scatterCompare(X, Y, 1, ...
+    'Florence 2018  Rmax Comparison for 34kt isotach', ...
+    'Rmax GAHM2026 (nm)', 'Rmax ASWIP (nm)');
+```
+
+By-quadrant mode (N×4 matrices) uses NE/SE/SW/NW colors automatically.  By-series mode (N×K with explicit legend labels) is also supported:
+
+```matlab
+obj.scatterCompare(X2, Y2, 2, ...
+    'Florence 2018  Rmax Comparison', ...
+    'Rmax computed (nm)', 'Rmax NHC (nm)', {'BLF=0.75','BLF=0.90'});
+```
+
+### 12. Animation
 
 Generate a GIF and MP4 of the wind field over all timesteps:
 
@@ -115,7 +218,7 @@ obj.setOpts('anim', 'mp4', false);           % GIF only
 obj.animate('mprecon', 1, [], 'Florence_P');  % → Florence_P.gif
 ```
 
-### 9. Export figures
+### 13. Export figures
 
 Save figures to PNG or PDF:
 
@@ -127,35 +230,7 @@ obj.setOpts('export', 'format', 'pdf');
 obj.exportFigure(fig, 'Florence_wind_t20');   % → output/Florence_wind_t20.pdf
 ```
 
-### 10. Scatter comparison
-
-For comparing GAHM2026 parameters against another dataset (e.g., ASWIP), first synchronize the two struct arrays by datetime, then plot:
-
-```matlab
-% sync matched timesteps
-[ig, ia] = obj.syncDatetime(GAHM_out_BLF090, ASWIP);
-
-% extract N×4 quadrant Rmax data
-X = vertcat(GAHM_out_BLF090(ig).Rmax34);
-Y = vertcat(ASWIP(ia).Rmax34);
-
-obj.scatterCompare(X, Y, 1, ...
-    'Florence 2018  Rmax Comparison for 34kt isotach', ...
-    'Rmax GAHM2026 BLF=0.90 (nm)', 'Rmax ASWIP (nm)');
-```
-
-For series-based comparisons (non-quadrant), provide explicit legend labels:
-
-```matlab
-X2 = [[GAHM_BLF075(ig).Rmax_out]', [GAHM_BLF090(ig).Rmax_out]'];
-Y2 = repmat([ASWIP(ia).RMW]', 1, 2);
-
-obj.scatterCompare(X2, Y2, 2, ...
-    'Florence 2018  Rmax Comparison', ...
-    'Rmax computed (nm)', 'Rmax NHC (nm)', {'BLF=0.75','BLF=0.90'});
-```
-
-### 11. Customizing options
+### 14. Customizing options
 
 All plotting behaviour is controlled by the `opts` struct.  Override individual fields with `setOpts` or restore defaults with `resetOpts`:
 
@@ -171,18 +246,74 @@ obj.resetOpts();
 
 ---
 
+## SeparateEnvHur Workflow
+
+`GAHM2026Plotter` can ingest SeparateEnvHur output directly via the `fromSepEnvHur` static factory method.  This normalizes the `env_vals` struct into the same `Result` format used by `run_GAHM2026`, enabling all plotting methods.
+
+```matlab
+obj = GAHM2026Plotter.fromSepEnvHur('separated.mat');
+```
+
+The factory accepts a `.mat` filename (containing `env_vals`) or a pre-loaded struct.  It creates:
+
+| Property | Contents |
+|----------|----------|
+| `PlotData` | Environmental + hurricane combined (total ERA5) |
+| `EnvData` | Environmental component only |
+| `HurData` | Hurricane component only |
+| `DataGrid` | Grid coordinates and vortex masks (`MaskInner`, `MaskOuter`) |
+| `Trackdata` | Best-track lon/lat/datetime |
+
+Default colour-limit presets for each component are stored in `Result.sep_opts`:
+
+```matlab
+% Plot env-only with appropriate color scale
+obj.setOpts('wind', 'clims', obj.Result.sep_opts.env.wind.clims);  % [0 16]
+obj.contourMap('velcon', 1, 5, obj.EnvData);
+
+% Hurricane-only
+obj.setOpts('wind', 'clims', obj.Result.sep_opts.hur.wind.clims);  % [0 50]
+obj.contourMap('velcon', 2, 5, obj.HurData);
+
+% Difference map: env vs hurricane wind speed
+obj.differenceMap(obj.EnvData, obj.HurData, 'speed', 3, 5);
+```
+
+**Note:** Radial-grid methods (`radialProfile`) are not available for SeparateEnvHur data since no `VPrad` struct is produced.  The `HasRadialGrid` property returns `false` in this case.
+
+---
+
+## GAHM2026Plotter Constructors
+
+| Constructor | Description |
+|-------------|-------------|
+| `GAHM2026Plotter(Result)` | From `run_GAHM2026` Result struct |
+| `GAHM2026Plotter(Result, opts)` | With custom options struct |
+| `GAHM2026Plotter.fromSepEnvHur(sepfile)` | From SeparateEnvHur `.mat` file or struct |
+| `GAHM2026Plotter.fromSepEnvHur(sepfile, opts)` | With custom options |
+
+---
+
 ## GAHM2026Plotter Method Reference
 
 ### Plotting Methods
 
 | Method | Description |
 |--------|-------------|
-| `contourMap(ptype, fign, time, plotdata)` | Contour map (pcolor) of wind speed or pressure at one timestep |
+| `contourMap(plotType, figNum, time, plotdata)` | Contour map (pcolor) of wind speed or pressure at one timestep |
 | `addQuiver(time, plotdata)` | Overlay velocity vectors on the current axes |
-| `radialProfile(ptype, fign, time, theta_inc)` | Radial profiles in subplot panels at one timestep |
-| `scatterCompare(X, Y, fign, title, xlabel, ylabel, legend)` | 1:1 scatter plot — by-quadrant (N×4) or by-series (N×K) |
-| `animate(ptype, fign, plotdata, filename)` | GIF/MP4 animation over all timesteps |
+| `radialProfile(plotType, fieldType, figNum, time, theta_inc)` | Radial profiles with multi-overlay support |
+| `timeSeriesPlot(fields, figNum)` | Storm parameter time-series in tiled layout |
+| `differenceMap(fieldA, fieldB, variable, figNum, time)` | Difference map (A minus B) with diverging colormap |
+| `scatterCompare(X, Y, figNum, title, xlabel, ylabel, legend)` | 1:1 scatter plot with optional metrics annotation |
+| `animate(plotType, figNum, plotdata, filename)` | GIF/MP4 animation over all timesteps |
 | `exportFigure(fig, filename)` | Save figure to PNG or PDF |
+
+### Diagnostic Methods
+
+| Method | Description |
+|--------|-------------|
+| `computeMetrics(X, Y, varName)` | Compute bias, RMSE, MAE, R, R², scatter index; optional CSV export |
 
 ### Utility Methods
 
@@ -192,26 +323,112 @@ obj.resetOpts();
 | `resetOpts()` | Restore all options to defaults |
 | `syncDatetime(A, B)` | Find matching datetime indices between two struct arrays |
 
-### Plot Types
+### Static Methods
 
-| `ptype` | Used by | Description |
-|---------|---------|-------------|
+| Method | Description |
+|--------|-------------|
+| `fromSepEnvHur(sepfile, opts)` | Factory: build plotter from SeparateEnvHur output |
+
+---
+
+## Plot Types
+
+| `plotType` | Used by | Description |
+|------------|---------|-------------|
 | `'velcon'` | `contourMap` | Wind speed contours with velocity vectors |
 | `'precon'` | `contourMap` | Pressure contours |
+| `'prequiv'` | `contourMap` | Pressure contours with velocity vectors |
 | `'mvelcon'` | `contourMap` | Wind speed contours with mask boundary lines |
 | `'mprecon'` | `contourMap` | Pressure contours with mask boundary lines |
 | `'velrad'` | `radialProfile` | Radial velocity profiles with isotach markers |
 | `'prerad'` | `radialProfile` | Radial pressure profiles |
 
-### Time Argument
+---
 
-The `time` parameter in `contourMap`, `addQuiver`, and `radialProfile` accepts:
+## Radial Profile — `fieldType` Options
+
+`fieldType` can be a single string or a cell array for multi-overlay:
+
+| `fieldType` | Data source | Legend label | Line style |
+|-------------|-------------|-------------|------------|
+| `'envhur'` | `EnvVor_bt` | E+H | solid, auto-color |
+| `'envhur_final'` | `EnvHur_final` | E+H Final | solid, auto-color |
+| `'vor_bt'` | `VVor_bt` | Vor b/t | solid, auto-color |
+| `'vor_at'` | `VVor_at` | Vor a/t | solid, auto-color |
+| `'envvor_bt'` | `EnvVor_bt` | E+V b/t | solid, auto-color |
+| `'env'` | `Env` | Env | dashed black (`--k`) |
+| `'trackdata'` | Trackdata markers | Vmax/isotachs | `*` and `o`/`x` markers |
+
+Example with multiple overlays:
+
+```matlab
+obj.radialProfile('velrad', {'envhur_final','vor_bt','env','trackdata'}, 1, 3, 2);
+```
+
+---
+
+## Time-Series — Field Options
+
+| Field | Source | Units |
+|-------|--------|-------|
+| `'Vmax'` | `Trackdata.Vmax_t1` | knots |
+| `'Pc'` | `Trackdata.MSLP` or `.Pc` | mb |
+| `'Rmax'` | `Trackdata.Rmax_t1` | nm |
+| `'Rmax34'` | `max(RQuad_t1(:,1))` | nm |
+| `'Rmax50'` | `max(RQuad_t1(:,2))` | nm |
+| `'Rmax64'` | `max(RQuad_t1(:,3))` | nm |
+
+---
+
+## Difference Map — `variable` Options
+
+| `variable` | Computed as | Units |
+|------------|-------------|-------|
+| `'speed'` | `hypot(A.VelU,A.VelV) - hypot(B.VelU,B.VelV)` | knots |
+| `'press'` | `A.Press - B.Press` | mb |
+
+---
+
+## Computed Metrics
+
+`computeMetrics(X, Y, varName)` returns a struct with:
+
+| Field | Description |
+|-------|-------------|
+| `N` | Number of valid pairs (NaN and zero pairs removed) |
+| `bias` | Mean(Y − X) |
+| `RMSE` | Root-mean-square error |
+| `MAE` | Mean absolute error |
+| `R` | Pearson correlation coefficient |
+| `R2` | R squared |
+| `SI` | Scatter index (RMSE / mean(X)) |
+| `varName` | Variable label string |
+
+---
+
+## Time Argument
+
+The `time` parameter in `contourMap`, `addQuiver`, `radialProfile`, and `differenceMap` accepts:
 
 | Type | Example | Behaviour |
 |------|---------|-----------|
 | integer | `5` | Use timestep index 5 |
 | `datetime` | `datetime(2018,9,14,12,0,0)` | Match to nearest available time |
 | `[]` or omitted | | Defaults to timestep 1 |
+
+---
+
+## Dependent Properties
+
+| Property | Description |
+|----------|-------------|
+| `PlotData` | Default TC fields (`Reggrid_TC_out`) |
+| `DataGrid` | Grid coordinates (`Reggrid_out`) |
+| `Trackdata` | Storm track data |
+| `RadialGrid` | Radial grid data (`VPrad`; empty for SepEnvHur) |
+| `EnvData` | Environmental fields (`Reggrid_Env_out`) |
+| `HurData` | Hurricane-only fields (`Reggrid_Hur_out`; SepEnvHur only) |
+| `HasRadialGrid` | Boolean: radial data available? |
 
 ---
 
@@ -251,26 +468,81 @@ Options are managed via `plot_defaults()`.  See that function for current defaul
 | **export** | `.dir` | Output directory for saved files |
 | | `.format` | `'png'`, `'pdf'`, or `'none'` |
 | | `.dpi` | Export resolution |
+| **diffmap** | `.colormap` | Diverging colormap name (default `'rdbu'`) |
+| | `.clims` | Fixed `[lo hi]` color limits; `[]` = auto-symmetric |
+| **scatter** | `.showMetrics` | Annotate bias/RMSE/R² on scatter plots |
+| | `.csvFile` | Path for appending metrics rows (empty = disabled) |
+| **timeseries** | `.linewidth` | Line width |
+| | `.marker` | Marker style (e.g., `'o'`) |
+| | `.markersize` | Marker size |
 | **time** | `.format` | Datetime display format string |
 
 ---
 
-## Standalone Scripts (Legacy)
+## Legacy Scripts
 
-The original function-based scripts remain available for backward compatibility:
+The original function-based scripts have been moved to `PlotEvalScripts/legacy/` for backward compatibility.  Add `legacy/` to the MATLAB path if needed:
+
+```matlab
+addpath('PlotEvalScripts/legacy')
+```
 
 | File | Description |
 |------|-------------|
-| `conplot_GAHM2026.m` | Contour plots with track, coastline, animation |
-| `radplot_GAHM2026.m` | Radial profiles with isotach markers |
-| `GAHM2026_ASWIP_compare.m` | GAHM2026 vs ASWIP scatter comparisons |
-| `Rmax_compare.m` | Input vs computed Rmax comparison across storms |
-| `plot_defaults.m` | Default options struct (shared with class) |
-| `plot_coastline.m` | Coastline overlay helper |
-| `plot_quiver_scaled.m` | Subsampled quiver overlay helper |
-| `radial_find_maskedge.m` | Radial mask-edge detection utility |
-| `run_conplot_GAHM2026.m` | Example contour plot calls |
-| `run_radplot_GAHM2026.m` | Example radial profile calls |
+| `legacy/conplot_GAHM2026.m` | Contour plots with track, coastline, animation |
+| `legacy/radplot_GAHM2026.m` | Radial profiles with isotach markers |
+| `legacy/radplot_GAHM2026_RL.m` | Expanded radplot with `ftype` cell-array and `timeinds` |
+| `legacy/GAHM2026_ASWIP_compare.m` | GAHM2026 vs ASWIP scatter comparisons |
+| `legacy/Rmax_compare.m` | Input vs computed Rmax comparison across storms |
+| `legacy/prep_separated_fields_4_conplot_GAHM2026.m` | Prep SeparateEnvHur fields for conplot |
+| `legacy/run_conplot_GAHM2026.m` | Example contour plot calls |
+| `legacy/run_radplot_GAHM2026.m` | Example radial profile calls |
+
+---
+
+## File Listing
+
+```
+PlotEvalScripts/
+├── @GAHM2026Plotter/
+│   ├── GAHM2026Plotter.m     (classdef)
+│   ├── contourMap.m              (public)
+│   ├── addQuiver.m               (public)
+│   ├── radialProfile.m           (public — multi-overlay)
+│   ├── timeSeriesPlot.m          (public — time-series diagnostics)
+│   ├── differenceMap.m           (public — difference maps)
+│   ├── computeMetrics.m          (public — objective metrics)
+│   ├── scatterCompare.m          (public — metrics annotation)
+│   ├── animate.m                 (public)
+│   ├── exportFigure.m            (public)
+│   ├── syncDatetime.m            (public)
+│   ├── fromSepEnvHur.m           (static factory)
+│   ├── resolveTime.m             (private)
+│   ├── resolveRadialTime.m       (private)
+│   ├── getDomain.m               (private)
+│   ├── plotTrack.m               (private)
+│   ├── plotMaskContours.m        (private)
+│   ├── captureGifFrame.m         (private)
+│   ├── openMp4.m                 (private)
+│   └── README.md                 (class-level reference)
+├── legacy/
+│   ├── conplot_GAHM2026.m
+│   ├── radplot_GAHM2026.m
+│   ├── radplot_GAHM2026_RL.m
+│   ├── GAHM2026_ASWIP_compare.m
+│   ├── Rmax_compare.m
+│   ├── prep_separated_fields_4_conplot_GAHM2026.m
+│   ├── run_conplot_GAHM2026.m
+│   └── run_radplot_GAHM2026.m
+├── plot_defaults.m               (shared options)
+├── plot_coastline.m              (shared helper)
+├── plot_quiver_scaled.m          (shared helper)
+├── radial_find_maskedge.m        (utility)
+├── gm.m                          (shared helper)
+├── burd.m                        (colormap)
+├── rdbu.m                        (colormap)
+└── README.md                     (this file)
+```
 
 ---
 

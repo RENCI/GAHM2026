@@ -1,96 +1,104 @@
 classdef GAHM2026Plotter < handle
-% GAHM2026Plotter  Plotting and evaluation class for GAHM2026 output.
+% GAHM2026Plotter  Unified plotting and diagnostics class for GAHM2026.
 %
+%   Accepts output from run_GAHM2026 (Result struct) or from the
+%   SeparateEnvHur pipeline (.mat file or pre-loaded struct).
+%
+% CONSTRUCTORS
 %   obj = GAHM2026Plotter(Result)
 %   obj = GAHM2026Plotter(Result, opts)
-%
-%   Result is the struct returned by run_GAHM2026, containing:
-%     .Reggrid_out, .Reggrid_TC_out, .Reggrid_Env_out,
-%     .Reggrid_VVor_invtapHur_out, .Trackdata, .GAHM_out, .VPrad,
-%     .storm_info, .env_info
-%     and optionally .Points_TC_out, .Points_Env_out (for point output)
+%   obj = GAHM2026Plotter.fromSepEnvHur(sepfile_or_struct)
+%   obj = GAHM2026Plotter.fromSepEnvHur(sepfile_or_struct, opts)
 %
 % PLOTTING METHODS
 %   contourMap(plotType, figNum, time, plotdata)
 %       Contour map (pcolor) of wind speed or pressure at one timestep.
 %       plotType: 'velcon','precon','prequiv','mvelcon','mprecon'
-%       time:  integer index, datetime, or [] (default 1)
 %
 %   addQuiver(time, plotdata)
-%       Overlay velocity vectors on the current axes at one timestep.
+%       Overlay velocity vectors on the current axes.
 %
 %   radialProfile(plotType, fieldType, figNum, time, theta_inc)
 %       Radial profiles of wind or pressure at one timestep in subplots.
 %       plotType: 'velrad' or 'prerad'
+%       fieldType: string or cell array of strings from:
+%         'envhur','vor_bt','vor_at','env','envvor_bt','envhur_final','trackdata'
+%
+%   timeSeriesPlot(fields, figNum)
+%       Time-series of storm parameters (Vmax, Pc, Rmax, etc.).
+%
+%   differenceMap(fieldA, fieldB, variable, figNum, time)
+%       Difference map between two gridded field sets.
 %
 %   scatterCompare(X, Y, figNum, titleStr, xlabelStr, ylabelStr, legendLabels)
-%       1:1 scatter plot.  N×4 → by-quadrant; N×K → by-series.
+%       1:1 scatter plot with optional metrics annotation.
 %
 %   animate(plotType, figNum, plotdata, filename)
-%       GIF/MP4 animation over all timesteps via contourMap.
+%       GIF/MP4 animation over all timesteps.
 %
 %   exportFigure(fig, filename)
-%       Save a figure to PNG or PDF using opts.export settings.
+%       Save figure to PNG or PDF.
+%
+% DIAGNOSTICS
+%   metrics = computeMetrics(X, Y, varName)
+%       Compute bias, RMSE, MAE, correlation, scatter index.
 %
 % UTILITY METHODS
-%   setOpts(group, field, value) — override a single option
-%   resetOpts()                  — restore all defaults
-%   syncDatetime(A, B)           — match two struct arrays by .datetime
+%   setOpts(group, field, value) - override a single option
+%   resetOpts()                  - restore all defaults
+%   syncDatetime(A, B)           - match two struct arrays by .datetime
 %
 % OPTIONS (see plot_defaults.m)
-%   opts.domain   — .mode, .padDeg, .fixedLimits
-%   opts.wind     — .clims, .alpha, .colormap
-%   opts.pres     — .clims, .alpha, .colormap
-%   opts.quiver   — .stride, .scale, .color
-%   opts.coast    — .show, .color, .linewidth
-%   opts.track    — .color, .linewidth, .progressive
-%   opts.radial   — .isotachs, .min1to10, .layout
-%   opts.mask     — .show, .color, .linewidth
-%   opts.anim     — .gif, .mp4, .frameRate
-%   opts.export   — .dir, .format, .dpi
-%   opts.time     — .format
+%   opts.domain, opts.wind, opts.pres, opts.quiver, opts.coast,
+%   opts.track, opts.radial, opts.mask, opts.anim, opts.export,
+%   opts.time, opts.scatter, opts.timeseries, opts.diffmap
 %
-% EXAMPLE
+% EXAMPLE (Result struct)
 %   R   = run_GAHM2026('config_GAHM2026_default');
 %   obj = GAHM2026Plotter(R);
-%
-%   % single-frame contour map at timestep 5
 %   fig = obj.contourMap('mvelcon', 1, 5);
-%   obj.exportFigure(fig, 'Helene_wind_t5');
+%   obj.radialProfile('velrad', {'envhur','env','trackdata'}, 1, 3);
+%   obj.timeSeriesPlot({'Vmax','Pc','Rmax'}, 10);
 %
-%   % animate all timesteps
-%   obj.animate('mvelcon', 1);
-%
-%   % radial velocity profiles at timestep 3
-%   obj.radialProfile('velrad', 'envhur', 20, 3);
-%
-%   % scatter comparison
-%   obj.scatterCompare(X, Y, 1, 'Rmax 34kt', 'GAHM (nm)', 'ASWIP (nm)');
+% EXAMPLE (SeparateEnvHur)
+%   obj = GAHM2026Plotter.fromSepEnvHur('separated.mat');
+%   obj.contourMap('mvelcon', 1, 5);
+%   obj.differenceMap(obj.EnvData, obj.HurData, 'speed', 2, 5);
 %
 %                Rick Luettich / UNC/IMS/CNHR/EMES
 %                Brian Blanton / UNC/RENCI
 
     properties (SetAccess = private)
-        Result      % full Result struct from run_GAHM2026
+        Result      % normalized data struct
         Opts        % options struct from plot_defaults
+        Source      % 'gahm' or 'sepenvhur'
     end
 
-    % Convenience dependent properties — avoid deep dot-indexing everywhere
     properties (Dependent, SetAccess = private)
-        PlotData    % Result.Reggrid_TC_out  (default gridded TC fields)
-        DataGrid    % Result.Reggrid_out
-        Trackdata   % Result.Trackdata
-        VPrad       % Result.VPrad
+        PlotData    % default gridded TC fields (Reggrid_TC_out)
+        DataGrid    % grid coordinates (Reggrid_out)
+        Trackdata   % track data
+        RadialGrid  % radial grid data (empty for sepenvhur source)
+        EnvData     % environmental fields (Reggrid_Env_out)
+        HurData     % hurricane-only fields (Reggrid_Hur_out, sepenvhur only)
+        HasRadialGrid % true if radial grid data is available
     end
 
     methods
 
-        function obj = GAHM2026Plotter(Result, opts)
+        function obj = GAHM2026Plotter(Result, opts, source)
         % Constructor.
         %   GAHM2026Plotter(Result)
         %   GAHM2026Plotter(Result, opts)
+        %   GAHM2026Plotter(Result, opts, source)  — internal use by fromSepEnvHur
 
             obj.Result = Result;
+
+            if nargin >= 3 && ~isempty(source)
+                obj.Source = source;
+            else
+                obj.Source = 'gahm';
+            end
 
             if nargin >= 2 && isstruct(opts)
                 obj.Opts = opts;
@@ -113,8 +121,32 @@ classdef GAHM2026Plotter < handle
             val = obj.Result.Trackdata;
         end
 
-        function val = get.VPrad(obj)
-            val = obj.Result.VPrad;
+        function val = get.RadialGrid(obj)
+            if isfield(obj.Result, 'VPrad')
+                val = obj.Result.VPrad;
+            else
+                val = [];
+            end
+        end
+
+        function val = get.EnvData(obj)
+            if isfield(obj.Result, 'Reggrid_Env_out')
+                val = obj.Result.Reggrid_Env_out;
+            else
+                val = [];
+            end
+        end
+
+        function val = get.HurData(obj)
+            if isfield(obj.Result, 'Reggrid_Hur_out')
+                val = obj.Result.Reggrid_Hur_out;
+            else
+                val = [];
+            end
+        end
+
+        function val = get.HasRadialGrid(obj)
+            val = isfield(obj.Result, 'VPrad') && ~isempty(obj.Result.VPrad);
         end
 
         %% Option helpers
@@ -122,14 +154,11 @@ classdef GAHM2026Plotter < handle
         function setOpts(obj, group, field, value)
         % setOpts  Override a single option.
         %   obj.setOpts('wind', 'clims', [0 100])
-        %   obj.setOpts('anim', 'gif', false)
-
             obj.Opts.(group).(field) = value;
         end
 
         function resetOpts(obj)
         % resetOpts  Restore all options to defaults.
-
             obj.Opts = plot_defaults();
         end
 
@@ -143,6 +172,15 @@ classdef GAHM2026Plotter < handle
         animate(obj, plotType, figNum, plotdata, filename)
         exportFigure(obj, fig, filename)
 
+        % New methods
+        fig = timeSeriesPlot(obj, fields, figNum)
+        fig = differenceMap(obj, fieldA, fieldB, variable, figNum, time)
+        metrics = computeMetrics(obj, X, Y, varName)
+
+    end
+
+    methods (Static)
+        obj = fromSepEnvHur(sepfile, opts)
     end
 
     methods (Access = private)

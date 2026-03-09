@@ -1,8 +1,8 @@
 function obj = fromSepEnvHur(sepfile, opts)
-% fromSepEnvHur  Static factory: build GAHM2026DiagPlotter from SeparateEnvHur output.
+% fromSepEnvHur  Static factory: build GAHM2026Plotter from SeparateEnvHur output.
 %
-%   obj = GAHM2026DiagPlotter.fromSepEnvHur(sepfile)
-%   obj = GAHM2026DiagPlotter.fromSepEnvHur(sepfile, opts)
+%   obj = GAHM2026Plotter.fromSepEnvHur(sepfile)
+%   obj = GAHM2026Plotter.fromSepEnvHur(sepfile, opts)
 %
 %   SEPFILE can be:
 %     - a char/string path to a .mat file containing the variable env_vals
@@ -23,7 +23,7 @@ function obj = fromSepEnvHur(sepfile, opts)
 %         colour-limit presets appropriate for each component are stored
 %         in Result.sep_opts.
 %
-%   See also GAHM2026DiagPlotter, plot_defaults.
+%   See also GAHM2026Plotter, plot_defaults.
 %
 %                Rick Luettich / UNC/IMS/CNHR/EMES
 %                Brian Blanton / UNC/RENCI
@@ -35,7 +35,7 @@ function obj = fromSepEnvHur(sepfile, opts)
     elseif isstruct(sepfile)
         ev = sepfile;
     else
-        error('GAHM2026DiagPlotter:fromSepEnvHur', ...
+        error('GAHM2026Plotter:fromSepEnvHur', ...
               'sepfile must be a filename (char/string) or a struct.');
     end
 
@@ -101,5 +101,5 @@ function obj = fromSepEnvHur(sepfile, opts)
     end
 
     %% ---- Construct plotter object ---------------------------------------
-    obj = GAHM2026DiagPlotter(Result, opts, 'sepenvhur');
+    obj = GAHM2026Plotter(Result, opts, 'sepenvhur');
 end

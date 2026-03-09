@@ -33,6 +33,7 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
     if nargin < 4 || isempty(time), time = 1; end
     if nargin < 3 || isempty(figNum), figNum = 1; end
 
+    MS2KT    = GAHM_physical_constants().ms2kt;
     opts     = obj.Opts;
     datagrid = obj.DataGrid;
     Track    = obj.Trackdata;
@@ -44,8 +45,8 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
 
     isWindPlot = strcmp(plotType,'velcon') || strcmp(plotType,'mvelcon');
     isPresPlot = strcmp(plotType,'precon') || strcmp(plotType,'mprecon') || strcmp(plotType,'prequiv');
-    showMask   = strcmp(plotType,'mvelcon') || strcmp(plotType,'mprecon');
-    showQuiv   = strcmp(plotType,'velcon') || strcmp(plotType,'prequiv');
+    showMask  = strcmp(plotType,'mvelcon') || strcmp(plotType,'mprecon');
+    showQuiv  = strcmp(plotType,'velcon') || strcmp(plotType,'prequiv');
 
     [minX, maxX, minY, maxY] = getDomain(obj, datagrid, tidx);
 
@@ -56,8 +57,6 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
     end
     clf(fig);
     hold on
-
-    MS2KT = GAHM_physical_constants().ms2kt;
 
     %% velocity contour
 
