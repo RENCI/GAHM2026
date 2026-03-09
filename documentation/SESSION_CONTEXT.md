@@ -1,6 +1,6 @@
 # GAHM2026 Refactoring Session Context
 
-**Last updated**: March 5, 2026  
+**Last updated**: March 9, 2026  
 **Purpose**: Continuity document for resuming work in a new session.
 
 ---
@@ -15,7 +15,7 @@ MATLAB codebase for computing hurricane wind and pressure fields using the Gener
 
 ## Current State
 
-All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization fully modernized with the `GAHM2026Plotter` class (7 build phases complete). SeparateEnvHur subproject fully integrated: shared IBTrACS file, shared track reader (`util/read_IBTrACS.m`), unified config with `<year>` placeholder, track loaded once in `run_GAHM2026.m` and passed to both subsystems. All `fprintf` logging converted to `logMsg` across `util/` and `GAHM2026.m`. GitHub Pages site created in `docs/`.
+All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization fully modernized with the `GAHM2026Plotter` class (7 build phases complete). SeparateEnvHur subproject fully integrated: shared IBTrACS file, shared track reader (`util/read_IBTrACS.m`), unified config with `<year>` placeholder, track loaded once in `run_GAHM2026.m` and passed to both subsystems. All `fprintf` logging converted to `logMsg` across `util/` and `GAHM2026.m`. GitHub Pages site created in `docs/`. `GAHM_physical_constants.m` fully adopted — no magic numbers remain outside the constants file. `@GAHM2026Plotter` variable names modernized to match `@GAHM2026DiagPlotter` conventions. A new `@GAHM2026DiagPlotter` class (20 files) provides unified diagnostics and plotting for both `run_GAHM2026` output and SeparateEnvHur `.mat` files.
 
 ### Active Files
 
@@ -32,6 +32,7 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | Post-processing | `util/apply_WAF_from_raster.m` |
 | Extracted utilities | `util/computeRmaxTot.m`, `util/quadrantUnitVectors.m`, `util/thetaToQuadrantPair.m`, `util/turnAngleDeg.m`, `util/logMsg.m`, `util/GAHM_physical_constants.m`, `util/struct2vars.m` |
 | Plotting class | `PlotEvalScripts/@GAHM2026Plotter/` (15 .m files) |
+| Diagnostics class | `PlotEvalScripts/@GAHM2026DiagPlotter/` (20 .m files) |
 | Plotting helpers | `PlotEvalScripts/plot_defaults.m`, `plot_coastline.m`, `plot_quiver_scaled.m` |
 | Legacy plot scripts | `PlotEvalScripts/conplot_GAHM2026.m`, `radplot_GAHM2026.m`, etc. |
 
@@ -62,6 +63,8 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | `documentation/SESSION_CONTEXT.md` | This file |
 | `documentation/README_config.md` | Authoritative configuration parameter reference |
 | `PlotEvalScripts/README.md` | GAHM2026Plotter class guide with Florence 2018 demo |
+| `PlotEvalScripts/@GAHM2026DiagPlotter/README.md` | GAHM2026DiagPlotter class API reference |
+| `SeparateEnvHur/TODO.md` | Code review findings for SeparateEnvHur (bugs, naming, magic numbers) |
 | `docs/index.md` | GitHub Pages landing page |
 
 ### Regression Testing
@@ -208,6 +211,76 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 5. **Added `ftype` parameter to `radialProfile.m`**: New second argument (`'envhur'`, `'hur'`, `'env'`) enables selective plotting of env+vortex combined, vortex-only, or env-only fields. Default `'envhur'` preserves backward compatibility. Three-way plotting logic for both velocity and pressure sections. Data-adaptive pressure label positioning. Merged from Rick's temp version with our improvements (auto-figure, `linkaxes`, `'--r'` env line, `'EV'`/`'Vortex'` labels).
 6. **Copied `radplot_GAHM2026_RL.m`**: Rick's expanded standalone radplot script from `temp/` with `ftype` cell-array input (`"envhur"`, `"vor_bt"`, `"vor_at"`, `"env"`, `"envvor_bt"`, `"trackdata"`) and `timeinds` parameter for specific timestep selection.
 
+### GAHM_physical_constants Adoption (Mar 9, 2026)
+
+Replaced all magic number literals across the codebase with named constants from `GAHM_physical_constants.m`. No magic numbers remain outside the constants file itself.
+
+| Constant | Value | Files updated |
+|---|---|---|
+| `omega` | `0.00007272` | `GAHM_VP.m`, `GAHM2026_solve.m` |
+| `earthRadiusM` | `6371000` | `GAHM2026_prep.m`, `read_ATCF_fort22.m` |
+| `nm2m` (NM2M) | `1852` | `GAHM2026_prep.m` (main + 2 local functions), `GAHM2026.m`, `radial2regular.m`, `VEnvreg2radial2.m`, `@GAHM2026Plotter/radialProfile.m`, `radial_find_maskedge.m`, `radplot_GAHM2026_RL.m` |
+| `ms2kt` (MS2KT) | `1/0.514444` | `GAHM2026_prep.m`, `GAHM2026_consistency.m`, `read_ATCF_fort22.m`, `@GAHM2026Plotter/contourMap.m`, `@GAHM2026Plotter/radialProfile.m`, `conplot_GAHM2026.m`, `radplot_GAHM2026.m`, `radplot_GAHM2026_RL.m`, 7 config files, `generate_baseline.m` |
+
+Pattern: each file calls `GAHM_physical_constants()` once and extracts the needed fields into local variables (e.g., `NM2M = c.nm2m; MS2KT = c.ms2kt;`). All TODO comments about switching to the constants were removed. Fixed a scoping bug where local functions `VEnvAvg` and `VEnvRQuad` inside `GAHM2026_prep.m` couldn't see the parent function's `NM2M` variable.
+
+### GAHM2026Plotter Variable Renames (Mar 9, 2026)
+
+Applied the same variable renames to `@GAHM2026Plotter` that were already done in `@GAHM2026DiagPlotter`. Updated 12 files:
+
+| Old | New | Rationale |
+|---|---|---|
+| `ip` | `tidx` | Was ambiguous (looks like IP address); it's a time index |
+| `int` | `tidx` | Shadows MATLAB built-in `int` |
+| `it` | `itheta` | Clarifies theta loop index |
+| `itot` | `ntimes` | Number of timesteps |
+| `Tdata` | `Track` | Concise and clear |
+| `VPr` | `Vrad` | Echoes `VPrad` but shorter |
+| `ptype` | `plotType` | Standard descriptive name |
+| `ftype` | `fieldType` | Distinguishes from `plotType` |
+| `fign` | `figNum` | Standard MATLAB naming |
+| `SQuad_1_10` | `isotach_kts` | Clarifies content |
+| `one2ten` | `min1to10` | Clarifies 1-min to 10-min conversion |
+| `con_Vplot`/`con_Pplot` | `isWindPlot`/`isPresPlot` | Boolean naming convention |
+| `rad_Vplot`/`rad_Pplot` | `isVelRadial`/`isPresRadial` | Boolean naming convention |
+| `rad_EnvVor`/`rad_Vor`/`rad_Env` | `showEnvHur`/`showVor`/`showEnv` | Visibility flag pattern |
+| `np` | `tileGrid` | Describes tile layout |
+| `idx` | `tileIdx` | Tile counter |
+
+Also removed `radialProfile.asv` (MATLAB autosave artifact). Both plotter classes now use consistent naming conventions.
+
+### SeparateEnvHur Code Review (Mar 9, 2026)
+
+Performed a comprehensive code review of all 16 `.m` files in `SeparateEnvHur/`. Findings saved to `SeparateEnvHur/TODO.md`, organized by priority:
+
+1. **Bugs** (5 items): distance factors swapped in `computeDistanceKm`, `size(find(idx),1)` fragile for row vectors in `getERA5Data`, no bounds clamping in `findCutline`, azimuth grid endpoint duplication in `convertToPolarCoords`, `logMsg('ERROR',...)` doesn't throw
+2. **Magic numbers** (9 items): `0.04` filter scale factor, cutline geometry constants, Butterworth filter parameters, Pa→mb conversion, degree-to-km factors
+3. **Variable naming** (10 items): `tem`/`cx`/`cy`/`count`/`in`/`d1`/`half`/`num` etc.
+4. **Duplication** (4 items): window extraction repeated 5×, Pa→mb done 2×, `griddata` on structured data
+5. **Documentation gaps** (7 items): README has stale output names, missing config fields, missing toolbox dependency
+6. **Performance** (4 items): `false()` pre-allocation, vectorization, local-only filtering
+
+### GAHM2026DiagPlotter Class (Mar 5–7, 2026)
+
+Built a new unified plotting and diagnostics class in `PlotEvalScripts/@GAHM2026DiagPlotter/` (20 files, ~1746 lines). Standalone from `@GAHM2026Plotter` — plan is to iterate on DiagPlotter, then merge features back.
+
+**Dual data sources**: Accepts `run_GAHM2026` Result structs directly, and SeparateEnvHur `.mat` files via `fromSepEnvHur` static factory method (builds a pseudo-Result struct).
+
+**New methods beyond GAHM2026Plotter**:
+
+| Method | Description |
+|---|---|
+| `timeSeriesPlot(fields, figNum)` | Vmax/Pc/Rmax/isotach radii vs time |
+| `differenceMap(fieldA, fieldB, variable, figNum, time)` | A−B with diverging colormap |
+| `computeMetrics(X, Y, varName)` | Bias, RMSE, MAE, R, R², SI with optional CSV export |
+| `radialProfile` (enhanced) | Multi-overlay via cell array fieldType: `'envhur_final'`, `'vor_bt'`, `'vor_at'`, `'env'`, `'envvor_bt'`, `'trackdata'` |
+
+**New dependent properties**: `EnvData`, `HurData`, `HasRadialGrid`, `RadialGrid` (with `MaskInner`/`MaskOuter` backward-compat shim).
+
+**Variable renames applied** (3 rounds): magic constants → `GAHM_physical_constants`, high-value cryptic names, medium/lower-priority names. See `PlotEvalScripts/@GAHM2026DiagPlotter/README.md` for full API reference.
+
+`plot_defaults.m` updated with new option groups: `opts.diffmap`, `opts.scatter`, `opts.timeseries`.
+
 ### Plot Script Rename (Feb 26, 2026)
 
 1. **Removed `_blend` from plot script filenames**: `conplot_blend_GAHM2026.m` → `conplot_GAHM2026.m`, `radplot_blend_GAHM2026.m` → `radplot_GAHM2026.m`, `run_conplot_blend_GAHM2026.m` → `run_conplot_GAHM2026.m`, `run_radplot_blend_GAHM2026.m` → `run_radplot_GAHM2026.m`. Updated all internal call references in run scripts and all documentation (`PlotEvalScripts/README.md`, `SESSION_CONTEXT.md`).
@@ -235,12 +308,12 @@ Built an object-oriented plotting and evaluation class in 7 phases. The class li
 
 | File | Method | Phase | Description |
 |------|--------|-------|-------------|
-| `contourMap.m` | `contourMap(ptype, fign, time, plotdata)` | 2 | Single-timestep pcolor map (wind or pressure); ptypes: `velcon`, `precon`, `prequiv`, `mvelcon`, `mprecon` |
+| `contourMap.m` | `contourMap(plotType, figNum, time, plotdata)` | 2 | Single-timestep pcolor map (wind or pressure); plotTypes: `velcon`, `precon`, `prequiv`, `mvelcon`, `mprecon` |
 | `addQuiver.m` | `addQuiver(time, plotdata)` | 3 | Standalone velocity vector overlay |
-| `radialProfile.m` | `radialProfile(ptype, ftype, fign, time, theta_inc)` | 4 | Radial wind/pressure profiles in subplots; ftype: `'envhur'`, `'hur'`, `'env'` |
-| `scatterCompare.m` | `scatterCompare(X, Y, fign, ...)` | 5 | 1:1 scatter (by-quadrant N×4 or by-series N×K) |
+| `radialProfile.m` | `radialProfile(plotType, fieldType, figNum, time, theta_inc)` | 4 | Radial wind/pressure profiles in subplots; fieldType: `'envhur'`, `'hur'`, `'env'` |
+| `scatterCompare.m` | `scatterCompare(X, Y, figNum, ...)` | 5 | 1:1 scatter (by-quadrant N×4 or by-series N×K) |
 | `syncDatetime.m` | `syncDatetime(A, B)` | 5 | Match two struct arrays by `.datetime` field |
-| `animate.m` | `animate(ptype, fign, plotdata, filename)` | 6 | GIF/MP4 animation loop over all timesteps |
+| `animate.m` | `animate(plotType, figNum, plotdata, filename)` | 6 | GIF/MP4 animation loop over all timesteps |
 | `exportFigure.m` | `exportFigure(fig, filename)` | 7 | Save figure to PNG or PDF via `opts.export` |
 
 **Private helpers:**
@@ -301,11 +374,14 @@ PlotEvalScripts/
 
 ## Possible Future Work
 
-- Gradually adopt `GAHM_physical_constants.m` to replace magic number literals
-- Time-series diagnostics: Vmax, central pressure, Rmax, isotach radii vs time
-- Difference maps between field pairs (diverging colormap)
-- Objective metrics: bias, RMSE, MAE, correlation → CSV summary
-- Bias/RMSE annotations on scatter plots
+- ~~Gradually adopt `GAHM_physical_constants.m` to replace magic number literals~~ ✅ Done (Mar 9, 2026)
+- ~~Time-series diagnostics: Vmax, central pressure, Rmax, isotach radii vs time~~ ✅ Done (DiagPlotter `timeSeriesPlot`)
+- ~~Difference maps between field pairs (diverging colormap)~~ ✅ Done (DiagPlotter `differenceMap`)
+- ~~Objective metrics: bias, RMSE, MAE, correlation → CSV summary~~ ✅ Done (DiagPlotter `computeMetrics`)
+- ~~Bias/RMSE annotations on scatter plots~~ ✅ Done (DiagPlotter `scatterCompare` with `opts.scatter.showMetrics`)
+- SeparateEnvHur hardening: fix bugs, parameterize magic numbers, rename variables (see `SeparateEnvHur/TODO.md`)
+- Merge `@GAHM2026DiagPlotter` features into `@GAHM2026Plotter` (or replace it)
+- Result struct field renames: `Reggrid_out` → `Grid`, `Reggrid_TC_out` → `Fields_TC`, etc. (cross-cutting, deferred)
 - Driver script producing complete evaluation for one storm
 - MATLAB Live Script template for publishable storm reports
 
@@ -326,6 +402,8 @@ Additional context files if needed:
 - `documentation/GAHM_struct.md` — data structure reference
 - `README.md` — user-facing documentation
 - `PlotEvalScripts/README.md` — GAHM2026Plotter class guide with Florence 2018 demo
+- `PlotEvalScripts/@GAHM2026DiagPlotter/README.md` — GAHM2026DiagPlotter API reference
+- `SeparateEnvHur/TODO.md` — code review findings for SeparateEnvHur
 - `docs/index.md` — GitHub Pages landing page
 
 ### Quick Test
@@ -338,5 +416,5 @@ obj.setOpts('anim', 'gif', false);
 obj.setOpts('anim', 'mp4', false);
 fig = obj.contourMap('mvelcon', 1, 20);
 obj.exportFigure(fig, 'Florence_test');
-obj.radialProfile('velrad', 10, 5);
+obj.radialProfile('velrad', 'envhur', 10, 5);
 ```
