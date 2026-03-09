@@ -218,8 +218,8 @@ if sum(flag(1:4,4)) == 0
         if Bg_status == 100
             flag(1:4,4)=9;
         end
-        GAHM_out.Rmic(q,4)=0;
-        GAHM_out.Bgicmax(q,4)=Bg_status;
+        GAHM_out.Rmic(1:4,4)=0;
+        GAHM_out.Bgicmax(1:4,4)=Bg_status;
     elseif GAHM_version == 4
         if ~isreal(Bg) || Bg_status <=0
             Bg=NaN;
@@ -257,8 +257,8 @@ else
                 else
                     Rmax=GAHM_out.RmaxQ(q);
                     Ro=SVorMax_10_tbl/(Rmax*f);
-                    GAHM_out.Rmax(q,i)=Rmax;
-                    GAHM_out.Ro(q,i)=Ro;
+                    % GAHM_out.Rmax(q,i)=Rmax;
+                    % GAHM_out.Ro(q,i)=Ro;
                     Bg_in=Bg0M*B;
                     [Bg, Bg_status]=compute_Bg(GAHM_version,GAHM_datetime,B,Ro,Bg_in,4,q,fid);
                     if GAHM_version == 3
@@ -274,9 +274,11 @@ else
                         end
                     end
                     phi=1 + 1/(Bg*(1+Ro));
-                    GAHM_out.A(q,i)=phi*Rmax^B;
-                    GAHM_out.Bg(q,i)=Bg;
-                    GAHM_out.phi(q,i)=phi;
+                    GAHM_out.Rmax(q,4)=Rmax;
+                    GAHM_out.Ro(q,4)=Ro;                         
+                    GAHM_out.A(q,4)=phi*Rmax^B;
+                    GAHM_out.Bg(q,4)=Bg;
+                    GAHM_out.phi(q,4)=phi;
                 end
             end
         end

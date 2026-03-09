@@ -4,7 +4,7 @@
 %    calculating GAHM2026 parameter values / radial profiles.
 %
 %        GAHM2026 equations adapted from Jia Gao 2018 PhD dissertation
-%                      R. Luettich 2024-25
+%                      R. Luettich 2024-26
 %
 %              coded by Rick Luettich 7/11/2025
 %
@@ -265,6 +265,12 @@ for i=1:3      % loop through the 3 isotachs
 
         GAHM_out.flag(q,i) = 1;
     end    % end of quadrant loop
+
+% complete check 4, for quadrant q.
+
+    if sum(GAHM_out.flag(q,:))==0  
+        GAHM_out.flag(q,4)=0;              
+    end
 
 end    % end of isotach loop
 
