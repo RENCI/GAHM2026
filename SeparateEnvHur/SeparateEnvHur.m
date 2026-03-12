@@ -101,17 +101,18 @@ end
 %% Main processing loop
 if CONFIG.debug, logMsg(-1, 'DEBUG', 'Beginning main processing loop over %d time steps', length(track.time)); end
 
+PA2MB = 0.01;
 for i = 1:length(track.time)
     
     logMsg(-1, 'INFO', 'Analyzing %s',string(track.time(i)))
     if CONFIG.debug, tic; end
 
     % extract at time level i
-    ThisMsl = squeeze(era5.msl(:,:,i))' / 100;  % convert from Pa to mb
-    ThisU = squeeze(era5.u10(:,:,i))';
-    ThisV = squeeze(era5.v10(:,:,i))';
-    ThisWind = abs(ThisU+1i*ThisV);
-    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Step %d/%d: field extraction done (SLP range=%.1f-%.1f mb, max wind=%.1f m/s)', i, length(track.time), min(ThisMsl(:)), max(ThisMsl(:)), max(ThisWind(:))); end
+    slp = squeeze(era5.msl(:,:,i))' * PA2MB;
+    u10 = squeeze(era5.u10(:,:,i))';
+    v10 = squeeze(era5.v10(:,:,i))';
+    windSpeed = hypot(u10, v10);
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Step %d/%d: field extraction done (SLP range=%.1f-%.1f mb, max wind=%.1f m/s)', i, length(track.time), min(slp(:)), max(slp(:)), max(windSpeed(:))); end
 
     [era5.vortex.lon(i), era5.vortex.lat(i)] = findPressureCenter(era5, track, i);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Pressure center found at (%.4f, %.4f), track position (%.4f, %.4f)', era5.vortex.lon(i), era5.vortex.lat(i), track.lon(i), track.lat(i)); end
@@ -119,27 +120,26 @@ for i = 1:length(track.time)
     [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Polar coordinate interpolation done (grid size=%dx%d)', size(Xq,1), size(Xq,2)); end
     
-    [count_inner, in_inner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
-                                                          era5, track, CONFIG, i, ...
-                                                          CONFIG.wind_threshold_inner);
-    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Inner cutline found: mean radius=%.1f km, points inside=%d', mean(distance_inner), sum(in_inner)); end
+    [cutlineIdx_inner, isInsideInner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
+                                                           era5, track, CONFIG, i, ...
+                                                           CONFIG.wind_threshold_inner);
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Inner cutline found: mean radius=%.1f km, points inside=%d', mean(distance_inner), sum(isInsideInner)); end
     
-    [~, in, distance_outer] = findCutline(hr_u, hr_v, Xq, Yq, ...
-                                          era5, track, CONFIG, i, ...
-                                          CONFIG.wind_threshold_outer);
-    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Outer cutline found: mean radius=%.1f km, points inside=%d', mean(distance_outer), sum(in)); end
+    [~, isInsideOuter, distance_outer] = findCutline(hr_u, hr_v, Xq, Yq, ...
+                                           era5, track, CONFIG, i, ...
+                                           CONFIG.wind_threshold_outer);
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Outer cutline found: mean radius=%.1f km, points inside=%d', mean(distance_outer), sum(isInsideOuter)); end
     
-    tem_ave_r = mean(count_inner, "all") * 10 / 1000;
-    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Mean inner vortex radius=%.4f deg', tem_ave_r); end
+    meanInnerRadiusDeg = mean(cutlineIdx_inner, "all") * CONFIG.max_radius_deg / CONFIG.num_radial_points;
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Mean inner vortex radius=%.4f deg', meanInnerRadiusDeg); end
     
-    %TODO: the 0.04 factor needs to be documented, moved to config
-    basic = computeBasicField(ThisMsl, ThisU, ThisV, ...
-                              track, CONFIG, i, tem_ave_r);
-    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Basic field computed (filter half-power wavelength=%.2f)', tem_ave_r / 0.04); end
+    basic = computeBasicField(slp, u10, v10, ...
+                              track, CONFIG, i, meanInnerRadiusDeg);
+    if CONFIG.debug, logMsg(-1, 'DEBUG', 'Basic field computed (mean inner radius=%.4f deg)', meanInnerRadiusDeg); end
     
     OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
-                          basic, ThisMsl, ThisU, ThisV, ...
-                          in, in_inner, distance_outer, distance_inner);
+                          basic, slp, u10, v10, ...
+                          isInsideOuter, isInsideInner, distance_outer, distance_inner);
     if CONFIG.debug, logMsg(-1, 'DEBUG', 'Results stored for step %d (elapsed=%.2f s)', i, toc); end
 
 end

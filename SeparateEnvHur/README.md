@@ -13,9 +13,12 @@ The main function `SeparateEnvHur.m` processes ERA5 reanalysis data for a specif
 - Cutline detection at specified wind speed thresholds (10 m/s and 34 kt)
 - Basic (environmental) field separation from the total field
 
+**Note:** ERA5 raw arrays are read as `[lon×lat×time]` and processing transposes each timestep to `[lat×lon]`.
+
 ## Requirements
 
 - MATLAB
+- Signal Processing Toolbox (`designfilt`, `filtfilt`)
 - ERA5 NetCDF data file containing:
   - `time` - time 
   - `msl` - Mean sea level pressure
@@ -51,18 +54,20 @@ You can also pass a struct directly:
 
 ```matlab
 >> CONFIG = struct('background_file','path/to/era5.nc', 'storm_name','FLORENCE', ...
+>>              'storm_designation','AL062018', ...
 >>              'storm_year',2018, 'track_file','input/ibtracs.NA.list.v04r01.csv', ...
 >>              'storm_start',datetime(2018,9,10,0,0,0), ...
 >>              'storm_end',datetime(2018,9,18,0,0,0), ...
 >>              'grid_half_size',40, 'output_half_size',40, ...
->>              'filter_domain_size',120, 'num_radial_points',1000, ...
+>>              'filter_domain_size',120, 'search_range',5, ...
+>>              'num_radial_points',1000, ...
 >>              'num_azimuth_points',360, 'max_radius_deg',10, ...
->>              'wind_threshold_outer',10, 'wind_threshold_inner',34/1.944, ...
+>>              'wind_threshold_outer',10, 'wind_threshold_inner',34/1.944, ... % 34 kt ≈ 17.5 m/s (1 kt = 1/1.944 m/s)
 >>              'debug',true);
 >> env_vals = SeparateEnvHur(CONFIG);
 ```
 
-Output is saved as `<STORM_NAME>_<YEAR>.mat` (e.g., `FLORENCE_2018.mat`).  If `output_dir` is set in the config, the file is saved there (e.g., `output/FLORENCE_2018.mat`).
+Output is saved as `<STORM_NAME>_<DESIGNATION>_<YEAR>.mat` (e.g., `FLORENCE_AL062018_2018.mat`).  If `output_dir` is set in the config, the file is saved there (e.g., `output/FLORENCE_AL062018_2018.mat`).
 
 ## Configuration Parameters
 
@@ -74,9 +79,10 @@ Output is saved as `<STORM_NAME>_<YEAR>.mat` (e.g., `FLORENCE_2018.mat`).  If `o
 | `storm_year` | `2018` | Year of storm |
 | `storm_start` | `datetime(2018,9,6,0,0,0)` | Start time for processing |
 | `storm_end` | `datetime(2018,9,18,0,0,0)` | End time for processing |
+| `search_range` | `5` | Search radius for pressure-center detection (grid points) |
 | `grid_half_size` | `40` | Half-size of extraction grid (grid points) |
 | `output_half_size` | `40` | Half-size of output grid (grid points) |
-| `filter_domain_size` | `120` | Domain size for filtering operations |
+| `filter_domain_size` | `120` | Half-size of the filtering domain (grid points) |
 | `num_radial_points` | `1000` | Number of radial points for polar interpolation |
 | `num_azimuth_points` | `360` | Number of azimuthal points |
 | `max_radius_deg` | `10` | Maximum radius in degrees for polar grid |
@@ -97,11 +103,16 @@ Output is saved as `<STORM_NAME>_<YEAR>.mat` (e.g., `FLORENCE_2018.mat`).  If `o
 
 ## Output
 
-The output `.mat` file contains a struct named env_vals with:
-- Filtered basic (environmental) fields: `basic_slp`, `basic_u`, `basic_v`
-- Original fields: `full_slp`, `full_u`, `full_v`
-- Storm positions: track coordinates and ERA5-derived center locations
-- Cutline masks and distances at both wind thresholds
+The output `.mat` file contains a struct named `env_vals` with:
+- Environmental fields: `env_msl`, `env_u10`, `env_v10`
+- Hurricane (residual) fields: `hur_msl`, `hur_u10`, `hur_v10`
+- Grid coordinates: `Lo`, `La`
+- Time vector: `Time`
+- Vortex masks: `Vortex_mask`, `Vortex_mask_inner`
+- Best-track positions: `BestTrack_lon`, `BestTrack_lat`
+- Cutline distances: `distance_outer`, `distance_inner`
+- Pressure center: `min_pressure_center_lon`, `min_pressure_center_lat`
+- Metadata: `units`
 
 
 <!--#### DDS of ERA5 file

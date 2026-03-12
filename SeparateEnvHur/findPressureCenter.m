@@ -1,16 +1,17 @@
-function [cx, cy] = findPressureCenter(era5, track, i)
+function [centerLon, centerLat] = findPressureCenter(era5, track, i)
     search_range = track.search_range;
     rows = track.lat_idx(i)-search_range : track.lat_idx(i)+search_range;
     cols = track.lon_idx(i)-search_range : track.lon_idx(i)+search_range;
     
-    psl = squeeze(era5.msl(:,:,i))' / 100;  % convert from Pa to mb
-    tem = psl(rows, cols);
-    lowest = min(tem, [], "all");
-    ind = find(tem == lowest, 1);
+    PA2MB = 0.01;
+    psl = squeeze(era5.msl(:,:,i))' * PA2MB;
+    localPsl = psl(rows, cols);
+    lowest = min(localPsl, [], "all");
+    ind = find(localPsl == lowest, 1);
     
-    temlon = era5.lon_grid(rows, cols);
-    temlat = era5.lat_grid(rows, cols);
+    localLon = era5.lon_grid(rows, cols);
+    localLat = era5.lat_grid(rows, cols);
     
-    cx = temlon(ind);
-    cy = temlat(ind);
+    centerLon = localLon(ind);
+    centerLat = localLat(ind);
 end

@@ -76,7 +76,7 @@ function era5 = getERA5Data(CONFIG,time)
     end
 
     ifirst=find(idx,1,'first');
-    icount=size(find(idx),1);
+    icount=nnz(idx);
 
     era5.u10  = ncread(bg_file, 'u10', [1 1 ifirst], [Inf Inf icount]);
     era5.v10  = ncread(bg_file, 'v10', [1 1 ifirst], [Inf Inf icount]);
