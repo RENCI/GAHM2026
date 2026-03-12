@@ -9,9 +9,18 @@
 %                     Rick Luettich 2/2/2026
 %
 
-function err=writeGAHM2026NetCdf(FileName,Reggrid_out, Reggrid_TC_out)
+function err=writeGAHM2026NetCdf(FileName,Reggrid_out, Reggrid_TC_out, output_info)
 
 err=0;
+
+% Determine pressure units (default: mb, no conversion)
+if nargin >= 4 && isfield(output_info, 'pres_units') && strcmpi(output_info.pres_units, 'Pa')
+    pres_scale = 100;
+    pres_units = 'Pa';
+else
+    pres_scale = 1;
+    pres_units = 'mb';
+end
 
 f_out=[FileName '.nc'];
 if exist(f_out,'file')
@@ -25,7 +34,7 @@ for i=1:nt
 %    time_data(i)=minutes(Reggrid_out(i).datetime-datetime('1970-01-01'));    
     lon_mat(i,:,:)=Reggrid_out(i).Lon(:,:);
     lat_mat(i,:,:)=Reggrid_out(i).Lat(:,:);
-    PSFC_mat(i,:,:)=Reggrid_TC_out(i).Press(:,:);
+    PSFC_mat(i,:,:)=pres_scale * Reggrid_TC_out(i).Press(:,:);
     U10_mat(i,:,:)=Reggrid_TC_out(i).VelU(:,:);
     V10_mat(i,:,:)=Reggrid_TC_out(i).VelV(:,:);
 end
@@ -68,9 +77,9 @@ netcdf.putAtt(ncid, var_lat, 'axis', 'Y');
 netcdf.putAtt(ncid, var_lat, 'coordinates', 'lon lat time');
 
 % PSFC: float(time, yi, xi)
-var_PSFC = netcdf.defVar(ncid, 'PSFC', 'NC_FLOAT', [dim_yi, dim_xi, dim_time]);
+var_PSFC = netcdf.defVar(ncid, 'PSFC', 'NC_DOUBLE', [dim_yi, dim_xi, dim_time]);
 netcdf.putAtt(ncid, var_PSFC, '_FillValue', single(NaN));
-netcdf.putAtt(ncid, var_PSFC, 'units', 'mb');
+netcdf.putAtt(ncid, var_PSFC, 'units', pres_units);
 netcdf.putAtt(ncid, var_PSFC, 'coordinates', 'lon lat time');
 
 % U10: double(time, yi, xi)
@@ -87,7 +96,7 @@ netcdf.putAtt(ncid, var_V10, 'coordinates', 'lon lat time');
 
 % Global attributes
 netcdf.putAtt(ncid, netcdf.getConstant('NC_GLOBAL'), 'rank', '2');
-source_info=[char(FileName),', BestTrack, GAHM26'];
+source_info=[char(FileName),', BestTrack, GAHM2026'];
 netcdf.putAtt(ncid, netcdf.getConstant('NC_GLOBAL'), 'source', source_info);
 
 % End define mode
@@ -102,7 +111,7 @@ netcdf.putVar(ncid, var_time, 0, nt, time_data);
 % Permute arrays and write
 netcdf.putVar(ncid, var_lon,  start, count, permute(lon_mat, [2,3,1]));
 netcdf.putVar(ncid, var_lat,  start, count, permute(lat_mat, [2,3,1]));
-netcdf.putVar(ncid, var_PSFC, start, count, permute(PSFC_mat, [2,3,1])); % single
+netcdf.putVar(ncid, var_PSFC, start, count, permute(PSFC_mat, [2,3,1])); 
 netcdf.putVar(ncid, var_U10,  start, count, permute(U10_mat, [2,3,1]));
 netcdf.putVar(ncid, var_V10,  start, count, permute(V10_mat, [2,3,1]));
 

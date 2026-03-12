@@ -120,7 +120,8 @@ end
 %% compute and output final TC wind/pressure fields as well as additional diagnostic information
 
 logMsg(fid, 'INFO', 'Calling GAHM2026 (version=%d, ntheta=%d, nr=%d, delr=%d) ...', ...
-    GAHM_param_info.version, GAHM_compute_info.ntheta, GAHM_compute_info.nr, GAHM_compute_info.delr);
+       GAHM_param_info.version, GAHM_compute_info.ntheta, ...
+       GAHM_compute_info.nr, GAHM_compute_info.delr);
 
 [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
         Trackdata, GAHM_out, VPrad] = ...
@@ -130,7 +131,7 @@ logMsg(fid, 'INFO', 'Calling GAHM2026 (version=%d, ntheta=%d, nr=%d, delr=%d) ..
 if output_info.type == "grid"
     if debug, logMsg(fid, 'DEBUG', 'Writing netCDF output to %s.nc', output_info.NetCDFfilename); end
     logMsg(fid, 'INFO', 'Writing netCDF output')
-    err=writeGAHM2026NetCdf(output_info.NetCDFfilename,Reggrid_out,Reggrid_TC_out);
+    err=writeGAHM2026NetCdf(output_info.NetCDFfilename,Reggrid_out,Reggrid_TC_out,output_info);
 elseif output_info.type == "points"
     nt=length(Reggrid_out);
     for i=1:nt
