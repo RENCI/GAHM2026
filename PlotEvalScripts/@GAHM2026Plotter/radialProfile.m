@@ -69,59 +69,61 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
     if nargin < 6 || isempty(theta_inc), theta_inc = 2; end
     if nargin < 5 || isempty(time), time = 1; end
     if nargin < 4 || isempty(figNum), figNum = 1; end
-    if nargin < 3 || isempty(fieldType), fieldType = 'envhur'; end
+    if nargin < 3 || isempty(fieldType), fieldType = "envhur"; end
 
-    assert(obj.HasRadialGrid, 'GAHM2026Plotter:noRadialGrid', ...
-        'Radial grid data (RadialGrid) is not available in this Result struct.')
+    assert(obj.HasRadialGrid, "GAHM2026Plotter:noRadialGrid", ...
+        "Radial grid data (RadialGrid) is not available in this Result struct.")
 
     if ischar(fieldType) || isstring(fieldType)
         fieldType = {char(fieldType)};
     end
 
-    phys  = GAHM_physical_constants();
+    phys = gahmPhysicalConstants();
     MS2KT = phys.ms2kt;
-    NM2M  = phys.nm2m;
+    NM2M = phys.nm2m;
 
-    Vrad  = obj.RadialGrid;
+    Vrad = obj.RadialGrid;
     Track = obj.Trackdata;
-    opts  = obj.Opts;
+    opts = obj.Opts;
 
     tidx = resolveRadialTime(obj, time);
 
-    min1to10    = opts.radial.one2ten;
+    min1to10 = opts.radial.one2ten;
     isotach_kts = opts.radial.isotachs;
 
-    isVelRadial = strcmp(plotType,'velrad');
-    isPresRadial = strcmp(plotType,'prerad');
+    isVelRadial = plotType == "velrad";
+    isPresRadial = plotType == "prerad";
 
     hasEnvHur_final = isfield(Vrad, 'EnvHur_final');
-    hasVor_bt       = isfield(Vrad, 'VVor_bt');
-    hasVor_at       = isfield(Vrad, 'VVor_at');
-    hasEnv          = isfield(Vrad, 'Env');
-    hasEnvVor_bt    = isfield(Vrad, 'EnvVor_bt');
+    hasVor_bt = isfield(Vrad, 'VVor_bt');
+    hasVor_at = isfield(Vrad, 'VVor_at');
+    hasEnv = isfield(Vrad, 'Env');
+    hasEnvVor_bt = isfield(Vrad, 'EnvVor_bt');
 
     showEnvHurFinal = false;
-    showVorBt       = false;
-    showVorAt       = false;
-    showEnv         = false;
-    showEnvVorBt    = false;
-    showEnvHur      = false;
-    showTrack       = false;
+    showVorBt = false;
+    showVorAt = false;
+    showEnv = false;
+    showEnvVorBt = false;
+    showEnvHur = false;
+    showTrack = false;
 
     for i = 1:length(fieldType)
         switch fieldType{i}
             case 'envhur_final', if hasEnvHur_final, showEnvHurFinal = true; end
-            case 'vor_bt',       if hasVor_bt,       showVorBt       = true; end
-            case 'vor_at',       if hasVor_at,       showVorAt       = true; end
-            case 'env',          if hasEnv,           showEnv         = true; end
-            case 'envvor_bt',    if hasEnvVor_bt,     showEnvVorBt    = true; end
-            case 'envhur',       if hasEnvVor_bt,     showEnvHur      = true; end
-            case 'trackdata',    showTrack = true;
+            case 'vor_bt',    if hasVor_bt,    showVorBt = true; end
+            case 'vor_at',    if hasVor_at,    showVorAt = true; end
+            case 'env',       if hasEnv,       showEnv = true; end
+            case 'envvor_bt', if hasEnvVor_bt, showEnvVorBt = true; end
+            case 'envhur',    if hasEnvVor_bt, showEnvHur = true; end
+            case 'trackdata', showTrack = true;
+            otherwise
+                warning("radialProfile:unknownFieldType", "Unknown fieldType '%s' ignored.", fieldType{i});
         end
     end
 
     ntheta = length(Vrad.theta);
-    nr     = length(Vrad.r);
+    nr = length(Vrad.r);
 
     slotsPerFig = min(length(theta_inc:theta_inc:ntheta), ...
         opts.radial.layout(1) * opts.radial.layout(2));
@@ -136,12 +138,12 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
     end
 
     tl = tiledlayout(tileGrid.rows, tileGrid.cols);
-    tl.Padding     = 'compact';
+    tl.Padding = 'compact';
     tl.TileSpacing = 'compact';
 
-    ax      = [];
+    ax = [];
     tileIdx = 0;
-    x       = Vrad.r / 1000;
+    x = Vrad.r / 1000;
 
     %% radial velocity profiles
     if isVelRadial
@@ -150,7 +152,7 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
             ax(tileIdx) = nexttile; %#ok<AGROW>
             hold on
 
-            nleg      = 0;
+            nleg = 0;
             legLabels = {};
 
             if showEnvHurFinal
@@ -254,7 +256,7 @@ function radialProfile(obj, plotType, fieldType, figNum, time, theta_inc)
             ax(tileIdx) = nexttile; %#ok<AGROW>
             hold on
 
-            nleg      = 0;
+            nleg = 0;
             legLabels = {};
 
             if showEnvHurFinal

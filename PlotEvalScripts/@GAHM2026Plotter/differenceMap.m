@@ -32,16 +32,16 @@ function fig = differenceMap(obj, fieldA, fieldB, variable, figNum, time)
     if nargin < 6 || isempty(time),   time = 1;  end
     if nargin < 5 || isempty(figNum), figNum = 1; end
 
-    MS2KT    = GAHM_physical_constants().ms2kt;
-    opts     = obj.Opts;
+    MS2KT = gahmPhysicalConstants().ms2kt;
+    opts = obj.Opts;
     datagrid = obj.DataGrid;
-    Track    = obj.Trackdata;
-    ntimes   = length(fieldA);
+    Track = obj.Trackdata;
+    ntimes = length(fieldA);
 
     % --- diffmap option defaults ---
-    if ~isfield(opts, 'diffmap'),            opts.diffmap = struct(); end
-    if ~isfield(opts.diffmap, 'colormap'),   opts.diffmap.colormap = 'rdbu'; end
-    if ~isfield(opts.diffmap, 'clims'),      opts.diffmap.clims = []; end
+    if ~isfield(opts, 'diffmap'), opts.diffmap = struct(); end
+    if ~isfield(opts.diffmap, 'colormap'), opts.diffmap.colormap = 'rdbu'; end
+    if ~isfield(opts.diffmap, 'clims'), opts.diffmap.clims = []; end
 
     tidx = resolveTime(obj, time);
     ThisTime = datagrid(tidx).datetime;
@@ -57,8 +57,8 @@ function fig = differenceMap(obj, fieldA, fieldB, variable, figNum, time)
             diff_field = fieldA(tidx).Press - fieldB(tidx).Press;
             titleStr = ['Pressure Difference (mb) A-B  ' char(string(ThisTime)) ' UTC'];
         otherwise
-            error('GAHM2026Plotter:differenceMap', ...
-                  'variable must be ''speed'' or ''press'', got ''%s''', variable);
+            error("GAHM2026Plotter:differenceMap", ...
+                  "variable must be 'speed' or 'press', got '%s'", variable);
     end
 
     [minX, maxX, minY, maxY] = getDomain(obj, datagrid, tidx);
@@ -95,7 +95,7 @@ function fig = differenceMap(obj, fieldA, fieldB, variable, figNum, time)
         plotMaskContours(obj, datagrid, tidx);
     end
 
-    plot_coastline(opts);
+    plotCoastline(opts);
 
     title(titleStr)
     axis('equal')

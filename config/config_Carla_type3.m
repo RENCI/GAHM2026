@@ -36,7 +36,7 @@ sepenvhur.num_radial_points  = 1000;
 sepenvhur.num_azimuth_points = 360;
 sepenvhur.max_radius_deg     = 10;
 sepenvhur.search_range       = 6;
-MS2KT = GAHM_physical_constants().ms2kt;
+MS2KT = gahmPhysicalConstants().ms2kt;
 sepenvhur.wind_threshold_outer  = 20/MS2KT; % 20 kts -> m/s
 sepenvhur.wind_threshold_inner  = 34/MS2KT; % 34 kts -> m/s
 sepenvhur.debug              = true;
@@ -56,9 +56,9 @@ storm_info.designation = storm_designation;
 storm_info.starttime   = storm_start;
 storm_info.endtime     = storm_end;
 storm_info.outputfilename = sprintf('%s_%s_%s', ...
-	                                storm_info.name, ...
+                                    storm_info.name, ...
                                     storm_info.designation, ...
-				                    storm_info.year);
+                                    storm_info.year);
 
 %% ===== GAHM2026 parameter values =====
 GAHM_param_info.Vmax_multiplier     = 1;    % =1 use full Vmax, =0.9 use 90% Vmax...
@@ -101,8 +101,8 @@ output_info.type           = "grid";
 if output_info.type == "grid"
     output_info.nlon   = 351;      % # lon values in regular output grid (best if an odd number) - ignored for env.type=3
     output_info.nlat   = 351;      % # lat values in regular output grid (best if an odd number) - ignored for env.type=3
-    output_info.dellon = 0.05;     % grid increment decimal degrees lon 
-    output_info.dellat = 0.05;     % grid increment decimal degrees lat 
+    output_info.dellon = 0.05;     % grid increment decimal degrees lon
+    output_info.dellat = 0.05;     % grid increment decimal degrees lat
 elseif output_info.type == "points"
     output_info.lon = x;
     output_info.lat = y;

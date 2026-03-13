@@ -11,12 +11,12 @@
 %     GAHM_out                 - per-timestep GAHM parameters
 %
 %  An optional opts struct can be passed to override defaults.
-%  See plot_defaults.m for all available options.
+%  See plotDefaults.m for all available options.
 %
 %                R. Luettich 7/13/2025
 %                updated 2/8/2026 - corrected variable names
 
-opts = plot_defaults();
+opts = plotDefaults();
 
 % plot the final blended TC velocity field with mask lines
 conplot_GAHM2026(Reggrid_TC_out, Reggrid_out, Trackdata, 'mvelcon', 20, opts)

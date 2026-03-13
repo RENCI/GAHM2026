@@ -10,12 +10,12 @@
 %     VPrad.EnvHur_final(i) - final blended output on radial grid
 %
 %  An optional opts struct can be passed to override defaults.
-%  See plot_defaults.m for all available options.
+%  See plotDefaults.m for all available options.
 %
 %                R. Luettich 11/10/2024
 %                updated 2/8/2026 - uses VPrad struct
 
-opts = plot_defaults();
+opts = plotDefaults();
 
 % plot radial pressure profiles (every other radial)
 radplot_GAHM2026(VPrad, Trackdata, 2, 'prerad', 20, opts)

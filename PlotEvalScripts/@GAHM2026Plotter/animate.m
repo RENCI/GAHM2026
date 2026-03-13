@@ -20,23 +20,23 @@ function animate(obj, plotType, figNum, plotdata, filename)
 
     if nargin < 4 || isempty(plotdata), plotdata = obj.PlotData; end
 
-    isVel = strcmp(plotType,'velcon') || strcmp(plotType,'mvelcon');
-    isPQ  = strcmp(plotType,'prequiv');
+    isVel = plotType == "velcon" || plotType == "mvelcon";
+    isPQ = plotType == "prequiv";
     if nargin < 5 || isempty(filename)
         if isVel
-            filename = 'GAHM_V';
+            filename = "GAHM_V";
         elseif isPQ
-            filename = 'GAHM_PQ';
+            filename = "GAHM_PQ";
         else
-            filename = 'GAHM_P';
+            filename = "GAHM_P";
         end
     end
 
     opts = obj.Opts;
     ntimes = length(plotdata);
 
-    gifFile = fullfile(opts.export.dir,string(filename)+".gif");
-    mp4File = fullfile(opts.export.dir,string(filename)+".mp4");
+    gifFile = fullfile(opts.export.dir, string(filename) + ".gif");
+    mp4File = fullfile(opts.export.dir, string(filename) + ".mp4");
 
     vw = [];
     if opts.anim.mp4

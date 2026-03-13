@@ -28,7 +28,7 @@ function fig = scatterCompare(obj, X, Y, figNum, titleStr, xlabelStr, ylabelStr,
 %     legendLabels - (optional) cell array of legend strings, one per column
 
     quadColors = {'K.','B.','G.','R.'};
-    quadNames  = {'NE Quadrant','SE Quadrant','SW Quadrant','NW Quadrant'};
+    quadNames = {'NE Quadrant','SE Quadrant','SW Quadrant','NW Quadrant'};
     seriesColors = {'b.','g.','r.','c.','m.','k.'};
 
     ncols = size(X, 2);

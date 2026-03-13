@@ -24,7 +24,7 @@
 %               - "trackdata" - include Vmax and isotach values from trackfile
 %    fign       - starting figure number
 %    tieminds   - indicators of times to plot (e.g., 2 = time 2; 2:4 = times 2-4)
-%    opts       - (optional) options struct from plot_defaults()
+%    opts       - (optional) options struct from plotDefaults()
 %
 %                 11/7/2024   - Rick Luettich
 %                 2/8/2026    - modernized (VPrad struct, opts pattern)
@@ -37,14 +37,14 @@
 function []=radplot_GAHM2026(VPrad,Trackdata,theta_inc,ptype,ftype,fign,timeinds,opts)
 
 if nargin < 8
-    opts = plot_defaults();
+    opts = plotDefaults();
 end
 
 one2ten = opts.radial.one2ten;
 SQuad_1_10 = opts.radial.isotachs;
 slotsPerFig = opts.radial.layout(1) * opts.radial.layout(2);
 
-c = GAHM_physical_constants(); MS2KT = c.ms2kt; NM2M = c.nm2m;
+c = gahmPhysicalConstants(); MS2KT = c.ms2kt; NM2M = c.nm2m;
 
 Vplot = strcmp(ptype,'velrad');
 Pplot = strcmp(ptype,'prerad');

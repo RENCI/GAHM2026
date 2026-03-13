@@ -19,10 +19,10 @@
 function []=conplot_GAHM2026(plotdata,datagrid,Trackdata,ptype,fign,opts)
 
 if nargin < 6
-    opts = plot_defaults();
+    opts = plotDefaults();
 end
 
-MS2KT = GAHM_physical_constants().ms2kt;
+MS2KT = gahmPhysicalConstants().ms2kt;
 
 con_Vplot = strcmp(ptype,'velcon') || strcmp(ptype,'mvelcon');
 con_Pplot = strcmp(ptype,'precon') || strcmp(ptype,'mprecon');
@@ -57,7 +57,7 @@ if con_Vplot
         clim(opts.wind.clims)
         alpha(opts.wind.alpha);
 
-        plot_quiver_scaled(datagrid(ip).Lon, datagrid(ip).Lat, ...
+        plotQuiverScaled(datagrid(ip).Lon, datagrid(ip).Lat, ...
             plotdata(ip).VelU, plotdata(ip).VelV, opts);
 
         if opts.mask.show
@@ -79,7 +79,7 @@ if con_Vplot
             datestr(datetime(datagrid(ip).datetime),'mmm dd yyyy HH:MM') ' UTC'])
         axis('equal')
         axis([minX maxX minY maxY]);
-        plot_coastline(opts);
+        plotCoastline(opts);
 
         if opts.anim.gif
             frame = getframe(fig);
@@ -151,7 +151,7 @@ if con_Pplot
             datestr(datetime(datagrid(ip).datetime),'mmm dd yyyy HH:MM') ' UTC'])
         axis('equal')
         axis([minX maxX minY maxY]);
-        plot_coastline(opts);
+        plotCoastline(opts);
 
         if opts.anim.gif
             frame = getframe(fig);

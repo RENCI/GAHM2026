@@ -14,7 +14,7 @@
 %    theta_inc  - plot every Nth radial angle (e.g., 2 = every other)
 %    ptype      - 'velrad' for velocity or 'prerad' for pressure
 %    fign       - starting figure number
-%    opts       - (optional) options struct from plot_defaults()
+%    opts       - (optional) options struct from plotDefaults()
 %
 %                 11/7/2024   - Rick Luettich
 %                 2/8/2026    - modernized (VPrad struct, opts pattern)
@@ -22,14 +22,14 @@
 function []=radplot_GAHM2026(VPrad,Trackdata,theta_inc,ptype,fign,opts)
 
 if nargin < 6
-    opts = plot_defaults();
+    opts = plotDefaults();
 end
 
 one2ten = opts.radial.one2ten;
 SQuad_1_10 = opts.radial.isotachs;
 slotsPerFig = opts.radial.layout(1) * opts.radial.layout(2);
 
-MS2KT = GAHM_physical_constants().ms2kt;
+MS2KT = gahmPhysicalConstants().ms2kt;
 
 rad_Vplot = strcmp(ptype,'velrad');
 rad_Pplot = strcmp(ptype,'prerad');

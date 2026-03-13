@@ -49,18 +49,18 @@ function fig = timeSeriesPlot(obj, fields, figNum)
     if nargin < 2 || isempty(fields), fields = {'Vmax','Pc','Rmax'}; end
     if nargin < 3 || isempty(figNum), figNum = 1; end
 
-    phys    = GAHM_physical_constants();
-    MS2KT   = phys.ms2kt;
-    NM2M    = phys.nm2m;
+    phys = gahmPhysicalConstants();
+    MS2KT = phys.ms2kt;
+    NM2M = phys.nm2m;
 
-    Track   = obj.Trackdata;
-    ntimes  = numel(Track);
+    Track = obj.Trackdata;
+    ntimes = numel(Track);
 
     % Extract datetime vector
     dt = [Track.datetime];
 
     %% Build storm title prefix
-    stormStr = '';
+    stormStr = "";
     if isfield(obj.Result, 'storm_info') && isfield(obj.Result.storm_info, 'storm_name')
         stormStr = [obj.Result.storm_info.storm_name ' — '];
     end
@@ -87,12 +87,12 @@ function fig = timeSeriesPlot(obj, fields, figNum)
         switch fname
             case 'Vmax'
                 if ~isfield(Track, 'Vmax_t1')
-                    warning('timeSeriesPlot:missingField', ...
-                        'Vmax_t1 not found in Trackdata — skipping Vmax.');
+                    warning("timeSeriesPlot:missingField", ...
+                        "Vmax_t1 not found in Trackdata — skipping Vmax.");
                     continue
                 end
-                ydata  = [Track.Vmax_t1] * MS2KT;
-                ylab   = 'Vmax [kts]';
+                ydata = [Track.Vmax_t1] * MS2KT;
+                ylab = 'Vmax [kts]';
 
             case 'Pc'
                 if isfield(Track, 'MSLP')
@@ -100,25 +100,25 @@ function fig = timeSeriesPlot(obj, fields, figNum)
                 elseif isfield(Track, 'Pc')
                     ydata = [Track.Pc];
                 else
-                    warning('timeSeriesPlot:missingField', ...
-                        'Neither MSLP nor Pc found in Trackdata — skipping Pc.');
+                    warning("timeSeriesPlot:missingField", ...
+                        "Neither MSLP nor Pc found in Trackdata — skipping Pc.");
                     continue
                 end
                 ylab = 'Pc [mb]';
 
             case 'Rmax'
                 if ~isfield(Track, 'Rmax_t1')
-                    warning('timeSeriesPlot:missingField', ...
-                        'Rmax_t1 not found in Trackdata — skipping Rmax.');
+                    warning("timeSeriesPlot:missingField", ...
+                        "Rmax_t1 not found in Trackdata — skipping Rmax.");
                     continue
                 end
                 ydata = [Track.Rmax_t1];
-                ylab  = 'Rmax [nm]';
+                ylab = 'Rmax [nm]';
 
             case 'Rmax34'
                 if ~isfield(Track, 'RQuad_t1')
-                    warning('timeSeriesPlot:missingField', ...
-                        'RQuad_t1 not found in Trackdata — skipping Rmax34.');
+                    warning("timeSeriesPlot:missingField", ...
+                        "RQuad_t1 not found in Trackdata — skipping Rmax34.");
                     continue
                 end
                 ydata = NaN(1, ntimes);
@@ -126,12 +126,12 @@ function fig = timeSeriesPlot(obj, fields, figNum)
                     ydata(j) = max(Track(j).RQuad_t1(:, 1));
                 end
                 ydata = ydata / NM2M;
-                ylab  = 'Rmax 34kt [nm]';
+                ylab = 'Rmax 34kt [nm]';
 
             case 'Rmax50'
                 if ~isfield(Track, 'RQuad_t1')
-                    warning('timeSeriesPlot:missingField', ...
-                        'RQuad_t1 not found in Trackdata — skipping Rmax50.');
+                    warning("timeSeriesPlot:missingField", ...
+                        "RQuad_t1 not found in Trackdata — skipping Rmax50.");
                     continue
                 end
                 ydata = NaN(1, ntimes);
@@ -139,12 +139,12 @@ function fig = timeSeriesPlot(obj, fields, figNum)
                     ydata(j) = max(Track(j).RQuad_t1(:, 2));
                 end
                 ydata = ydata / NM2M;
-                ylab  = 'Rmax 50kt [nm]';
+                ylab = 'Rmax 50kt [nm]';
 
             case 'Rmax64'
                 if ~isfield(Track, 'RQuad_t1')
-                    warning('timeSeriesPlot:missingField', ...
-                        'RQuad_t1 not found in Trackdata — skipping Rmax64.');
+                    warning("timeSeriesPlot:missingField", ...
+                        "RQuad_t1 not found in Trackdata — skipping Rmax64.");
                     continue
                 end
                 ydata = NaN(1, ntimes);
@@ -152,11 +152,11 @@ function fig = timeSeriesPlot(obj, fields, figNum)
                     ydata(j) = max(Track(j).RQuad_t1(:, 3));
                 end
                 ydata = ydata / NM2M;
-                ylab  = 'Rmax 64kt [nm]';
+                ylab = 'Rmax 64kt [nm]';
 
             otherwise
-                warning('timeSeriesPlot:unknownField', ...
-                    'Unknown field "%s" — skipping.', fname);
+                warning("timeSeriesPlot:unknownField", ...
+                    "Unknown field ""%s"" — skipping.", fname);
                 continue
         end
 
@@ -164,9 +164,9 @@ function fig = timeSeriesPlot(obj, fields, figNum)
         ax(nplotted) = nexttile;
         tsopts = obj.Opts;
         if isfield(tsopts, 'timeseries')
-            lw  = tsopts.timeseries.linewidth;
+            lw = tsopts.timeseries.linewidth;
             mrk = tsopts.timeseries.marker;
-            ms  = tsopts.timeseries.markersize;
+            ms = tsopts.timeseries.markersize;
         else
             lw = 1.5; mrk = 'o'; ms = 4;
         end
@@ -179,7 +179,7 @@ function fig = timeSeriesPlot(obj, fields, figNum)
     ax = ax(1:nplotted);
 
     if nplotted == 0
-        warning('timeSeriesPlot:noData', 'No plottable fields found.');
+        warning("timeSeriesPlot:noData", "No plottable fields found.");
         return
     end
 

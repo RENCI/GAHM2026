@@ -48,7 +48,7 @@ classdef GAHM2026Plotter < handle
 %   resetOpts()                  - restore all defaults
 %   syncDatetime(A, B)           - match two struct arrays by .datetime
 %
-% OPTIONS (see plot_defaults.m)
+% OPTIONS (see plotDefaults.m)
 %   opts.domain, opts.wind, opts.pres, opts.quiver, opts.coast,
 %   opts.track, opts.radial, opts.mask, opts.anim, opts.export,
 %   opts.time, opts.scatter, opts.timeseries, opts.diffmap
@@ -70,7 +70,7 @@ classdef GAHM2026Plotter < handle
 
     properties (SetAccess = private)
         Result      % normalized data struct
-        Opts        % options struct from plot_defaults
+        Opts        % options struct from plotDefaults
         Source      % 'gahm' or 'sepenvhur'
     end
 
@@ -97,13 +97,13 @@ classdef GAHM2026Plotter < handle
             if nargin >= 3 && ~isempty(source)
                 obj.Source = source;
             else
-                obj.Source = 'gahm';
+                obj.Source = "gahm";
             end
 
             if nargin >= 2 && isstruct(opts)
                 obj.Opts = opts;
             else
-                obj.Opts = plot_defaults();
+                obj.Opts = plotDefaults();
             end
         end
 
@@ -159,7 +159,7 @@ classdef GAHM2026Plotter < handle
 
         function resetOpts(obj)
         % resetOpts  Restore all options to defaults.
-            obj.Opts = plot_defaults();
+            obj.Opts = plotDefaults();
         end
 
         %% Plotting methods (in separate files)

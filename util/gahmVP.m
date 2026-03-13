@@ -1,6 +1,7 @@
+function [Press,VVorRadProf_10_10] = gahmVP(r,q,iso,GAHM_constants,GAHM)
 %--------------------------------------------------------------------------
 %
-%  Script to compute GAHM velocity and pressure deficit at a specified 
+%  Script to compute GAHM velocity and pressure deficit at a specified
 %  radial distance from the eye (r), for a specified quadrant (q) and
 %  isotach (iso)
 %
@@ -13,7 +14,7 @@
 % Units used in calculations:
 %      velocity - m/s unless otherwise specified 10 min @ 10 m height
 %      distance - m unless otherwise specified
-%      pressure - mb (N/m^2 / 100) 
+%      pressure - mb (N/m^2 / 100)
 %
 % Inputs:
 %       r - distance (m) from the eye to compute V,P
@@ -25,7 +26,7 @@
 %
 % Outputs:
 %    Press - atmospheric pressure deficite (P(r)-Pn) (mb)
-%    VVorRadProf_10_10 - vortex velocity (m/s) including turning angle, 
+%    VVorRadProf_10_10 - vortex velocity (m/s) including turning angle,
 %                                                 10 min avg, 10 m height
 %
 % Constants & Assumptions:
@@ -41,43 +42,40 @@
 %                       turnangle=10+75*(r/Rmax-1);
 %                   else     (r>= 1.2*Rmax)
 %                       turnangle=25;
-%                   end  
-%       
+%                   end
 %
-function [Press,VVorRadProf_10_10] = GAHM_VP(r,q,iso,GAHM_constants,GAHM)
 
 
 %% Specify constants
 
-LatNS=GAHM.Eye(2);
+LatNS = GAHM.Eye(2);
 BLF = GAHM_constants.BLF;
-c = GAHM_physical_constants();
+c = gahmPhysicalConstants();
 omega = c.omega;
-f=2*omega*sind(LatNS);
+f = 2*omega*sind(LatNS);
 
 % Compute unit vectors & rotation matricies
 
 VVorQuaduv_tbl = quadrantUnitVectors(LatNS);
 
-SVorMax_10_10=GAHM.SVorMax_10_10;
-SVorMax_10_tbl=SVorMax_10_10/BLF;
-Bg=GAHM.Bg(q,iso);
-Rmax=GAHM.Rmax(q,iso);   
-RmaxQ=GAHM.RmaxQ(q);   % Rmax for highest isotach that isn't NaN
-RmorBg=(Rmax/r)^Bg;
-Ro=GAHM.Ro(q,iso);
-phi=GAHM.phi(q,iso);
-SVorGRadProf_10_tbl=sqrt(SVorMax_10_tbl^2*(1+1/Ro)*exp(phi*(1-RmorBg))*RmorBg+(r*f/2)^2)-r*f/2;
-SVorRadProf_10_10=SVorGRadProf_10_tbl*BLF;
+SVorMax_10_10 = GAHM.SVorMax_10_10;
+SVorMax_10_tbl = SVorMax_10_10/BLF;
+Bg = GAHM.Bg(q,iso);
+Rmax = GAHM.Rmax(q,iso);
+RmaxQ = GAHM.RmaxQ(q);   % Rmax for highest isotach that isn't NaN
+RmorBg = (Rmax/r)^Bg;
+Ro = GAHM.Ro(q,iso);
+phi = GAHM.phi(q,iso);
+SVorGRadProf_10_tbl = sqrt(SVorMax_10_tbl^2*(1+1/Ro)*exp(phi*(1-RmorBg))*RmorBg+(r*f/2)^2)-r*f/2;
+SVorRadProf_10_10 = SVorGRadProf_10_tbl*BLF;
 turnangle = turnAngleDeg(r, RmaxQ);
-turnmat=[cosd(-turnangle) -sind(-turnangle); sind(-turnangle) cosd(-turnangle)];
-VVorQuaduv_10=VVorQuaduv_tbl(q,:)*turnmat;
-VVorRadProf_10_10=SVorRadProf_10_10*VVorQuaduv_10;
-    
+turnmat = [cosd(-turnangle) -sind(-turnangle); sind(-turnangle) cosd(-turnangle)];
+VVorQuaduv_10 = VVorQuaduv_tbl(q,:)*turnmat;
+VVorRadProf_10_10 = SVorRadProf_10_10*VVorQuaduv_10;
+
 % Compute the pressure deficit
-    
-    Press=(GAHM.Pback-GAHM.CP)*(exp(-phi*RmorBg)-1);
 
-%end
+    Press = (GAHM.Pback-GAHM.CP)*(exp(-phi*RmorBg)-1);
 
+end
 

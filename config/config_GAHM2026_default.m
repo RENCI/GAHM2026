@@ -12,7 +12,7 @@
 % To create a config for a new storm, copy this file and update the
 % shared storm identity and SeparateEnvHur sections.
 %
-%                        2/7/2026  Rick Luettich, UNC/IMS/CNHR/EMES 
+%                        2/7/2026  Rick Luettich, UNC/IMS/CNHR/EMES
 %                                  Brian Blanton, UNC/RENCI
 %--------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ sepenvhur.num_radial_points  = 1000;
 sepenvhur.num_azimuth_points = 360;
 sepenvhur.max_radius_deg     = 10;
 sepenvhur.search_range       = 6;
-MS2KT = GAHM_physical_constants().ms2kt;
+MS2KT = gahmPhysicalConstants().ms2kt;
 sepenvhur.wind_threshold_outer  = 20/MS2KT; % 20 kts -> m/s
 sepenvhur.wind_threshold_inner  = 34/MS2KT; % 34 kts -> m/s
 sepenvhur.debug              = debug;
@@ -55,7 +55,7 @@ storm_info.name           = storm_name;
 storm_info.year           = num2str(storm_year);
 storm_info.designation    = storm_designation;
 storm_info.starttime      = storm_start;
-storm_info.endtime        = storm_end;   
+storm_info.endtime        = storm_end;
 storm_info.outputfilename = sprintf('%s_%s', storm_info.name, storm_info.year);
 
 %% ===== GAHM2026 parameter values =====
@@ -92,15 +92,15 @@ env_info.taper_a          = 2;   % adjusts steepness of hyperbolic tangent taper
 
 %% ===== Output information =====
 % for gridded output:
-%    if env_info.type =1 or 2, this will be centered on the eye of the storm at the 
+%    if env_info.type =1 or 2, this will be centered on the eye of the storm at the
 %    specified output time using nlon, nlat, dellon, dellat specified below
 %    if env_info.type =3, this will match the outer footprint of the environmental
 %    grid using dellon and dellat specified below.  nlon, nlat will be
-%    computed.  Note, in this case dellon and dellat can be <, =, > the grid 
+%    computed.  Note, in this case dellon and dellat can be <, =, > the grid
 %    size in the environmental grid, but it must divide evenly into the footprint
 %    of the environmental grid.
 % for point output:
-%   the number of longitude and latitude values much be equal and are fixed in time.  
+%   the number of longitude and latitude values much be equal and are fixed in time.
 %   Output is computed a corresponding lon,lat pairs
 
 output_info.diagnostics    = fullfile('output', sprintf('%s_%s_%s_GAHM2026_diagnostics.dat', storm_info.name, storm_info.designation, storm_info.year));
@@ -112,14 +112,13 @@ output_info.type           = "grid";
 if output_info.type == "grid"
     output_info.nlon   = 351;      % # lon values in regular output grid (best if an odd number) - ignored for env.type=3
     output_info.nlat   = 351;      % # lat values in regular output grid (best if an odd number) - ignored for env.type=3
-    output_info.dellon = 0.05;     % grid increment decimal degrees lon 
-    output_info.dellat = 0.05;     % grid increment decimal degrees lat 
+    output_info.dellon = 0.05;     % grid increment decimal degrees lon
+    output_info.dellat = 0.05;     % grid increment decimal degrees lat
 elseif output_info.type == "points"
     output_info.lon = x;
     output_info.lat = y;
 %    output_info.lon=[  ];
-%    output_info.lat=[  ];    
+%    output_info.lat=[  ];
 else
     disp ('output_info.type must be either the string "grid" or "points" ')
 end
-

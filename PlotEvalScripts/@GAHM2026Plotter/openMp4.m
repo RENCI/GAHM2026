@@ -3,7 +3,7 @@ function vw = openMp4(obj, filename)
 
     vw = VideoWriter(filename, 'MPEG-4');
     vw.FrameRate = obj.Opts.anim.frameRate;
-    vw.Quality   = 100;
+    vw.Quality = 100;
     open(vw);
 
 end

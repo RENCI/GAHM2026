@@ -9,7 +9,7 @@ function storm = createOutputStruct(OUTPUT, track, era5)
     vortex_lon(vortex_lon > 180) = vortex_lon(vortex_lon > 180) - 360;
     mask = 1 - OUTPUT.mask;
     mask_inner = 1 - OUTPUT.mask_inner;
-    
+
     storm = struct( ...
         'Time', track.time, ...
         'Lo', output_lon, ...
@@ -29,7 +29,7 @@ function storm = createOutputStruct(OUTPUT, track, era5)
         'min_pressure_center_lon', vortex_lon, ...
         'min_pressure_center_lat', era5.vortex.lat ...
     );
-    
+
     varnames = ["env_msl", "env_u10", "env_v10", "hur_msl", "hur_u10", "hur_v10"];
     varunits = ["mb", "m/s", "m/s", "mb", "m/s", "m/s"];
     storm.units = dictionary(varnames, varunits);

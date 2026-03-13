@@ -42,7 +42,7 @@ function metrics = computeMetrics(obj, X, Y, varName)
 
     % Default variable name
     if nargin < 4 || isempty(varName)
-        varName = 'Variable';
+        varName = "Variable";
     end
 
     % Flatten to column vectors
@@ -60,10 +60,10 @@ function metrics = computeMetrics(obj, X, Y, varName)
         diff_YX = Y - X;
         bias = mean(diff_YX);
         RMSE = sqrt(mean(diff_YX.^2));
-        MAE  = mean(abs(diff_YX));
+        MAE = mean(abs(diff_YX));
         Rmat = corrcoef(X, Y);
-        R    = Rmat(1, 2);
-        R2   = R^2;
+        R = Rmat(1, 2);
+        R2 = R^2;
         meanX = mean(X);
         if meanX ~= 0
             SI = RMSE / meanX;
@@ -73,20 +73,20 @@ function metrics = computeMetrics(obj, X, Y, varName)
     else
         bias = NaN;
         RMSE = NaN;
-        MAE  = NaN;
-        R    = NaN;
-        R2   = NaN;
-        SI   = NaN;
+        MAE = NaN;
+        R = NaN;
+        R2 = NaN;
+        SI = NaN;
     end
 
     % Build output struct
-    metrics.N       = N;
-    metrics.bias    = bias;
-    metrics.RMSE    = RMSE;
-    metrics.MAE     = MAE;
-    metrics.R       = R;
-    metrics.R2      = R2;
-    metrics.SI      = SI;
+    metrics.N = N;
+    metrics.bias = bias;
+    metrics.RMSE = RMSE;
+    metrics.MAE = MAE;
+    metrics.R = R;
+    metrics.R2 = R2;
+    metrics.SI = SI;
     metrics.varName = varName;
 
     % Print summary
@@ -114,8 +114,8 @@ function metrics = computeMetrics(obj, X, Y, varName)
                 varName, N, bias, RMSE, MAE, R, R2, SI);
             fclose(fid);
         else
-            warning('computeMetrics:csvOpen', ...
-                'Could not open CSV file for writing: %s', csvFile);
+            warning("computeMetrics:csvOpen", ...
+                "Could not open CSV file for writing: %s", csvFile);
         end
     end
 

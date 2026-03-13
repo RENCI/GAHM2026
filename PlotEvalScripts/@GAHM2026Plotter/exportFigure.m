@@ -17,7 +17,7 @@ function exportFigure(obj, fig, filename)
 
     opts = obj.Opts;
 
-    if strcmp(opts.export.format, 'none')
+    if opts.export.format == "none"
         return
     end
 
@@ -47,8 +47,8 @@ function exportFigure(obj, fig, filename)
                 'ContentType', 'vector');
             fprintf('Saved: %s.pdf\n', filepath);
         otherwise
-            warning('GAHM2026Plotter:badFormat', ...
-                'Unknown export format ''%s''. Use ''png'', ''pdf'', or ''none''.', ...
+            warning("GAHM2026Plotter:badFormat", ...
+                "Unknown export format '%s'. Use 'png', 'pdf', or 'none'.", ...
                 opts.export.format);
     end
 

@@ -1,3 +1,4 @@
+function ta = turnAngleDeg(r, RmaxQ)
 % Compute the piecewise turning angle as a function of radial distance,
 % based on the following formula
 %
@@ -5,7 +6,7 @@
 %  Rmax <= r <1.2*Rmax  turn angle = 10 + 75*(r/Rmax - 1)
 %  r => 1.2*Rmax        turn angle = 25
 %
-%  where the turning angle is deg 
+%  where the turning angle is deg
 %
 % Inputs:
 %       r     - radial distance from the eye (m)
@@ -14,12 +15,12 @@
 % Output:
 %       ta - turning angle (degrees)
 
-function ta = turnAngleDeg(r, RmaxQ)
-
 if r < RmaxQ
     ta = 10*r/RmaxQ;
 elseif r < 1.2*RmaxQ
-    ta = 10+75*(r/RmaxQ-1);
+    ta = 10 + 75*(r/RmaxQ-1);
 else
     ta = 25;
+end
+
 end

@@ -8,19 +8,19 @@ function plotMaskContours(obj, datagrid, tidx)
     end
 
     opts = obj.Opts;
-    clevs=[1 1]*.99;
-    [C,H]=contour(datagrid(tidx).Lon, datagrid(tidx).Lat, datagrid(tidx).MaskInner, clevs);
+    clevs = [1 1]*.99;
+    [C,H] = contour(datagrid(tidx).Lon, datagrid(tidx).Lat, datagrid(tidx).MaskInner, clevs);
     delete(H)
     while ~isempty(C)
-        n=C(2,1);
+        n = C(2,1);
         line(C(1,2:n+1),C(2,2:n+1),color=opts.mask.color,LineWidth=opts.mask.linewidth);
-        C(:,1:n+1)=[];
+        C(:,1:n+1) = [];
     end
-    [C,H]=contour(datagrid(tidx).Lon, datagrid(tidx).Lat, datagrid(tidx).MaskOuter, clevs);
+    [C,H] = contour(datagrid(tidx).Lon, datagrid(tidx).Lat, datagrid(tidx).MaskOuter, clevs);
     delete(H)
     while ~isempty(C)
-        n=C(2,1);
+        n = C(2,1);
         line(C(1,2:n+1),C(2,2:n+1),color=opts.mask.color,LineWidth=opts.mask.linewidth);
-        C(:,1:n+1)=[];
+        C(:,1:n+1) = [];
     end
 end

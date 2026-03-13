@@ -1,4 +1,4 @@
-function cm=burd(m)
+function cm = burd(m)
 
 if nargin < 1
     f = get(groot,'CurrentFigure');
@@ -24,11 +24,13 @@ trgb=[
            ];
 
 % interpolate
-tn=(0:m-1)/(m-1);
-tn=tn(:);
+tn = (0:m-1)/(m-1);
+tn = tn(:);
 
-cm(:,1)=interp1(trgb(:,1),trgb(:,2),tn);
-cm(:,2)=interp1(trgb(:,1),trgb(:,3),tn);
-cm(:,3)=interp1(trgb(:,1),trgb(:,4),tn);
+cm(:,1) = interp1(trgb(:,1),trgb(:,2),tn);
+cm(:,2) = interp1(trgb(:,1),trgb(:,3),tn);
+cm(:,3) = interp1(trgb(:,1),trgb(:,4),tn);
 
-cm(cm<0)=0;
+cm(cm < 0) = 0;
+
+end

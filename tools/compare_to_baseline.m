@@ -51,7 +51,7 @@ storm_info.designation = 'AL06';
 storm_info.starttime   = datetime(2018,9,13,12,0,0);
 storm_info.endtime     = datetime(2018,9,15,0,0,0);
 
-ATCF_data_in = read_IBTrACS(storm_info);
+ATCF_data_in = readIBTrACS(storm_info);
 
 env_file_base = fullfile(toolsdir, sprintf('%s_%s_%s', ...
     storm_info.name, storm_info.designation, storm_info.year));

@@ -1,7 +1,7 @@
 function fig = contourMap(obj, plotType, figNum, time, plotdata)
 % contourMap  Contour plot of a gridded wind or pressure field at one time.
 %
-%  To use this, must first issue command: 
+%  To use this, must first issue command:
 %      obj = GAHM2026Plotter(R);
 %  where R is the datastructure from
 %      R=run_GAHM2026( );
@@ -33,20 +33,20 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
     if nargin < 4 || isempty(time), time = 1; end
     if nargin < 3 || isempty(figNum), figNum = 1; end
 
-    MS2KT    = GAHM_physical_constants().ms2kt;
-    opts     = obj.Opts;
+    MS2KT = gahmPhysicalConstants().ms2kt;
+    opts = obj.Opts;
     datagrid = obj.DataGrid;
-    Track    = obj.Trackdata;
-    ntimes   = length(plotdata);
+    Track = obj.Trackdata;
+    ntimes = length(plotdata);
 
     tidx = resolveTime(obj, time);
-    ThisTime=datagrid(tidx).datetime;
-    ThisTime.Format='yyyy-MM-dd HH:mm';
+    ThisTime = datagrid(tidx).datetime;
+    ThisTime.Format = 'yyyy-MM-dd HH:mm';
 
-    isWindPlot = strcmp(plotType,'velcon') || strcmp(plotType,'mvelcon');
-    isPresPlot = strcmp(plotType,'precon') || strcmp(plotType,'mprecon') || strcmp(plotType,'prequiv');
-    showMask  = strcmp(plotType,'mvelcon') || strcmp(plotType,'mprecon');
-    showQuiv  = strcmp(plotType,'velcon') || strcmp(plotType,'prequiv');
+    isWindPlot = plotType == "velcon" || plotType == "mvelcon";
+    isPresPlot = plotType == "precon" || plotType == "mprecon" || plotType == "prequiv";
+    showMask = plotType == "mvelcon" || plotType == "mprecon";
+    showQuiv = plotType == "velcon" || plotType == "prequiv";
 
     [minX, maxX, minY, maxY] = getDomain(obj, datagrid, tidx);
 
@@ -71,7 +71,7 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
 
         addQuiver(obj, tidx, plotdata);
 
-        titleStr =  ['Wind Speed (kts) 10 min @ 10 m  ' char(string(ThisTime)) ' UTC'];
+        titleStr = ['Wind Speed (kts) 10 min @ 10 m  ' char(string(ThisTime)) ' UTC'];
     end
 
     %% pressure contour
@@ -103,6 +103,6 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
     axis('equal')
     gm
     axis([minX maxX minY maxY]);
-    plot_coastline(opts);
+    plotCoastline(opts);
 
 end

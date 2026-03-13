@@ -43,7 +43,7 @@ storm_info.designation = 'AL06';
 storm_info.starttime  = datetime(2018,9,13,12,0,0);
 storm_info.endtime    = datetime(2018,9,15,0,0,0);
 
-ATCF_data_in = read_IBTrACS(storm_info);
+ATCF_data_in = readIBTrACS(storm_info);
 
 % SeparateEnvHur config for auto-generating env fields
 sepenvhur.background_file      = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global.1/uvp/<year>/<year>.nc';
@@ -56,7 +56,7 @@ sepenvhur.num_radial_points     = 1000;
 sepenvhur.num_azimuth_points    = 360;
 sepenvhur.max_radius_deg        = 10;
 sepenvhur.search_range          = 6;
-MS2KT = GAHM_physical_constants().ms2kt;
+MS2KT = gahmPhysicalConstants().ms2kt;
 sepenvhur.wind_threshold_outer  = 20/MS2KT;
 sepenvhur.wind_threshold_inner  = 34/MS2KT;
 sepenvhur.debug                 = false;

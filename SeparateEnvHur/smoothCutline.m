@@ -3,7 +3,7 @@ function cutlineIdx = smoothCutline(cutlineIdx)
     MAX_ITER = 200;
     var_last = 0;
     var_now = var(cutlineIdx);
-    
+
     iter = 0;
     while abs(var_now - var_last) > VARIANCE_TOL && iter < MAX_ITER
         cutlineIdx = applyCircularSmooth(cutlineIdx);

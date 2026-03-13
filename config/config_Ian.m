@@ -36,12 +36,12 @@ sepenvhur.num_radial_points    = 100;
 sepenvhur.num_azimuth_points   = 360;
 sepenvhur.max_radius_deg       = 10;
 sepenvhur.search_range         = 6;
-MS2KT = GAHM_physical_constants().ms2kt;
+MS2KT = gahmPhysicalConstants().ms2kt;
 sepenvhur.wind_threshold_outer = 20/MS2KT; % 20 kts -> m/s
 sepenvhur.wind_threshold_inner = 34/MS2KT; % 34 kts -> m/s
 sepenvhur.debug                = true;
 sepenvhur.output_dir           = 'output';
-% Populate shared fields into sepenvhur for SeparateEnvHur 
+% Populate shared fields into sepenvhur for SeparateEnvHur
 sepenvhur.storm_name           = storm_name;
 sepenvhur.storm_year           = storm_year;
 sepenvhur.storm_designation    = storm_designation;
