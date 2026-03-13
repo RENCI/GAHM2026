@@ -66,12 +66,12 @@ Two solver backends are available: version 3 (iterative fixed-point) and version
 │  Phase A: Read track, load environmental fields         │
 │                                                         │
 │  Phase B: Per-timestep loop                             │
-│    ├─ GAHM2026_prep      → initialize GAHM struct      │
-│    ├─ GAHM2026_consistency → screen & validate inputs   │
-│    ├─ GAHM2026_solve     → compute Bg, Rmax per quad    │
-│    ├─ GAHM_VPradial      → radial velocity & pressure   │
+│    ├─ gahm2026Prep       → initialize GAHM struct      │
+│    ├─ gahm2026Consistency → screen & validate inputs   │
+│    ├─ gahm2026Solve      → compute Bg, Rmax per quad    │
+│    ├─ gahmVPradial       → radial velocity & pressure   │
 │    ├─ VEnvreg2radial2    → env fields → radial grid     │
-│    └─ radial_taper2      → taper at blending boundary   │
+│    └─ radialTaper2       → taper at blending boundary   │
 │                                                         │
 │  Phase C: Interpolate to output grid                    │
 │    ├─ radial2regular     → radial → regular grid        │

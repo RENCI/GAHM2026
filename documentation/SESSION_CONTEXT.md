@@ -1,6 +1,6 @@
 # GAHM2026 Refactoring Session Context
 
-**Last updated**: March 9, 2026  
+**Last updated**: March 13, 2026  
 **Purpose**: Continuity document for resuming work in a new session.
 
 ---
@@ -15,7 +15,7 @@ MATLAB codebase for computing hurricane wind and pressure fields using the Gener
 
 ## Current State
 
-All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization fully modernized with the `GAHM2026Plotter` class (7 build phases complete). SeparateEnvHur subproject fully integrated: shared IBTrACS file, shared track reader (`util/read_IBTrACS.m`), unified config with `<year>` placeholder, track loaded once in `run_GAHM2026.m` and passed to both subsystems. All `fprintf` logging converted to `logMsg` across `util/` and `GAHM2026.m`. GitHub Pages site created in `docs/`. `GAHM_physical_constants.m` fully adopted — no magic numbers remain outside the constants file. `@GAHM2026Plotter` variable names modernized to match `@GAHM2026DiagPlotter` conventions. A new `@GAHM2026DiagPlotter` class (20 files) provides unified diagnostics and plotting for both `run_GAHM2026` output and SeparateEnvHur `.mat` files.
+All five refactoring phases are complete. All naming uses GAHM2026 consistently. Directory structure organized with `input/` and `output/` directories. Graphics/visualization fully modernized with the `GAHM2026Plotter` class (7 build phases complete). SeparateEnvHur subproject fully integrated: shared IBTrACS file, shared track reader (`util/readIBTrACS.m`), unified config with `<year>` placeholder, track loaded once in `run_GAHM2026.m` and passed to both subsystems. All `fprintf` logging converted to `logMsg` across `util/` and `GAHM2026.m`. GitHub Pages site created in `docs/`. `gahmPhysicalConstants.m` fully adopted — no magic numbers remain outside the constants file. `@GAHM2026Plotter` variable names modernized to match `@GAHM2026DiagPlotter` conventions. A new `@GAHM2026DiagPlotter` class (20 files) provides unified diagnostics and plotting for both `run_GAHM2026` output and SeparateEnvHur `.mat` files. MATLAB coding standards compliance (AGENTS.md) applied across the codebase: formatting, `end` keywords, H1 lines, string literals, `arguments` blocks, pre-allocation, lowerCamelCase function names, `otherwise` blocks.
 
 ### Active Files
 
@@ -25,12 +25,12 @@ All five refactoring phases are complete. All naming uses GAHM2026 consistently.
 | Configuration | `config/config_GAHM2026_default.m` (Florence 2018, unified: SeparateEnvHur + GAHM2026) |
 | Configuration | `config/config_Florence.m` (short Florence run for testing) |
 | Orchestrator | `GAHM2026.m` |
-| GAHM pipeline | `util/GAHM2026_prep.m`, `util/GAHM2026_consistency.m`, `util/GAHM2026_solve.m` |
-| Profile computation | `util/GAHM_VPradial.m`, `util/GAHM_VP.m` |
-| I/O | `util/read_ATCF_fort22.m`, `util/read_IBTrACS.m`, `util/read_Env_and_Hurr_fields2.m`, `util/writeGAHM2026NetCdf.m`, `util/check_url.m` |
-| Grid operations | `util/VEnvreg2radial2.m`, `util/radial2regular.m`, `util/radial_taper2.m` |
-| Post-processing | `util/apply_WAF_from_raster.m` |
-| Extracted utilities | `util/computeRmaxTot.m`, `util/quadrantUnitVectors.m`, `util/thetaToQuadrantPair.m`, `util/turnAngleDeg.m`, `util/logMsg.m`, `util/GAHM_physical_constants.m`, `util/struct2vars.m` |
+| GAHM pipeline | `util/gahm2026Prep.m`, `util/gahm2026Consistency.m`, `util/gahm2026Solve.m` |
+| Profile computation | `util/gahmVPradial.m`, `util/gahmVP.m` |
+| I/O | `util/readATCFfort22.m`, `util/readIBTrACS.m`, `util/readEnvAndHurrFields2.m`, `util/writeGAHM2026NetCdf.m`, `util/checkUrl.m` |
+| Grid operations | `util/VEnvreg2radial2.m`, `util/radial2regular.m`, `util/radialTaper2.m` |
+| Post-processing | `util/applyWAFfromRaster.m` |
+| Extracted utilities | `util/computeRmaxTot.m`, `util/quadrantUnitVectors.m`, `util/thetaToQuadrantPair.m`, `util/turnAngleDeg.m`, `util/logMsg.m`, `util/gahmPhysicalConstants.m`, `util/struct2vars.m` |
 | Plotting class | `PlotEvalScripts/@GAHM2026Plotter/` (15 .m files) |
 | Diagnostics class | `PlotEvalScripts/@GAHM2026DiagPlotter/` (20 .m files) |
 | Plotting helpers | `PlotEvalScripts/plot_defaults.m`, `plot_coastline.m`, `plot_quiver_scaled.m` |
@@ -211,9 +211,49 @@ Created a standardized plotting framework in `PlotEvalScripts/`:
 5. **Added `ftype` parameter to `radialProfile.m`**: New second argument (`'envhur'`, `'hur'`, `'env'`) enables selective plotting of env+vortex combined, vortex-only, or env-only fields. Default `'envhur'` preserves backward compatibility. Three-way plotting logic for both velocity and pressure sections. Data-adaptive pressure label positioning. Merged from Rick's temp version with our improvements (auto-figure, `linkaxes`, `'--r'` env line, `'EV'`/`'Vortex'` labels).
 6. **Copied `radplot_GAHM2026_RL.m`**: Rick's expanded standalone radplot script from `temp/` with `ftype` cell-array input (`"envhur"`, `"vor_bt"`, `"vor_at"`, `"env"`, `"envvor_bt"`, `"trackdata"`) and `timeinds` parameter for specific timestep selection.
 
+### MATLAB Coding Standards Compliance (Mar 10–13, 2026)
+
+Applied AGENTS.md coding standards across the codebase in multiple passes:
+
+| Pass | Description | Status |
+|------|-------------|--------|
+| 1 | Formatting: spaces around assignment, relational, and logical operators; removed trailing whitespace and extra blank lines | ✅ |
+| 2 | Added missing `end` keywords to all functions | ✅ |
+| 3 | Moved H1 comment blocks to immediately follow function declarations | ✅ |
+| 4 | Converted char literals (`'...'`) to string literals (`"..."`) for log messages, error strings, and string comparisons | ✅ |
+| 5 | Added `arguments` blocks for input validation to public-facing functions (`run_GAHM2026.m`, `GAHM2026.m`, `SeparateEnvHur.m`) | ✅ |
+| 6 | Array pre-allocation in `GAHM2026.m` main loop and `writeGAHM2026NetCdf.m` to avoid incremental growth | ✅ |
+| 7 | `fullfile` path construction | ⏭️ Skipped (OS separator concerns) |
+| 8 | Refactor large argument lists into structs | ⏭️ Skipped (internal/local functions only) |
+| 9 | Renamed 17 functions from underscore_separated to lowerCamelCase and updated all caller references | ✅ |
+| 10 | Added missing `otherwise` block to `switch` in `radialProfile.m` | ✅ |
+| 11 | Fixed floating-point literals without leading digit (`.5` → `0.5` in `gm.m`) | ✅ |
+
+Function renames applied in Pass 9:
+
+| Old Name | New Name |
+|----------|----------|
+| `GAHM2026_prep` | `gahm2026Prep` |
+| `GAHM2026_consistency` | `gahm2026Consistency` |
+| `GAHM2026_solve` | `gahm2026Solve` |
+| `GAHM_VPradial` | `gahmVPradial` |
+| `GAHM_VP` | `gahmVP` |
+| `read_ATCF_fort22` | `readATCFfort22` |
+| `read_IBTrACS` | `readIBTrACS` |
+| `read_Env_and_Hurr_fields2` | `readEnvAndHurrFields2` |
+| `radial_taper2` | `radialTaper2` |
+| `apply_WAF_from_raster` | `applyWAFfromRaster` |
+| `check_url` | `checkUrl` |
+| `GAHM_physical_constants` | `gahmPhysicalConstants` |
+| `radial_find_maskedge` | `radialFindMaskedge` |
+| `compute_Bg_iterative` | `computeBgIterative` (local in `gahm2026Solve.m`) |
+| `compute_Bg_fsolve` | `computeBgFsolve` (local in `gahm2026Solve.m`) |
+| `compute_Bg` | `computeBg` (local in `gahm2026Solve.m`) |
+| `solve_flag1or5_v3` / `_v4` | kept as local functions (internal to `gahm2026Solve.m`) |
+
 ### GAHM_physical_constants Adoption (Mar 9, 2026)
 
-Replaced all magic number literals across the codebase with named constants from `GAHM_physical_constants.m`. No magic numbers remain outside the constants file itself.
+Replaced all magic number literals across the codebase with named constants from `gahmPhysicalConstants.m` (originally `GAHM_physical_constants.m`, renamed in Pass 9). No magic numbers remain outside the constants file itself.
 
 | Constant | Value | Files updated |
 |---|---|---|
@@ -379,6 +419,7 @@ PlotEvalScripts/
 - ~~Difference maps between field pairs (diverging colormap)~~ ✅ Done (DiagPlotter `differenceMap`)
 - ~~Objective metrics: bias, RMSE, MAE, correlation → CSV summary~~ ✅ Done (DiagPlotter `computeMetrics`)
 - ~~Bias/RMSE annotations on scatter plots~~ ✅ Done (DiagPlotter `scatterCompare` with `opts.scatter.showMetrics`)
+- ~~MATLAB coding standards compliance (AGENTS.md)~~ ✅ Done (Mar 10–13, 2026)
 - SeparateEnvHur hardening: fix bugs, parameterize magic numbers, rename variables (see `SeparateEnvHur/TODO.md`)
 - Merge `@GAHM2026DiagPlotter` features into `@GAHM2026Plotter` (or replace it)
 - Result struct field renames: `Reggrid_out` → `Grid`, `Reggrid_TC_out` → `Fields_TC`, etc. (cross-cutting, deferred)

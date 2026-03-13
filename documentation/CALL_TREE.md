@@ -11,13 +11,13 @@
 |------|-------|
 | Driver | `run_GAHM2026.m` |
 | Orchestrator | `GAHM2026.m` |
-| I/O | `read_ATCF_fort22.m`, `read_IBTrACS.m`, `read_Env_and_Hurr_fields2.m`, `writeGAHM2026NetCdf.m` |
-| GAHM pipeline | `GAHM2026_prep.m`, `GAHM2026_consistency.m`, `GAHM2026_solve.m` |
-| Legacy solvers | `GAHM2026v3e.m`, `GAHM2026v4a.m` (removed, logic unified in `GAHM2026_solve.m`) |
-| Profile computation | `GAHM_VPradial.m`, `GAHM_VP.m` |
-| Grid operations | `VEnvreg2radial2.m`, `radial2regular.m`, `radial_taper2.m` |
-| Post-processing | `apply_WAF_from_raster.m` |
-| Extracted utilities | `computeRmaxTot.m`, `quadrantUnitVectors.m`, `thetaToQuadrantPair.m`, `turnAngleDeg.m`, `logMsg.m`, `GAHM_physical_constants.m` |
+| I/O | `readATCFfort22.m`, `readIBTrACS.m`, `readEnvAndHurrFields2.m`, `writeGAHM2026NetCdf.m` |
+| GAHM pipeline | `gahm2026Prep.m`, `gahm2026Consistency.m`, `gahm2026Solve.m` |
+| Legacy solvers | `GAHM2026v3e.m`, `GAHM2026v4a.m` (removed, logic unified in `gahm2026Solve.m`) |
+| Profile computation | `gahmVPradial.m`, `gahmVP.m` |
+| Grid operations | `VEnvreg2radial2.m`, `radial2regular.m`, `radialTaper2.m` |
+| Post-processing | `applyWAFfromRaster.m` |
+| Extracted utilities | `computeRmaxTot.m`, `quadrantUnitVectors.m`, `thetaToQuadrantPair.m`, `turnAngleDeg.m`, `logMsg.m`, `gahmPhysicalConstants.m` |
 
 ---
 
@@ -25,7 +25,7 @@
 
 ### Step 1: `run_GAHM2026.m` (driver function)
 
-Loads configuration from `config/config_GAHM2026_default.m` (or a user-specified config), reads the storm track data once (`read_IBTrACS` or `read_ATCF_fort22`), and passes it to both SeparateEnvHur and GAHM2026:
+Loads configuration from `config/config_GAHM2026_default.m` (or a user-specified config), reads the storm track data once (`readIBTrACS` or `readATCFfort22`), and passes it to both SeparateEnvHur and GAHM2026:
 
 1. Reads track file → `ATCF_data_in`
 2. Calls `SeparateEnvHur(sepenvhur, ATCF_data_in)` (if env_type=3 and `.mat` missing)
@@ -43,32 +43,32 @@ Decomposed into a main function + 7 local helper functions (Phase 3).
 | Function | Condition | Calls | Description |
 |----------|-----------|-------|-------------|
 | `sliceTrack` | always | — | Slice pre-loaded `ATCF_data_in` to start/end lines |
-| `loadEnvFields` | `env_type == 3` | `read_Env_and_Hurr_fields2.m` | Load gridded env & hurricane fields |
+| `loadEnvFields` | `env_type == 3` | `readEnvAndHurrFields2.m` | Load gridded env & hurricane fields |
 | main | `WAF_flag == true` | `readgeoraster` (builtin) | Read Wind Adjustment Factor raster |
 
 #### Phase B: Per-timestep loop (master time loop)
 
 | Function | Condition | Calls | Description |
 |----------|-----------|-------|-------------|
-| `computeGAHMAtTrackTime` | always | `GAHM2026_prep.m` | Initialize GAHM data structure |
-| `computeGAHMAtTrackTime` | always | `GAHM2026_consistency.m` | Check input consistency, set flags |
-| `computeGAHMAtTrackTime` | always | `GAHM2026_solve.m` | Compute GAHM parameters (unified solver) |
-| `computeRadialProfiles` | always | `GAHM_VPradial.m` | Compute radial velocity/pressure profiles |
+| `computeGAHMAtTrackTime` | always | `gahm2026Prep.m` | Initialize GAHM data structure |
+| `computeGAHMAtTrackTime` | always | `gahm2026Consistency.m` | Check input consistency, set flags |
+| `computeGAHMAtTrackTime` | always | `gahm2026Solve.m` | Compute GAHM parameters (unified solver) |
+| `computeRadialProfiles` | always | `gahmVPradial.m` | Compute radial velocity/pressure profiles |
 | `interpolateEnvOnRadialGrid` | `env_type == 3` | `VEnvreg2radial2.m` | Interpolate env/hurricane fields to radial grid |
-| `applyTaperOnRadialGrid` | `taper_flag == true` | `radial_taper2.m` | Compute and apply taper function |
+| `applyTaperOnRadialGrid` | `taper_flag == true` | `radialTaper2.m` | Compute and apply taper function |
 
 #### Phase C: Output (after master loop)
 
 | Function | Condition | Calls | Description |
 |----------|-----------|-------|-------------|
 | `buildRegularGridOutputs` | always | `radial2regular.m` | Interpolate vortex fields to regular grid |
-| `buildRegularGridOutputs` | `WAF_flag == true` | `apply_WAF_from_raster.m` | Apply Wind Adjustment Factor |
+| `buildRegularGridOutputs` | `WAF_flag == true` | `applyWAFfromRaster.m` | Apply Wind Adjustment Factor |
 | `buildRegularGridOutputs` | `env_type == 1/2` | `radial2regular.m` | Interpolate env fields to regular grid |
 | `buildRegularGridOutputs` | `env_type == 3` | `griddedInterpolant` (builtin) | Interpolate env/hurricane to output grid |
 
 ---
 
-### Step 3: `GAHM2026_solve.m` (unified solver, Phase 4)
+### Step 3: `gahm2026Solve.m` (unified solver, Phase 4)
 
 Single entry point replacing direct calls to `GAHM2026v3e.m` / `GAHM2026v4a.m`.
 Dispatches to version-specific backends based on `GAHM_constants.version`.
@@ -110,12 +110,12 @@ Writes `Reggrid_out` and `Reggrid_TC_out` to a NetCDF4 file.
 | `sliceTrack` | Slice pre-loaded track to start/end lines |
 | `loadEnvFields` | Env/hurricane gridded field loading by env_type |
 | `computeGAHMAtTrackTime` | prep → consistency → solve |
-| `computeRadialProfiles` | Theta loop calling GAHM_VPradial |
+| `computeRadialProfiles` | Theta loop calling gahmVPradial |
 | `interpolateEnvOnRadialGrid` | Env_type branching for env fields on radial grid |
 | `applyTaperOnRadialGrid` | Taper computation and application |
 | `buildRegularGridOutputs` | Output grid construction, WAF, blending, masks |
 
-### `GAHM2026_prep.m`
+### `gahm2026Prep.m`
 | Function | Called When | Description |
 |----------|-------------|-------------|
 | `VEnvAvg` | `env_type == 3` | Average environmental velocity within Rmax of eye |
@@ -141,12 +141,12 @@ Previously duplicated logic, now standalone `.m` files:
 
 | File | Replaces | Called From |
 |------|----------|-------------|
-| `computeRmaxTot.m` | 3 nested `compute_Rmax_tot` copies | `GAHM2026_solve.m`, `read_ATCF_fort22.m` |
-| `quadrantUnitVectors.m` | 4 inline copies | `GAHM2026_solve.m`, `GAHM2026_consistency.m`, `GAHM_VP.m` |
-| `thetaToQuadrantPair.m` | ~20-line blocks | `GAHM_VPradial.m`, `computeRmaxTot.m` |
-| `turnAngleDeg.m` | Piecewise turning angle | `GAHM_VP.m` |
+| `computeRmaxTot.m` | 3 nested `compute_Rmax_tot` copies | `gahm2026Solve.m`, `readATCFfort22.m` |
+| `quadrantUnitVectors.m` | 4 inline copies | `gahm2026Solve.m`, `gahm2026Consistency.m`, `gahmVP.m` |
+| `thetaToQuadrantPair.m` | ~20-line blocks | `gahmVPradial.m`, `computeRmaxTot.m` |
+| `turnAngleDeg.m` | Piecewise turning angle | `gahmVP.m` |
 | `logMsg.m` | Dual fprintf pairs | Available for gradual adoption |
-| `GAHM_physical_constants.m` | Magic number literals | Available for gradual adoption |
+| `gahmPhysicalConstants.m` | Magic number literals | Available for gradual adoption |
 
 ---
 
@@ -154,25 +154,25 @@ Previously duplicated logic, now standalone `.m` files:
 
 ```
 run_GAHM2026.m
-├── read_ATCF_fort22.m               [if ATCF/fort22]
+├── readATCFfort22.m               [if ATCF/fort22]
 │   └── computeRmaxTot.m             [if ASWIP]
 │       └── thetaToQuadrantPair.m
-├── read_IBTrACS.m                   [if IBTrACS]
+├── readIBTrACS.m                   [if IBTrACS]
 ├── SeparateEnvHur.m                      [if env_type==3 and .mat missing]
 ├── GAHM2026.m (ATCF_data_in passed in)
 │   ├── sliceTrack [local]
 │   ├── loadEnvFields [local]
-│   │   └── read_Env_and_Hurr_fields2.m [if env_type==3]
+│   │   └── readEnvAndHurrFields2.m [if env_type==3]
 │   ├── readgeoraster (builtin)      [if WAF_flag]
 │   │
 │   ├── [master time loop]
 │   │   ├── computeGAHMAtTrackTime [local]
-│   │   │   ├── GAHM2026_prep.m
+│   │   │   ├── gahm2026Prep.m
 │   │   │   │   ├── VEnvAvg          [nested, if env_type==3]
 │   │   │   │   └── VEnvRQuad        [nested, if env_type==3]
-│   │   │   ├── GAHM2026_consistency.m
+│   │   │   ├── gahm2026Consistency.m
 │   │   │   │   └── quadrantUnitVectors.m
-│   │   │   └── GAHM2026_solve.m
+│   │   │   └── gahm2026Solve.m
 │   │   │       ├── quadrantUnitVectors.m
 │   │   │       ├── solve_flag1or5_v3 [local, if version==3]
 │   │   │       │   └── compute_Bg_iterative [local]
@@ -185,19 +185,19 @@ run_GAHM2026.m
 │   │   │       └── computeRmaxTot.m
 │   │   │           └── thetaToQuadrantPair.m
 │   │   ├── computeRadialProfiles [local]
-│   │   │   └── GAHM_VPradial.m      [for it=1:ntheta]
+│   │   │   └── gahmVPradial.m      [for it=1:ntheta]
 │   │   │       ├── thetaToQuadrantPair.m
-│   │   │       └── GAHM_VP.m        [for each radial point]
+│   │   │       └── gahmVP.m        [for each radial point]
 │   │   │           ├── quadrantUnitVectors.m
 │   │   │           └── turnAngleDeg.m
 │   │   ├── interpolateEnvOnRadialGrid [local]
 │   │   │   └── VEnvreg2radial2.m    [if env_type==3]
 │   │   └── applyTaperOnRadialGrid [local]
-│   │       └── radial_taper2.m      [if taper_flag]
+│   │       └── radialTaper2.m      [if taper_flag]
 │   │
 │   └── buildRegularGridOutputs [local]
 │       ├── radial2regular.m         [vortex, env, hurricane fields]
-│       └── apply_WAF_from_raster.m  [if WAF_flag]
+│       └── applyWAFfromRaster.m  [if WAF_flag]
 │
 └── writeGAHM2026NetCdf.m           [if output type=="grid"]
 ```

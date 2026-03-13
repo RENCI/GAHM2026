@@ -32,23 +32,23 @@ flowchart TB
 
         subgraph INIT["Phase A: Initialization"]
             track["sliceTrack\n(ATCF_data_in passed from driver)"]
-            loadenv["loadEnvFields\nread_Env_and_Hurr_fields2"]
+            loadenv["loadEnvFields\nreadEnvAndHurrFields2"]
         end
 
         subgraph LOOP["Phase B: Per-Timestep Loop"]
             direction TB
-            prep["GAHM2026_prep\nInitialize GAHM struct,\nVEnvAvg, VEnvRQuad"]
-            consist["GAHM2026_consistency\nScreen inputs, set flags"]
-            solve["GAHM2026_solve\nCompute Bg, Rmax\n(v3 iterative / v4 fsolve)"]
-            radial["GAHM_VPradial → GAHM_VP\nRadial velocity & pressure\nprofiles (ntheta × nr)"]
+            prep["gahm2026Prep\nInitialize GAHM struct,\nVEnvAvg, VEnvRQuad"]
+            consist["gahm2026Consistency\nScreen inputs, set flags"]
+            solve["gahm2026Solve\nCompute Bg, Rmax\n(v3 iterative / v4 fsolve)"]
+            radial["gahmVPradial → gahmVP\nRadial velocity & pressure\nprofiles (ntheta × nr)"]
             envrad["VEnvreg2radial2\nInterpolate env fields\nto radial grid"]
-            taper["radial_taper2\nCompute & apply\ntaper function"]
+            taper["radialTaper2\nCompute & apply\ntaper function"]
             prep --> consist --> solve --> radial --> envrad --> taper
         end
 
         subgraph OUTPUT_GRID["Phase C: Output Grid Construction"]
             r2r["radial2regular\nInterpolate radial → regular grid"]
-            wafapp["apply_WAF_from_raster\nWind adjustment factor"]
+            wafapp["applyWAFfromRaster\nWind adjustment factor"]
             blend["Blend vortex + env fields\nBuild masks (Mask1, Mask2)"]
             r2r --> wafapp --> blend
         end

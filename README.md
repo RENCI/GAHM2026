@@ -281,13 +281,13 @@ GAHM2026 and SeparateEnvHur share the following utilities in `util/`:
 
 | File | Purpose |
 |------|---------|
-| `read_IBTrACS.m` | IBTrACS CSV parser (used by both projects) |
+| `readIBTrACS.m` | IBTrACS CSV parser (used by both projects) |
 | `logMsg.m` | Standardized logging (`DEBUG`/`INFO`/`WARNING`/`ERROR`) |
 | `computeRmaxTot.m` | Total Rmax from quadrant values |
 | `quadrantUnitVectors.m` | Vortex/environmental unit vectors per quadrant |
 | `thetaToQuadrantPair.m` | Map azimuth to bounding quadrant pair |
 | `turnAngleDeg.m` | Boundary layer turning angle |
-| `GAHM_physical_constants.m` | Centralized physical constants |
+| `gahmPhysicalConstants.m` | Centralized physical constants |
 
 ---
 
