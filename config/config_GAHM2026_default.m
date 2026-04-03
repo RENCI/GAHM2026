@@ -46,10 +46,10 @@ sepenvhur.output_dir         = 'output';
 sepenvhur.storm_name        = storm_name;
 sepenvhur.storm_year        = storm_year;
 sepenvhur.storm_designation = storm_designation;
-sepenvhur.track_file        = 'input/ibtracs.NA.list.v04r01.csv';
+sepenvhur.track_file        = fullfile('input', track_file);
 
 %% ===== GAHM2026 storm / track file info =====
-storm_info.track_file     = 'input/ibtracs.NA.list.v04r01.csv';
+storm_info.track_file     = fullfile('input', track_file);
 storm_info.file_type      = "IBTrACS";
 storm_info.name           = storm_name;
 storm_info.year           = num2str(storm_year);
@@ -117,8 +117,6 @@ if output_info.type == "grid"
 elseif output_info.type == "points"
     output_info.lon = x;
     output_info.lat = y;
-%    output_info.lon=[  ];
-%    output_info.lat=[  ];
 else
     disp ('output_info.type must be either the string "grid" or "points" ')
 end

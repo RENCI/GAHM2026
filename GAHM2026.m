@@ -92,6 +92,7 @@ if taper_flag
 end
 
 fid = fopen(output.diagnostics, 'at');
+cleanupFid = onCleanup(@() fclose(fid));
 
 if debug, logMsg(fid, "DEBUG", "GAHM version=%d, env_type=%d, taper=%d, WAF=%d", GAHM_version, env_type, taper_flag, WAF_flag); end
 if debug, logMsg(fid, "DEBUG", "Radial grid: ntheta=%d, nr=%d, delr=%d m (max radius=%.0f km)", ntheta, nr, delr, nr*delr/1000); end
@@ -296,7 +297,6 @@ logMsg(fid, "INFO", "Completed calculations on radial grid. Preparing output");
 if debug, logMsg(fid, "DEBUG", "Master time loop complete: %d output time steps produced", i); end
 
 itot = i;
-fclose(fid);
 
 %% Interpolate from radial grid to regular output grid
 
@@ -335,10 +335,7 @@ for ii = 1:itot
     FV = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).VelV');
     FP = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).Press');
     for it = 1:length(theta)
-        az = 90 - theta(it);  %compute the bearing angle cw from N
-        if az < 0
-            az = az + 360;
-        end
+        az = thetaToAzimuth(theta(it));
         [rad_lat, rad_lon] = reckon("rh", LatNS(ii), LonEW(ii), r_arc, az);
         VPrad.EnvHur_final(ii).VelU(it,:) = FU(rad_lon', rad_lat');
         VPrad.EnvHur_final(ii).VelV(it,:) = FV(rad_lon', rad_lat');
@@ -481,7 +478,7 @@ function [VEnvrad_10_10, PEnvrad, VHurrad_10_10, PHurrad, BlendingMasksrad] = ..
                        r, theta);
         [VHurrad_10_10(i,1:ntheta,1:nr+1,1:2), PHurrad(i,1:ntheta,1:nr+1)] = ...
                        VEnvreg2radial2(gtime, VHur_10_10, LonEW_i, LatNS_i, r, theta);
-        [BlendingMasksrad(i,1:ntheta,1:nr+1,1:2), Dummy(i,1:ntheta,1:nr+1)] = ...
+        [BlendingMasksrad(i,1:ntheta,1:nr+1,1:2), ~] = ...
                        VEnvreg2radial2(-gtime, BlendingMasks, LonEW_i, LatNS_i, r, theta);
     end
 end
@@ -584,26 +581,10 @@ for i = 1:itot
 
     elseif env_type == 3
 % Input Environmental field
-        FU = griddedInterpolant(VEnv_10_10(i).lon', VEnv_10_10(i).lat', ...
-                                                 VEnv_10_10(i).VelU');
-        Reggrid_Env_out(i).VelU = FU(longrid, latgrid);
-        FV = griddedInterpolant(VEnv_10_10(i).lon', VEnv_10_10(i).lat', ...
-                                                 VEnv_10_10(i).VelV');
-        Reggrid_Env_out(i).VelV = FV(longrid, latgrid);
-        FP = griddedInterpolant(VEnv_10_10(i).lon', VEnv_10_10(i).lat', ...
-                                                 VEnv_10_10(i).Press');
-        Reggrid_Env_out(i).Press = FP(longrid, latgrid);
+        Reggrid_Env_out(i) = interpFieldToGrid(VEnv_10_10(i), longrid, latgrid);
 
 % Input hurricane field
-        FU = griddedInterpolant(VHur_10_10(i).lon', VHur_10_10(i).lat', ...
-                                                 VHur_10_10(i).VelU');
-        Reggrid_Hur0_out.VelU = FU(longrid, latgrid);
-        FV = griddedInterpolant(VHur_10_10(i).lon', VHur_10_10(i).lat', ...
-                                                 VHur_10_10(i).VelV');
-        Reggrid_Hur0_out.VelV = FV(longrid, latgrid);
-        FP = griddedInterpolant(VHur_10_10(i).lon', VHur_10_10(i).lat', ...
-                                                 VHur_10_10(i).Press');
-        Reggrid_Hur0_out.Press = FP(longrid, latgrid);
+        Reggrid_Hur0_out = interpFieldToGrid(VHur_10_10(i), longrid, latgrid);
 
 % Input hurricane field with taper applied to radial version
         Reggrid_Hur_out(i) = radial2regular(longrid, latgrid, LonEW(i), LatNS(i), ...

@@ -1,5 +1,7 @@
 function [VEnvrad, PEnvrad] = VEnvreg2radial2(itime,VEnv,eyeLon,eyeLat,r,theta)
-% script to interpolate Velocity and Pressure or the mask value from a
+% VEnvreg2radial2  Interpolate gridded fields onto a radial grid.
+%
+% Interpolates Velocity and Pressure or the mask value from a
 % regular gridded input data structure, assumed to match the gridded
 % environmental or hurricane field, to a radial grid defined by r, theta
 % and the eye location
@@ -12,6 +14,15 @@ function [VEnvrad, PEnvrad] = VEnvreg2radial2(itime,VEnv,eyeLon,eyeLat,r,theta)
 %
 %
 %                Rick Luettich 6/19/2025
+
+    arguments
+        itime (1,1) double
+        VEnv (1,:) struct
+        eyeLon (1,1) double
+        eyeLat (1,1) double
+        r (1,:) double
+        theta
+    end
 
 theta = squeeze(theta);  % this gets rid of a bogus leading dimension of 1, i.e., (1,:,:) = (:,:)
 NM2M = gahmPhysicalConstants().nm2m;
@@ -36,12 +47,8 @@ else
 end
 
 for it=1:length(theta)
-    az = 90-theta(it);  %compute the bearing angle cw from N
-    if az < 0
-        az = az+360;
-    end
-
-    [rad_lat(1:nr),rad_lon(1:nr)] = reckon("rh",eyeLat,eyeLon,r_arc,az);  %might use track command here
+    az = thetaToAzimuth(theta(it));
+    [rad_lat(1:nr),rad_lon(1:nr)] = reckon("rh",eyeLat,eyeLon,r_arc,az);
 
     if ~mask
         VEnvrad(it,:,1) = FU(rad_lon',rad_lat');

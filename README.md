@@ -11,9 +11,9 @@ Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 ### Quick Start
 
 ```matlab
->> cd GAHM2026
->> R = run_GAHM2026;                          % uses default config/config_GAHM2026_default.m
->> R = run_GAHM2026('config_Florence');       % uses config/config_Florence.m
+cd GAHM2026
+R = run_GAHM2026;                          % uses default config/config_GAHM2026_default.m
+R = run_GAHM2026('config_Florence');       % uses config/config_Florence.m
 ```
 
 `run_GAHM2026` returns a `Result` struct containing all output fields (see [Output](#output) below). If the SeparateEnvHur `.mat` file does not exist (e.g., `output/FLORENCE_2018_AL06.mat`), it will automatically run SeparateEnvHur to generate it before proceeding.
@@ -23,9 +23,10 @@ Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 ```matlab
 addpath('PlotEvalScripts')
 obj = GAHM2026Plotter(R);
-fig = obj.contourMap('mvelcon', 1, 20);       % wind speed map at timestep 20
-obj.radialProfile('velrad', 10, 10);          % radial profiles at timestep 10
-obj.animate('mvelcon', 1);                    % animated GIF/MP4
+fig = obj.contourMap('mvelcon', 1, 20);                        % wind speed map at timestep 20
+obj.radialProfile('velrad', 'envhur', 10, 10);                 % radial profiles at timestep 10
+obj.radialProfile('velrad', {'envhur', 'trackdata'}, 10, 10);  % add track data to profiles
+obj.animate('mvelcon', 1);                                     % animated GIF/MP4
 ```
 
 See [`PlotEvalScripts/README.md`](PlotEvalScripts/README.md) for the full `GAHM2026Plotter` class reference.
@@ -35,10 +36,10 @@ See [`PlotEvalScripts/README.md`](PlotEvalScripts/README.md) for the full `GAHM2
 You can run SeparateEnvHur standalone using the same config file:
 
 ```matlab
->> cd GAHM2026
->> addpath('SeparateEnvHur')
->> env_vals = SeparateEnvHur('config/config_GAHM2026_default');  % default config
->> env_vals = SeparateEnvHur('config/config_Florence');          % storm-specific config
+cd GAHM2026
+addpath('SeparateEnvHur')
+env_vals = SeparateEnvHur('config/config_GAHM2026_default');  % default config
+env_vals = SeparateEnvHur('config/config_Florence');          % storm-specific config
 ```
 
 ### Plotting SeparateEnvHur output

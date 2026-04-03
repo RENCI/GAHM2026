@@ -1,5 +1,7 @@
 function taper = radialTaper2(r,theta,datetime,Maskrad,blend_constants,fid)
-% Script to compute a hyperbolic tangent taper function with the properties
+% radialTaper2  Compute a hyperbolic tangent taper function.
+%
+% Computes a hyperbolic tangent taper function with the properties
 %
 %    taper = 1 r<=r1
 %    taper = 0.5*(1 + tanh(a*(1-2*r))/tanh(a))
@@ -31,7 +33,16 @@ function taper = radialTaper2(r,theta,datetime,Maskrad,blend_constants,fid)
 %                        a > 1 uses more of tanh range and is more s-shaped.
 %
 %                         Rick Luettich 6/19/2025
-%                         Rick Luettich 1/28/2926
+%                         Rick Luettich 1/28/2026
+
+    arguments
+        r (1,:) double
+        theta (1,:) double
+        datetime
+        Maskrad
+        blend_constants (1,1) struct
+        fid (1,1) double
+    end
 
 mindelr2r1 = blend_constants.taper_mindelr2r1;
 a = blend_constants.taper_a;
@@ -63,17 +74,11 @@ for i=1:nt       % compute the radial taper function for each theta value
         logMsg(fid, "WARNING", "(r2-r1)/r2 < %.2f at %s for theta = %.0f, r1 set = (1-mindelr2r1)*r2 = %.0f", mindelr2r1, string(datetime), theta(i), r1);
     end
 
-% compute taper using r1 & r2
+% compute taper using r1 & r2 (vectorized over r)
 
-    for ir=1:nr
-        if r(ir) < r1
-            taper(i,ir) = 1;
-        elseif r(ir) >= r1 && r(ir) <= r2
-            taper(i,ir) = 0.5*(1 + tanh(a*(1-2*(r(ir)-r1)/(r2-r1)))/tanh(a));
-        else
-            taper(i,ir) = 0;
-        end
-    end
+    taper(i, r < r1) = 1;
+    transition = r >= r1 & r <= r2;
+    taper(i, transition) = 0.5*(1 + tanh(a*(1 - 2*(r(transition) - r1)/(r2 - r1)))/tanh(a));
 end
 
 end

@@ -21,19 +21,22 @@ compare_to_baseline
 
 ### `generate_baseline.m`
 
-Runs the `GAHM2026` pipeline and saves key output fields to `.mat` files for later comparison. Two test configurations are executed:
+Runs the `GAHM2026` pipeline and saves key output fields to `.mat` files for later comparison. Four test configurations are executed:
 
 | Test | env_type | Description | Data Required |
 |------|----------|-------------|---------------|
 | 1 | 1 | ADCIRC/ASWIP environmental velocity | `ibtracs.NA.list.v04r01.csv` only |
-| 2 | 3 | Gridded environmental fields + taper + WAF | `Florence.mat`, WAF raster |
+| 2 | 2 | Lin & Chavez (2012) environmental velocity | `ibtracs.NA.list.v04r01.csv` only |
+| 3 | 3 | Gridded environmental fields + taper + WAF (51×51) | `Florence.mat`, WAF raster |
+| 4 | 3 | Full Florence (351×351) | `Florence.mat`, WAF raster |
 
-Test 2 is automatically skipped if `Florence.mat` is not present.
+Tests 3 and 4 are automatically skipped if `Florence.mat` is not present.
 
-Both tests use a reduced 51x51 output grid (0.1 degree resolution) for speed. The storm configuration matches `run_GAHM2026.m` (Hurricane Florence, 2018-09-13 12Z to 2018-09-15 00Z).
+Tests 1 and 2 are lightweight (no gridded env file needed). All tests use the storm configuration from `run_GAHM2026.m` (Hurricane Florence, 2018-09-13 12Z to 2018-09-15 00Z).
 
 **Output files** (not committed to git):
 - `tools/baseline_env1.mat` — baseline for env_type=1
+- `tools/baseline_env2.mat` — baseline for env_type=2
 - `tools/baseline_env3.mat` — baseline for env_type=3
 
 ### `compare_to_baseline.m`

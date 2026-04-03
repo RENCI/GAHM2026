@@ -48,8 +48,7 @@ sepenvhur.storm_designation = storm_designation;
 sepenvhur.track_file        = fullfile('input', track_file);
 
 %% ===== GAHM2026 storm / track file info =====
-%storm_info.track_file  = fullfile('input', track_file);
-storm_info.track_file  = 'input/ibtracs.NA.list.v04r01.csv';
+storm_info.track_file  = fullfile('input', track_file);
 storm_info.file_type   = "IBTrACS";
 storm_info.name        = storm_name;
 storm_info.year        = num2str(storm_year);

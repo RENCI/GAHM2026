@@ -126,151 +126,153 @@ function GAHM_out = gahm2026Consistency(GAHM_constants,GAHM_in,fid)
 %       B - Holland (1980) B = SVorMax_10_tbl^2*rhoa*exp(1)/deltaP_NpMsq
 %
 
-% Extract inputs
+    % Extract inputs
 
-BLF = GAHM_constants.BLF;
-one2tenF = GAHM_constants.one2tenF;
+    BLF = GAHM_constants.BLF;
+    one2tenF = GAHM_constants.one2tenF;
 
-c = gahmPhysicalConstants();
-MS2KT = c.ms2kt;
+    c = gahmPhysicalConstants();
+    MS2KT = c.ms2kt;
 
-SVorMax_10_tblmin = GAHM_constants.SVorMax_10_tblmin/MS2KT; %convert to m/s
-SVorQuad_10_tblmin = GAHM_constants.SVorQuad_10_tblmin/MS2KT; %convert to m/s
-Bmin = GAHM_constants.Bmin;
-Bmax = GAHM_constants.Bmax;
+    SVorMax_10_tblmin = GAHM_constants.SVorMax_10_tblmin/MS2KT; %convert to m/s
+    SVorQuad_10_tblmin = GAHM_constants.SVorQuad_10_tblmin/MS2KT; %convert to m/s
+    Bmin = GAHM_constants.Bmin;
+    Bmax = GAHM_constants.Bmax;
 
-GAHM_datetime = GAHM_in.datetime;
-LatNS = GAHM_in.Eye(2);
-B = GAHM_in.B;
-Rmax_in = GAHM_in.Rmax_in;
-RQuad = GAHM_in.RQuad;
-Gcase = GAHM_in.Gcase;
-SQuad_10_10 = GAHM_in.SQuad_10_10; % 34,50,64 kt converted to 10 min & m/s
-SVorMax_10_10 = GAHM_in.SVorMax_10_10;
-SVorMax_10_tbl = SVorMax_10_10/BLF;
-VEnvStar_10_10 = GAHM_in.VEnvStar_10_10; % avg environmental velocity near eye
-VEnvQuad_10_10 = GAHM_in.VEnvQuad_10_10;
+    GAHM_datetime = GAHM_in.datetime;
+    LatNS = GAHM_in.Eye(2);
+    B = GAHM_in.B;
+    Rmax_in = GAHM_in.Rmax_in;
+    RQuad = GAHM_in.RQuad;
+    Gcase = GAHM_in.Gcase;
+    SQuad_10_10 = GAHM_in.SQuad_10_10; % 34,50,64 kt converted to 10 min & m/s
+    SVorMax_10_10 = GAHM_in.SVorMax_10_10;
+    SVorMax_10_tbl = SVorMax_10_10/BLF;
+    VEnvStar_10_10 = GAHM_in.VEnvStar_10_10; % avg environmental velocity near eye
+    VEnvQuad_10_10 = GAHM_in.VEnvQuad_10_10;
 
-GAHM_out = GAHM_in;
+    GAHM_out = GAHM_in;
 
-% Compute unit vectors & rotation matricies
+    % Compute unit vectors & rotation matricies
 
-VVorQuaduv_tbl = quadrantUnitVectors(LatNS);
-ra25 = 25*LatNS/abs(LatNS); % S hemisphere
-ra10 = 10*LatNS/abs(LatNS);
-rotation_matrix_ccw25d = [cosd(-ra25) -sind(-ra25); sind(-ra25) cosd(-ra25)]; % rotate 25deg ccw N hemi
-rotation_matrix_ccw10d = [cosd(-ra10) -sind(-ra10); sind(-ra10) cosd(-ra10)]; % rotate 10deg ccw N hemi
+    VVorQuaduv_tbl = quadrantUnitVectors(LatNS);
+    hemiSign = sign(LatNS);
+    if hemiSign == 0, hemiSign = 1; end
+    ra25 = 25*hemiSign;
+    ra10 = 10*hemiSign;
+    rotation_matrix_ccw25d = [cosd(-ra25) -sind(-ra25); sind(-ra25) cosd(-ra25)]; % rotate 25deg ccw N hemi
+    rotation_matrix_ccw10d = [cosd(-ra10) -sind(-ra10); sind(-ra10) cosd(-ra10)]; % rotate 10deg ccw N hemi
 
-%% Check 1: that the Holland (1980) B is within bounds
+    %% Check 1: that the Holland (1980) B is within bounds
 
-GAHM_out.flag_B = 1;
+    GAHM_out.flag_B = 1;
 
-if B < Bmin
- logMsg(fid, "WARNING", "@ time = %s initial B = %.3f reset = Bmin = %.3f", GAHM_datetime, B, Bmin);
- B = Bmin;
- GAHM_out.B = B;
- GAHM_out.flag_B = 0;
-elseif B > Bmax
- logMsg(fid, "WARNING", "@ time = %s initial B = %.3f reset = Bmax = %.3f", GAHM_datetime, B, Bmax);
- B = Bmax;
- GAHM_out.B = B;
- GAHM_out.flag_B = 2;
-end
+    if B < Bmin
+        logMsg(fid, "WARNING", "@ time = %s initial B = %.3f reset = Bmin = %.3f", GAHM_datetime, B, Bmin);
+        B = Bmin;
+        GAHM_out.B = B;
+        GAHM_out.flag_B = 0;
+    elseif B > Bmax
+        logMsg(fid, "WARNING", "@ time = %s initial B = %.3f reset = Bmax = %.3f", GAHM_datetime, B, Bmax);
+        B = Bmax;
+        GAHM_out.B = B;
+        GAHM_out.flag_B = 2;
+    end
 
-%% Check GAHM vortex consistency
+    %% Check GAHM vortex consistency
 
-GAHM_out.flag(1:4,1:4) = NaN;
-GAHM_out.turnangle(1:4,1:4) = 25; %default value
+    GAHM_out.flag(1:4,1:4) = NaN;
+    GAHM_out.turnangle(1:4,1:4) = 25; %default value
 
-% check 2. All distances to isotachs in the track file = 0, NaN or missing
+    % check 2. All distances to isotachs in the track file = 0, NaN or missing
 
-if all(RQuad(:) == 0) || all(isnan(RQuad(:))) || all(ismissing(RQuad(:)))
- GAHM_out.flag(1:4,1:4) = 0;
- logMsg(fid, "WARNING", "@ time = %s No valid isotachs were found in any quadrant. Alternative Rmw required, e.g., = Rmw read in from track file", GAHM_datetime);
- return
-end
+    if all(RQuad(:) == 0) || all(isnan(RQuad(:))) || all(ismissing(RQuad(:)))
+        GAHM_out.flag(1:4,1:4) = 0;
+        logMsg(fid, "WARNING", "@ time = %s No valid isotachs were found in any quadrant. Alternative Rmw required, e.g., = Rmw read in from track file", GAHM_datetime);
+        return
+    end
 
-% check 3. SVorMax_10_tbl >= SVorMax_10_tblmin
+    % check 3. SVorMax_10_tbl >= SVorMax_10_tblmin
 
-if SVorMax_10_tbl < SVorMax_10_tblmin
- GAHM_out.flag(1:4,1:3) = 2;
- GAHM_out.flag(1:4,4) = 0;
- logMsg(fid, "WARNING", "@ time = %s Maximum Vortex Speed @ tbl = %.1f (kt) < minimum allowable value = %.1f (kt) Alternative Rmw required, e.g., = Rmw read in from track file", ...
-  GAHM_datetime, SVorMax_10_tbl*0.51444, SVorMax_10_tblmin*0.51444);
- return
-end
+    if SVorMax_10_tbl < SVorMax_10_tblmin
+        GAHM_out.flag(1:4,1:3) = 2;
+        GAHM_out.flag(1:4,4) = 0;
+        logMsg(fid, "WARNING", "@ time = %s Maximum Vortex Speed @ tbl = %.1f (kt) < minimum allowable value = %.1f (kt) Alternative Rmw required, e.g., = Rmw read in from track file", ...
+            GAHM_datetime, SVorMax_10_tbl*0.51444, SVorMax_10_tblmin*0.51444);
+        return
+    end
 
-for i = 1:3 % loop through the 3 isotachs
- for q = 1:4 % loop through the 4 quadrants
+    for i = 1:3 % loop through the 3 isotachs
+        for q = 1:4 % loop through the 4 quadrants
 
-% check 4. if no radial distance to specified quadrant, isotach
+            % check 4. if no radial distance to specified quadrant, isotach
 
- if RQuad(q,i) == 0 || isnan(RQuad(q,i)) || ismissing(RQuad(q,i))
- GAHM_out.flag(q,i) = 0;
- continue
- end
+            if RQuad(q,i) == 0 || isnan(RQuad(q,i)) || ismissing(RQuad(q,i))
+                GAHM_out.flag(q,i) = 0;
+                continue
+            end
 
-% check 5. SVorQuad_10_10 >= SVorQuad_10_10min for specified quadrant, isotach
+            % check 5. SVorQuad_10_10 >= SVorQuad_10_10min for specified quadrant, isotach
 
- VVorQuaduv_10_10(1:2) = VVorQuaduv_tbl(q,1:2)*rotation_matrix_ccw25d; %Quadrant vortex unit vector rotated to 10 m assuming r>1.2*Rmw
- VVorQuad_10_10min(1:2) = VVorQuaduv_10_10(1:2)*SVorQuad_10_tblmin*BLF;
- if Gcase == 1
- VEnvQuad_10_10_check = VEnvStar_10_10*(SVorQuad_10_tblmin/SVorMax_10_tbl);
- else
- VEnvQuad_10_10_check = squeeze(squeeze(VEnvQuad_10_10(q,i,1:2)))';
- end
- SQuad_10_10min = vecnorm(VVorQuad_10_10min+VEnvQuad_10_10_check);
- if SQuad_10_10(i) < SQuad_10_10min
- GAHM_out.flag(q,i) = 3;
- logMsg(fid, "WARNING", "@ time = %s Vortex Isotach Speed @ tbl < minimum allowable value isotach=%i quadrant=%i flag(q,i)=3", ...
-  GAHM_datetime, i, q);
- continue
- end
+            VVorQuaduv_10_10(1:2) = VVorQuaduv_tbl(q,1:2)*rotation_matrix_ccw25d; %Quadrant vortex unit vector rotated to 10 m assuming r>1.2*Rmw
+            VVorQuad_10_10min(1:2) = VVorQuaduv_10_10(1:2)*SVorQuad_10_tblmin*BLF;
+            if Gcase == 1
+                VEnvQuad_10_10_check = VEnvStar_10_10*(SVorQuad_10_tblmin/SVorMax_10_tbl);
+            else
+                VEnvQuad_10_10_check = squeeze(squeeze(VEnvQuad_10_10(q,i,1:2)))';
+            end
+            SQuad_10_10min = vecnorm(VVorQuad_10_10min+VEnvQuad_10_10_check);
+            if SQuad_10_10(i) < SQuad_10_10min
+                GAHM_out.flag(q,i) = 3;
+                logMsg(fid, "WARNING", "@ time = %s Vortex Isotach Speed @ tbl < minimum allowable value isotach=%i quadrant=%i flag(q,i)=3", ...
+                    GAHM_datetime, i, q);
+                continue
+            end
 
-% check 6: SVorQuad_10_10 <= SVorMax_10_10 for both a 10 deg and 25 deg turning angle for each quadrant, isotach
- if Gcase == 1
- VEnvQuad_10_10_check = VEnvStar_10_10;
- else
- VEnvQuad_10_10_check = squeeze(squeeze(VEnvQuad_10_10(q,i,1:2)))';
- end
- VVorQuaduv_10_10(1:2) = VVorQuaduv_tbl(q,1:2)*rotation_matrix_ccw10d; %Quadrant vortex unit vector rotated to 10 deg limiting case
- VVorQuad_10_10max(1:2) = VVorQuaduv_10_10(1:2)*SVorMax_10_10;
- SQuad_10_10max_10deg = vecnorm(VVorQuad_10_10max+VEnvQuad_10_10_check);
- VVorQuaduv_10_10(1:2) = VVorQuaduv_tbl(q,1:2)*rotation_matrix_ccw25d; %Quadrant vortex unit vector rotated to 25 deg limiting case
- VVorQuad_10_10max(1:2) = VVorQuaduv_10_10(1:2)*SVorMax_10_10;
- SQuad_10_10max_25deg = vecnorm(VVorQuad_10_10max+VEnvQuad_10_10_check);
- if SQuad_10_10(i) > SQuad_10_10max_10deg && SQuad_10_10(i) > SQuad_10_10max_25deg
- logMsg(fid, "WARNING", "@ time = %s Vortex Isotach Speed @ 10 & 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=4, Vor Iso Spd = Max Vor Spd", ...
-  GAHM_datetime, i, q);
- GAHM_out.flag(q,i) = 4;
- elseif SQuad_10_10(i) > SQuad_10_10max_25deg
- delturnangle = 15*(SQuad_10_10max_10deg-SQuad_10_10(i))/(SQuad_10_10max_10deg-SQuad_10_10max_25deg);
- GAHM_out.turnangle(q,i) = 10+delturnangle/2; %estimate of an intermediate turning angle
- logMsg(fid, "WARNING", "@ time = %s Vortex Isotach Speed @ 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg", ...
-  GAHM_datetime, i, q, GAHM_out.turnangle(q,i));
- GAHM_out.flag(q,i) = 5;
- elseif SQuad_10_10(i) > SQuad_10_10max_10deg
- delturnangle = 15*(SQuad_10_10max_25deg-SQuad_10_10(i))/(SQuad_10_10max_25deg-SQuad_10_10max_10deg);
- GAHM_out.turnangle(q,i) = 25-delturnangle/2; %estimate of an intermediate turning angle
- logMsg(fid, "WARNING", "@ time = %s Vortex Isotach Speed @ 10 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg", ...
-  GAHM_datetime, i, q, GAHM_out.turnangle(q,i));
- GAHM_out.flag(q,i) = 5;
- end
- if GAHM_out.flag(q,i) == 4 || GAHM_out.flag(q,i) == 5
- continue
- end
+            % check 6: SVorQuad_10_10 <= SVorMax_10_10 for both a 10 deg and 25 deg turning angle for each quadrant, isotach
+            if Gcase == 1
+                VEnvQuad_10_10_check = VEnvStar_10_10;
+            else
+                VEnvQuad_10_10_check = squeeze(squeeze(VEnvQuad_10_10(q,i,1:2)))';
+            end
+            VVorQuaduv_10_10(1:2) = VVorQuaduv_tbl(q,1:2)*rotation_matrix_ccw10d; %Quadrant vortex unit vector rotated to 10 deg limiting case
+            VVorQuad_10_10max(1:2) = VVorQuaduv_10_10(1:2)*SVorMax_10_10;
+            SQuad_10_10max_10deg = vecnorm(VVorQuad_10_10max+VEnvQuad_10_10_check);
+            VVorQuaduv_10_10(1:2) = VVorQuaduv_tbl(q,1:2)*rotation_matrix_ccw25d; %Quadrant vortex unit vector rotated to 25 deg limiting case
+            VVorQuad_10_10max(1:2) = VVorQuaduv_10_10(1:2)*SVorMax_10_10;
+            SQuad_10_10max_25deg = vecnorm(VVorQuad_10_10max+VEnvQuad_10_10_check);
+            if SQuad_10_10(i) > SQuad_10_10max_10deg && SQuad_10_10(i) > SQuad_10_10max_25deg
+                logMsg(fid, "WARNING", "@ time = %s Vortex Isotach Speed @ 10 & 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=4, Vor Iso Spd = Max Vor Spd", ...
+                    GAHM_datetime, i, q);
+                GAHM_out.flag(q,i) = 4;
+            elseif SQuad_10_10(i) > SQuad_10_10max_25deg
+                delturnangle = 15*(SQuad_10_10max_10deg-SQuad_10_10(i))/(SQuad_10_10max_10deg-SQuad_10_10max_25deg);
+                GAHM_out.turnangle(q,i) = 10+delturnangle/2; %estimate of an intermediate turning angle
+                logMsg(fid, "WARNING", "@ time = %s Vortex Isotach Speed @ 25 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg", ...
+                    GAHM_datetime, i, q, GAHM_out.turnangle(q,i));
+                GAHM_out.flag(q,i) = 5;
+            elseif SQuad_10_10(i) > SQuad_10_10max_10deg
+                delturnangle = 15*(SQuad_10_10max_25deg-SQuad_10_10(i))/(SQuad_10_10max_25deg-SQuad_10_10max_10deg);
+                GAHM_out.turnangle(q,i) = 25-delturnangle/2; %estimate of an intermediate turning angle
+                logMsg(fid, "WARNING", "@ time = %s Vortex Isotach Speed @ 10 deg turn angles > Maximum Vortex Speed isotach=%i quadrant=%i flag=5, new turning angle=%.1f deg", ...
+                    GAHM_datetime, i, q, GAHM_out.turnangle(q,i));
+                GAHM_out.flag(q,i) = 5;
+            end
+            if GAHM_out.flag(q,i) == 4 || GAHM_out.flag(q,i) == 5
+                continue
+            end
 
-% If made it to here, passed all vortex consistency checks
+            % If made it to here, passed all vortex consistency checks
 
- GAHM_out.flag(q,i) = 1;
- end % end of quadrant loop
+            GAHM_out.flag(q,i) = 1;
+        end % end of quadrant loop
 
-% complete check 4, for quadrant q.
+        % complete check 4, for quadrant q.
 
- if sum(GAHM_out.flag(q,:)) == 0
- GAHM_out.flag(q,4) = 0;
- end
+        if sum(GAHM_out.flag(q,:)) == 0
+            GAHM_out.flag(q,4) = 0;
+        end
 
-end % end of isotach loop
+    end % end of isotach loop
 
 end

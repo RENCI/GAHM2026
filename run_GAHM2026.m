@@ -11,9 +11,9 @@ function Result = run_GAHM2026(config_name)
 %                        2/3/2026  Rick Luettich
 %                        2/16/2026 Brian Blanton
 
-    arguments
-        config_name (1,1) string = "config_GAHM2026_default"
-    end
+arguments
+    config_name (1,1) string = "config_GAHM2026_default"
+end
 
 addpath('util')
 addpath('static')
@@ -22,17 +22,16 @@ addpath('PlotEvalScripts')
 if ~exist('input', 'dir'),  mkdir('input');  end
 if ~exist('output', 'dir'), mkdir('output'); end
 
-warning off
-
 %% Load configuration parameters
 config_file = fullfile('config', config_name);
-if ~exist([config_file '.m'], 'file')
+if ~exist(config_file+".m", 'file')
     error("Config file not found: %s.m", config_file);
 end
 run(config_file)
 
 if ~exist('debug', 'var'), debug = false; end
 fid = fopen(output_info.diagnostics, 'wt');
+cleanupFid = onCleanup(@() fclose(fid));
 logMsg(fid, "INFO", "Configuration loaded from %s", config_file);
 logMsg(fid, "INFO", "Storm: %s/%s/%s, env_type=%d", storm_info.name, storm_info.year, storm_info.designation, env_info.type);
 
@@ -77,8 +76,7 @@ end
 if output_info.type == "grid"
     f_out = [output_info.NetCDFfilename '.nc'];
     if exist(f_out, 'file')
-        % error([f_out ' already exists. Delete or rename it before running.'])
-        logMsg(fid, "ERROR", f_out + " already exists. Delete or rename it before running.")
+            logMsg(fid, "ERROR", f_out + " already exists. Delete or rename it before running.")
     end
 end
 
@@ -169,6 +167,5 @@ if output_info.type == "points"
 end
 
 logMsg(fid, "INFO", "Done.");
-fclose(fid);
 
 end

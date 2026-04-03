@@ -1,7 +1,7 @@
 function [Press,VVorRadProf_10_10] = gahmVP(r,q,iso,GAHM_constants,GAHM)
-%--------------------------------------------------------------------------
+% gahmVP  Compute GAHM velocity and pressure deficit at a single radial point.
 %
-%  Script to compute GAHM velocity and pressure deficit at a specified
+%  Computes GAHM velocity and pressure deficit at a specified
 %  radial distance from the eye (r), for a specified quadrant (q) and
 %  isotach (iso)
 %
@@ -43,8 +43,14 @@ function [Press,VVorRadProf_10_10] = gahmVP(r,q,iso,GAHM_constants,GAHM)
 %                   else     (r>= 1.2*Rmax)
 %                       turnangle=25;
 %                   end
-%
 
+    arguments
+        r (1,1) double
+        q (1,1) double
+        iso (1,1) double
+        GAHM_constants (1,1) struct
+        GAHM (1,1) struct
+    end
 
 %% Specify constants
 

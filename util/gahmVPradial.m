@@ -1,7 +1,5 @@
 function GAHM_VPrad = gahmVPradial(r,theta,GAHM_constants,GAHM)
-%
-%     Script to compute velocity and pressure along a radial line using
-%     GAHM2026
+% gahmVPradial  Compute velocity and pressure along a radial line using GAHM2026.
 %
 %     v1 coded by Rick Luettich 8/6/2024
 %     v2 changed to pressure deficite 6/20/2025
@@ -56,6 +54,13 @@ function GAHM_VPrad = gahmVPradial(r,theta,GAHM_constants,GAHM)
 %                             interpolate to radial line specified by theta
 %
 %--------------------------------------------------------------------------
+
+    arguments
+        r (1,:) double
+        theta (1,1) double
+        GAHM_constants (1,1) struct
+        GAHM (1,1) struct
+    end
 
 %% identify which standard radials (NE, SE, SW, NW) the specified radial line
 %  is between RP(1:2) and determine the associated interpolating factors IF(1:2)

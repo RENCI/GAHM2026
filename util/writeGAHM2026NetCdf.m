@@ -1,4 +1,6 @@
 function err = writeGAHM2026NetCdf(FileName,Reggrid_out, Reggrid_TC_out, output_info)
+% writeGAHM2026NetCdf  Write GAHM2026 output to NetCDF.
+%
 % Write GAHM2026 (blended) wind velocity and pressure values on a grid in
 % netCDF. This format is designed to be easily merged with parent large
 % scale gridded met output (e.g., ERA5) for use with ADCIRC nws=13.
@@ -7,7 +9,13 @@ function err = writeGAHM2026NetCdf(FileName,Reggrid_out, Reggrid_TC_out, output_
 % Reggrid_out and Reggrid_TC_out are data structures created by GAHM2026
 %
 %                     Rick Luettich 2/2/2026
-%
+
+    arguments
+        FileName (1,1) string
+        Reggrid_out (1,:) struct
+        Reggrid_TC_out (1,:) struct
+        output_info (1,1) struct
+    end
 
 err = 0;
 
@@ -42,7 +50,6 @@ for i = 1:nt
     V10_mat(i,:,:) = Reggrid_TC_out(i).VelV(:,:);
 end
 time_units = ['minutes since ',char(Reggrid_out(1).datetime)];
-% time_units='minutes since 1970-01-01';
 
 % Create NETCDF4 file
 ncid = netcdf.create(f_out, 'NETCDF4');
@@ -118,7 +125,6 @@ netcdf.putVar(ncid, var_PSFC, start, count, permute(PSFC_mat, [2,3,1]));
 netcdf.putVar(ncid, var_U10, start, count, permute(U10_mat, [2,3,1]));
 netcdf.putVar(ncid, var_V10, start, count, permute(V10_mat, [2,3,1]));
 
-% Close file
-netcdf.close(ncid);
+% File is closed automatically by onCleanup when function exits
 
 end

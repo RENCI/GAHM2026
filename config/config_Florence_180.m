@@ -21,7 +21,7 @@ track_file        = 'ibtracs.NA.list.v04r01.csv';
 storm_designation = 'AL06';
 debug             = true;
 storm_start       = datetime(2018,9,12,0,0,0);
-storm_end         = datetime(2018,9,12,3,0,0);
+storm_end         = datetime(2018,9,17,0,0,0);
 
 %% ===== SeparateEnvHur parameters =====
 % sepenvhur.background_file    = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global.1/uvp/<year>/<year>.nc';

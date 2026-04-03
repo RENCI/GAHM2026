@@ -6,10 +6,11 @@
 % used by compare_to_baseline.m to verify that refactoring has not changed
 % numerical results.
 %
-% Three test configurations are run:
+% Four test configurations are run:
 %   1. env_type=1 (ADCIRC/ASWIP, no gridded env file needed, fast)
-%   2. env_type=3 (gridded env, 51x51 grid — auto-runs SeparateEnvHur)
-%   3. env_type=3 (full Florence 351x351 — auto-runs SeparateEnvHur)
+%   2. env_type=2 (Lin & Chavez 2012, no gridded env file needed, fast)
+%   3. env_type=3 (gridded env, 51x51 grid — auto-runs SeparateEnvHur)
+%   4. env_type=3 (full Florence 351x351 — auto-runs SeparateEnvHur)
 %
 % Usage:
 %   cd into the GAHM26 directory, then run:
@@ -17,6 +18,7 @@
 %
 % Output:
 %   tools/baseline_env1.mat      - baseline for env_type=1 test
+%   tools/baseline_env2.mat      - baseline for env_type=2 test
 %   tools/baseline_env3.mat      - baseline for env_type=3 test
 %   tools/baseline_florence.mat  - baseline for full Florence test
 %
@@ -130,7 +132,42 @@ catch ME
     fprintf('  FAILED: %s\n', ME.message);
 end
 
-%% Auto-generate env fields if needed (shared by Tests 2 and 3)
+%% Test 2: env_type = 2 (Lin & Chavez 2012, lightweight)
+
+fprintf('\n--- Test 2: env_type=2 (Lin & Chavez 2012) ---\n')
+
+env_info_2.type             = 2;
+env_info_2.taper_flag       = false;
+env_info_2.taper_mindelr2r1 = 0.1;
+env_info_2.taper_a          = 2;
+
+WAF_info_2.flag = false;
+
+try
+    tic;
+    [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out, ...
+        Trackdata, GAHM_out] = GAHM2026(storm_info, ATCF_data_in, GAHM_param_info, ...
+        GAHM_compute_info, WAF_info_2, env_info_2, output_info);
+    elapsed = toc;
+
+    baseline = extract_baseline_fields(Reggrid_out, Reggrid_TC_out, ...
+                                       Reggrid_Env_out, GAHM_out, Trackdata);
+    baseline.elapsed_seconds = elapsed;
+    baseline.generated = datetime('now');
+    baseline.config.env_type = 2;
+    baseline.config.GAHM_version = GAHM_param_info.version;
+    baseline.config.starttime = storm_info.starttime;
+    baseline.config.endtime = storm_info.endtime;
+
+    outfile2 = fullfile(toolsdir, 'baseline_env2.mat');
+    save(outfile2, 'baseline', '-v7.3');
+    fprintf('  Saved: %s (%.1f seconds)\n', outfile2, elapsed);
+    fprintf('  Timesteps: %d\n', baseline.nt);
+catch ME
+    fprintf('  FAILED: %s\n', ME.message);
+end
+
+%% Auto-generate env fields if needed (shared by Tests 3 and 4)
 
 if ~exist([env_file_base '.mat'], 'file')
     fprintf('--- Generating env fields via SeparateEnvHur ---\n')
@@ -138,9 +175,9 @@ if ~exist([env_file_base '.mat'], 'file')
     fprintf('  Saved: %s.mat\n', env_file_base);
 end
 
-%% Test 2: env_type = 3 (full pipeline, 51x51 grid)
+%% Test 3: env_type = 3 (full pipeline, 51x51 grid)
 
-fprintf('\n--- Test 2: env_type=3 (gridded env + taper, 51x51) ---\n')
+fprintf('\n--- Test 3: env_type=3 (gridded env + taper, 51x51) ---\n')
 
 env_info_3.type             = 3;
 env_info_3.file_name        = env_file_base;
@@ -174,9 +211,9 @@ catch ME
     fprintf('  FAILED: %s\n', ME.message);
 end
 
-%% Test 3: Full Florence case (351x351 grid, env_type=3)
+%% Test 4: Full Florence case (351x351 grid, env_type=3)
 
-fprintf('\n--- Test 3: Full Florence (351x351 grid, env_type=3) ---\n')
+fprintf('\n--- Test 4: Full Florence (351x351 grid, env_type=3) ---\n')
 
 env_info_full.type             = 3;
 env_info_full.file_name        = env_file_base;
