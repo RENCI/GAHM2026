@@ -29,9 +29,7 @@ else
 end
 
 f_out = [FileName '.nc'];
-if exist(f_out,'file')
-    error([f_out ' already exists. Terminal.'])
-end
+assert(~exist(f_out, 'file'), f_out + " already exists. Terminal.")
 
 [yi,xi] = size(Reggrid_out(1).Lon);
 nt = length(Reggrid_out);

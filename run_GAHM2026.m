@@ -24,9 +24,7 @@ if ~exist('output', 'dir'), mkdir('output'); end
 
 %% Load configuration parameters
 config_file = fullfile('config', config_name);
-if ~exist(config_file+".m", 'file')
-    error("Config file not found: %s.m", config_file);
-end
+assert(exist(config_file+".m", 'file') ~= 0, "Config file not found: %s.m", config_file);
 run(config_file)
 
 if ~exist('debug', 'var'), debug = false; end
@@ -75,9 +73,7 @@ end
 %% Check for existing output file before running
 if output_info.type == "grid"
     f_out = [output_info.NetCDFfilename '.nc'];
-    if exist(f_out, 'file')
-            logMsg(fid, "ERROR", f_out + " already exists. Delete or rename it before running.")
-    end
+    assert(~exist(f_out, 'file'), f_out + " already exists. Delete or rename it before running.")
 end
 
 %% Auto-run SeparateEnvHur if env_info.type==3 and the .mat file does not exist
@@ -85,19 +81,17 @@ if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
     % TODO:  THE FOLLOWING DOES NOT LOOK RIGHT.  Just because the variable
     % sepenvhur (which contains the separateenvhur config parameters) exists
     % does NOT mean that the EnvFields.mat file does.
-    if ~exist('sepenvhur', 'var')
-        error("EnvFields file not found: %s.mat\n" + ...
-               "Use a unified config (with sepenvhur) to enable auto-generation, " + ...
-               "or run SeparateEnvHur separately first.", env_info.file_name);
-    end
+    assert(exist('sepenvhur', 'var') ~= 0, ...
+        "EnvFields file not found: %s.mat\n" + ...
+        "Use a unified config (with sepenvhur) to enable auto-generation, " + ...
+        "or run SeparateEnvHur separately first.", env_info.file_name);
     logMsg(fid, "INFO", "EnvFields file not found: %s.mat", env_info.file_name);
     logMsg(fid, "INFO", "Running SeparateEnvHur to generate it ...");
 
     % Locate SeparateEnvHur — subdirectory of GAHM2026
     sep_dir = fullfile(pwd, 'SeparateEnvHur');
-    if ~exist(fullfile(sep_dir, 'SeparateEnvHur.m'), 'file')
-        error("Cannot find SeparateEnvHur.m in %s.", sep_dir);
-    end
+    assert(exist(fullfile(sep_dir, 'SeparateEnvHur.m'), 'file') ~= 0, ...
+        "Cannot find SeparateEnvHur.m in %s.", sep_dir);
     addpath(sep_dir);
 
     % Run SeparateEnvHur with the sepenvhur struct and pre-loaded track data
@@ -106,9 +100,8 @@ if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
     % SeparateEnvHur saves its output as <storm_name>_<storm_year>.mat in its
     % own working directory.  Move it here if needed.
     expected_mat = [env_info.file_name '.mat'];
-    if ~exist(expected_mat, 'file')
-        error("SeparateEnvHur completed but %s was not found.", expected_mat);
-    end
+    assert(exist(expected_mat, 'file') ~= 0, ...
+        "SeparateEnvHur completed but %s was not found.", expected_mat);
     logMsg(fid, "INFO", "SeparateEnvHur complete. %s is ready.", expected_mat);
 else
     logMsg(fid, "INFO", "EnvField file %s from SeparateEnvHur already exists.  Using.", [env_info.file_name '.mat']);

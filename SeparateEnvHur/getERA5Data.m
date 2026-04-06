@@ -5,8 +5,8 @@ function era5 = getERA5Data(CONFIG,time)
     bg_file = strrep(CONFIG.background_file, '<year>', num2str(CONFIG.storm_year));
     if startsWith(bg_file, 'http')
         checkUrl([bg_file '.html']);
-    elseif ~exist(bg_file, 'file')
-        logMsg(-1, "ERROR", "ERA5 file not found: %s", bg_file);
+    else
+        assert(exist(bg_file, 'file') ~= 0, "ERA5 file not found: %s", bg_file);
     end
 
     file_info = ncinfo(bg_file);
