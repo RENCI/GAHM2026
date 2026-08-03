@@ -1,10 +1,12 @@
 # GAHM2026 — Generalized Asymmetric Holland Model <img width="70" height="70" alt="gahm" src="documentation/image4.png"	/>
 
-MATLAB codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). The pipeline reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with large-scale gridded environmental fields, and writes output to NetCDF.
+MATLAB codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). The process reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with large-scale gridded environmental fields, and writes output to NetCDF.
 
 When using gridded environmental fields (`env_info.type = 3`), **SeparateEnvHur** separates storm-scale features from ERA5 reanalysis data to produce the required environmental input. One configuration file specifies the complete pipeline. 
 
 Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
+
+V1.3, April 2026
 
 ---
 
@@ -152,7 +154,7 @@ This matches the output filename that SeparateEnvHur produces (`FLORENCE_2018.ma
 
 ---
 
-## Auto-chaining: How It Works
+## End-to-End: How It Works
 
 When `run_GAHM2026` is called and `env_info.type == 3`:
 
@@ -208,7 +210,44 @@ Place in `GAHM2026/input/`. If not found, `run_GAHM2026` will attempt to downloa
 
 ### ERA5 reanalysis data
 
-ERA5 NetCDF files must contain variables `msl`, `u10`, `v10`, and `time` (or `valid_time`). The file path is specified in `sepenvhur.background_file`. Use the `<year>` placeholder in the path to have it automatically replaced with `storm_year` at runtime (e.g., `/data/ERA5/<year>/<year>.global.nc`).
+The configurations in the config directory point to ERA5 output downloaded and hosted on a THREDDS data server at RENCI.  These ERA5 NetCDF files contain variables `msl`, `u10`, `v10`, and `time` (or `valid_time`) with spatial extends that cover a typical ADCIRC grid for the northwest Atlantic Ocean, including the Gulf of Mexico. The URL to this data is 
+```
+'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/regional/wna/uvp/<year>/<year>.wna.nc';
+```
+The file path is specified in `sepenvhur.background_file`. Use the `<year>` placeholder in the path to have it automatically replaced with `storm_year` at runtime.  Any model dataset can be used as long as the files contain at least the above-specified variables.  
+
+The DDS for these files looks like this: 
+```
+Dataset {
+    Grid {
+     ARRAY:
+        Int16 msl[time = 10248][latitude = 201][longitude = 201];
+     MAPS:
+        Int32 time[time = 10248];
+        Float32 latitude[latitude = 201];
+        Float32 longitude[longitude = 201];
+    } msl;
+    Grid {
+     ARRAY:
+        Int16 u10[time = 10248][latitude = 201][longitude = 201];
+     MAPS:
+        Int32 time[time = 10248];
+        Float32 latitude[latitude = 201];
+        Float32 longitude[longitude = 201];
+    } u10;
+    Float32 latitude[latitude = 201];
+    Float32 longitude[longitude = 201];
+    Int32 time[time = 10248];
+    Grid {
+     ARRAY:
+        Int16 v10[time = 10248][latitude = 201][longitude = 201];
+     MAPS:
+        Int32 time[time = 10248];
+        Float32 latitude[latitude = 201];
+        Float32 longitude[longitude = 201];
+    } v10;
+} Datalayers/ERA5/regional/wna/uvp/1979/1979.wna.nc;
+```
 
 ---
 
