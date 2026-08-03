@@ -26,7 +26,6 @@ storm_start       = datetime(2018,9,14,0,0,0);
 storm_end         = datetime(2018,9,14,3,0,0);
 
 %% ===== SeparateEnvHur parameters =====
-% sepenvhur.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.nc';  % <year> is replaced with storm_year at runtime
 sepenvhur.background_file    = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/<year>/<year>.nc';
 sepenvhur.storm_start        = storm_start;
 sepenvhur.storm_end          = storm_end;

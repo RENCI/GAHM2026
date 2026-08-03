@@ -24,11 +24,8 @@ storm_start       = datetime(2018,9,12,0,0,0);
 storm_end         = datetime(2018,9,12,3,0,0);
 
 %% ===== SeparateEnvHur parameters =====
-sepenvhur.background_file     = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global.1/uvp/2018/09.nc';
+sepenvhur.background_file     = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/regional/wna/uvp/2018/2018.wna.nc';
 %sepenvhur.background_file     = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/2018/09.nc';
-%sepenvhur.background_file    = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/<year>/<year>.nc';
-%sepenvhur.background_file    = '/Users/bblanton/ees/TDS/ERA5/global/uvp/<year>/<year>.nc';
-%sepenvhur.background_file    = 'input/09.nc';
 sepenvhur.storm_start        = storm_start;
 sepenvhur.storm_end          = storm_end;
 sepenvhur.grid_half_size     = 40;
