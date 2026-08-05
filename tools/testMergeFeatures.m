@@ -9,6 +9,7 @@ function setupOnce(testCase)
     testCase.TestData.ProjectDirectory = projectDirectory;
     testCase.TestData.OriginalPath = path;
     addpath(fullfile(projectDirectory, "util"));
+    addpath(fullfile(projectDirectory, "SeparateEnvHur"));
 end
 
 function teardownOnce(testCase)
@@ -359,8 +360,67 @@ function testMissingOuterMaskIdentifiesAcceptedNames(testCase)
     end
 end
 
+function testPhysicalGridConfigurationDerivesCellCounts(testCase)
+    config = createPhysicalGridConfig();
+
+    actual = deriveConfiguration(config, 0:0.25:40, 0:0.25:40);
+
+    verifyEqual(testCase, actual.gridSpacingDegrees, 0.25);
+    verifyEqual(testCase, actual.outputGridSize, 81);
+    verifyEqual(testCase, actual.filterHalfWidth, 60);
+    verifyEqual(testCase, actual.outputHalfWidth, 40);
+    verifyEqual(testCase, actual.searchRange, 6);
+    verifyEqual(testCase, actual.numAzimuthPoints, 24);
+    verifyEqual(testCase, actual.numRadialPoints, 800);
+    verifyEqual(testCase, actual.radialIncrementDegrees, 0.0125);
+end
+
+function testPhysicalGridConfigurationRejectsNonSquareSpacing(testCase)
+    config = createPhysicalGridConfig();
+
+    verifyError(testCase, ...
+        @() deriveConfiguration(config, 0:0.25:40, 0:0.2501:40), ...
+        "SeparateEnvHur:NonSquareGridSpacing");
+end
+
+function testPhysicalGridConfigurationAcceptsRoundoffInSpacing(testCase)
+    config = createPhysicalGridConfig();
+
+    actual = deriveConfiguration(config, 0:0.25:40, 0:(0.25 + eps(0.25)):40);
+
+    verifyEqual(testCase, actual.gridSpacingDegrees, 0.25, AbsTol=1.0e-12);
+end
+
+function testPhysicalGridConfigurationRejectsFractionalCells(testCase)
+    config = createPhysicalGridConfig();
+    config.output_grid_length = 20.1;
+
+    verifyError(testCase, ...
+        @() deriveConfiguration(config, 0:0.25:40, 0:0.25:40), ...
+        "SeparateEnvHur:NonIntegerCellCount");
+end
+
+function testPhysicalGridConfigurationRejectsUndersizedArrays(testCase)
+    config = createPhysicalGridConfig();
+
+    verifyError(testCase, ...
+        @() deriveConfiguration(config, 0:0.25:20, 0:0.25:20), ...
+        "SeparateEnvHur:GridTooSmall");
+end
+
 function wafPoint = createWafPoint(longitude, latitude, waf)
     wafPoint = struct("lon", longitude, "lat", latitude, "WAF", waf);
+end
+
+function config = createPhysicalGridConfig()
+    config = struct("filter_grid_length", 30, "output_grid_length", 20, ...
+        "search_radius", 1.5, "num_azimuth_points", 24, ...
+        "num_radial_points", 800);
+end
+
+function config = deriveConfiguration(config, longitude, latitude)
+    coordinateData = struct("lon", longitude, "lat", latitude);
+    config = SeparateEnvHur(config, struct.empty, coordinateData);
 end
 
 function vortexPoints = createWind(speed, direction)

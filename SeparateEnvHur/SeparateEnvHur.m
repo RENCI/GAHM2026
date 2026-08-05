@@ -1,4 +1,4 @@
-function env_vals = SeparateEnvHur(config_input, ATCF_data_in)
+function env_vals = SeparateEnvHur(config_input, ATCF_data_in, coordinate_data)
 %SeparateEnvHur  Extract environmental fields from ERA5 data for a tropical cyclone.
 %   env_vals = SeparateEnvHur(config_file) runs the vortex removal using the
 %   configuration specified in config_file (a .m file that defines CONFIG).
@@ -14,7 +14,13 @@ function env_vals = SeparateEnvHur(config_input, ATCF_data_in)
     arguments
         config_input
         ATCF_data_in (1,:) struct = struct.empty
+        coordinate_data (1,1) struct = struct()
     end
+
+if ~isempty(fieldnames(coordinate_data))
+    env_vals = deriveSeparateEnvHurConfig(config_input, coordinate_data.lon, coordinate_data.lat);
+    return
+end
 
 %% Configuration
 if isstruct(config_input)
@@ -88,10 +94,13 @@ if era5.lon_convention == "0_360"
     track.lon(track.lon < 0) = track.lon(track.lon < 0) + 360;
 end
 
+% Convert physical lengths to cell counts once, before processing or allocation.
+CONFIG = deriveSeparateEnvHurConfig(CONFIG, era5.lon, era5.lat);
+
 % Compute grid indices from the actual ERA5 coordinate vectors
 track.lon_idx = interp1(era5.lon, 1:length(era5.lon), track.lon, 'nearest', 'extrap');
 track.lat_idx = interp1(era5.lat, 1:length(era5.lat), track.lat, 'nearest', 'extrap');
-track.search_range = CONFIG.search_range;
+track.search_range = CONFIG.searchRange;
 
 
 %% Initialize output arrays
@@ -99,7 +108,7 @@ OUTPUT = initializeOutputArrays(length(track.time), CONFIG);
 era5.vortex.lon = zeros(1, length(track.time));
 era5.vortex.lat = zeros(1, length(track.time));
 if CONFIG.debug
-    grid_size = 2 * CONFIG.output_half_size + 1;
+    grid_size = CONFIG.outputGridSize;
     logMsg(-1, "DEBUG", "Output arrays initialized: %d times, %dx%d grid", length(track.time), grid_size, grid_size);
 end
 
@@ -125,7 +134,12 @@ for i = 1:length(track.time)
     [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Polar coordinate interpolation done (grid size=%dx%d)", size(Xq,1), size(Xq,2)); end
 
-    [cutlineIdx_inner, isInsideInner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
+    [cutlineIdx_filter, ~, ~] = findCutline(hr_u, hr_v, Xq, Yq, ...
+                                           era5, track, CONFIG, i, CONFIG.filter_isotach);
+    filterRadiusDegrees = mean(cutlineIdx_filter, "all") * ...
+        CONFIG.radialIncrementDegrees;
+
+    [~, isInsideInner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
                                                            era5, track, CONFIG, i, ...
                                                            CONFIG.wind_threshold_inner);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Inner cutline found: mean radius=%.1f km, points inside=%d", mean(distance_inner), sum(isInsideInner)); end
@@ -135,12 +149,13 @@ for i = 1:length(track.time)
                                            CONFIG.wind_threshold_outer);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Outer cutline found: mean radius=%.1f km, points inside=%d", mean(distance_outer), sum(isInsideOuter)); end
 
-    meanInnerRadiusDeg = mean(cutlineIdx_inner, "all") * CONFIG.max_radius_deg / CONFIG.num_radial_points;
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Mean inner vortex radius=%.4f deg", meanInnerRadiusDeg); end
-
+    filterRadiusScale = 0.04;
     basic = computeBasicField(slp, u10, v10, ...
-                              track, CONFIG, i, meanInnerRadiusDeg);
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Basic field computed (mean inner radius=%.4f deg)", meanInnerRadiusDeg); end
+        track, CONFIG, i, filterRadiusDegrees*CONFIG.filter_hp_multiplier*filterRadiusScale);
+    if CONFIG.debug
+        logMsg(-1, "DEBUG", "Basic field computed (filter isotach radius=%.4f deg)", ...
+            filterRadiusDegrees);
+    end
 
     OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
                           basic, slp, u10, v10, ...
@@ -159,4 +174,67 @@ end
 if CONFIG.debug, logMsg(-1, "DEBUG", "Saving output to %s", outfile); end
 save(outfile, "env_vals")
 logMsg(-1, "INFO", "Done.");
+end
+
+function config = deriveSeparateEnvHurConfig(config, longitude, latitude)
+%deriveSeparateEnvHurConfig Convert physical grid settings to validated cell counts.
+    longitudeIncrement = abs(longitude(2) - longitude(1));
+    latitudeIncrement = abs(latitude(2) - latitude(1));
+    spacingTolerance = 100*eps(max([longitudeIncrement, latitudeIncrement, 1]));
+    if abs(longitudeIncrement - latitudeIncrement) > spacingTolerance
+        error("SeparateEnvHur:NonSquareGridSpacing", ...
+            "Longitude and latitude grid increments must be equal within numeric tolerance.");
+    end
+
+    config.gridSpacingDegrees = (longitudeIncrement + latitudeIncrement)/2;
+    if ~isfield(config, "filter_grid_length")
+        config.filter_grid_length = 2*config.filter_domain_size*config.gridSpacingDegrees;
+    end
+    if ~isfield(config, "output_grid_length")
+        config.output_grid_length = 2*config.output_half_size*config.gridSpacingDegrees;
+    end
+    if ~isfield(config, "search_radius")
+        config.search_radius = config.search_range*config.gridSpacingDegrees;
+    end
+
+    filterCells = validatedCellCount(config.filter_grid_length, config.gridSpacingDegrees, ...
+        "filter_grid_length");
+    outputCells = validatedCellCount(config.output_grid_length, config.gridSpacingDegrees, ...
+        "output_grid_length");
+    config.searchRange = validatedCellCount(config.search_radius, config.gridSpacingDegrees, ...
+        "search_radius");
+    if mod(filterCells, 2) ~= 0 || mod(outputCells, 2) ~= 0
+        error("SeparateEnvHur:NonIntegerCellCount", ...
+            "Filter and output lengths must each span an even number of grid cells.");
+    end
+    requiredGridSize = filterCells + 1;
+    if numel(longitude) < requiredGridSize || numel(latitude) < requiredGridSize
+        error("SeparateEnvHur:GridTooSmall", ...
+            "The loaded grid must contain the configured filter box before allocation.");
+    end
+
+    config.filterHalfWidth = filterCells/2;
+    config.outputHalfWidth = outputCells/2;
+    config.outputGridSize = outputCells + 1;
+    config.numAzimuthPoints = config.num_azimuth_points;
+    config.numRadialPoints = config.num_radial_points;
+    config.radialIncrementDegrees = (config.output_grid_length/2)/config.numRadialPoints;
+
+    % Legacy helper aliases are assigned only at this boundary.
+    config.filter_domain_size = config.filterHalfWidth;
+    config.grid_half_size = config.outputHalfWidth;
+    config.output_half_size = config.outputHalfWidth;
+    config.search_range = config.searchRange;
+    config.max_radius_deg = config.output_grid_length/2;
+end
+
+function cellCount = validatedCellCount(lengthDegrees, spacingDegrees, fieldName)
+%validatedCellCount Require a physical length to align with grid cells.
+    rawCellCount = lengthDegrees/spacingDegrees;
+    cellCount = round(rawCellCount);
+    countTolerance = 100*eps(max(abs(rawCellCount), 1));
+    if abs(rawCellCount - cellCount) > countTolerance
+        error("SeparateEnvHur:NonIntegerCellCount", ...
+            "%s must map to an integer number of grid cells.", fieldName);
+    end
 end
