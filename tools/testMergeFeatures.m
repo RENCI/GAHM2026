@@ -298,6 +298,54 @@ function testCallerRetainsGenericAssignmentsStructuralDueToNoPracticalRunSeam(te
     end
 end
 
+function testZeroQuadrantRadiiAreNormalizedAtIngestion(testCase)
+    constants = struct("BLF", 0.9, "one2tenF", 0.89, "rhoa", 1.204, ...
+        "pback_def", 1013, "Vmax_multiplier", 1);
+    env = struct("type", 1);
+    track = struct("datetime", datetime(2026, 8, 5), "lat", 30, "lon", -75, ...
+        "Pmin", 950, "Vmax", 80, "Pouter", 1010, "numiso", 3, "RMW", 20, ...
+        "R34", [0, 10, 20, 30], "R50", [40, 0, 50, 60], ...
+        "R64", [70, 80, 0, 90]);
+
+    actual = gahm2026Prep(constants, env, track, [], [], 1, 1, -1);
+
+    verifyTrue(testCase, all(isnan(actual.RQuad([1, 6, 11]))));
+    verifyEqual(testCase, actual.RQuad([2, 3, 4, 5, 7, 8, 9, 10, 12]), ...
+        [10, 20, 30, 40, 50, 60, 70, 80, 90]*1852);
+end
+
+function testEitherOuterMaskSchemaProducesSameMask(testCase)
+    expectedMask = [1, NaN; 0, 1];
+    legacyFile = createEnvironmentalFile("Vortex_mask", expectedMask);
+    outerFile = createEnvironmentalFile("Vortex_mask_outer", expectedMask);
+    cleanupFiles = onCleanup(@() deleteFiles([legacyFile, outerFile]));
+    sampleTime = datetime(2026, 8, 5);
+
+    [~, ~, legacyMasks] = readEnvAndHurrFields2(struct("file_name", legacyFile), ...
+        sampleTime, sampleTime);
+    [~, ~, outerMasks] = readEnvAndHurrFields2(struct("file_name", outerFile), ...
+        sampleTime, sampleTime);
+
+    verifyEqual(testCase, outerMasks.mask2, legacyMasks.mask2);
+    verifyEqual(testCase, outerMasks.mask2, [1, 0; 0, 1]);
+end
+
+function testMissingOuterMaskIdentifiesAcceptedNames(testCase)
+    fileName = createEnvironmentalFile("", []);
+    cleanupFile = onCleanup(@() deleteIfPresent(fileName));
+    sampleTime = datetime(2026, 8, 5);
+
+    try
+        readEnvAndHurrFields2(struct("file_name", fileName), sampleTime, sampleTime);
+        verifyFail(testCase, "Expected a missing outer-mask error.");
+    catch exception
+        verifyEqual(testCase, exception.identifier, ...
+            'readEnvAndHurrFields2:MissingOuterMaskField');
+        verifySubstring(testCase, exception.message, "Vortex_mask_outer");
+        verifySubstring(testCase, exception.message, "Vortex_mask");
+    end
+end
+
 function wafPoint = createWafPoint(longitude, latitude, waf)
     wafPoint = struct("lon", longitude, "lat", latitude, "WAF", waf);
 end
@@ -335,5 +383,26 @@ end
 function deleteIfPresent(fileName)
     if isfile(fileName)
         delete(fileName);
+    end
+end
+
+function fileName = createEnvironmentalFile(outerMaskName, outerMask)
+    sampleTime = datetime(2026, 8, 5);
+    env_vals = struct("Time", sampleTime, "Lo", reshape([-76, -75; -76, -75], 1, 2, 2), ...
+        "La", reshape([29, 29; 30, 30], 1, 2, 2), ...
+        "env_u10", zeros(1, 2, 2), "env_v10", zeros(1, 2, 2), ...
+        "env_msl", 1000*ones(1, 2, 2), "hur_u10", zeros(1, 2, 2), ...
+        "hur_v10", zeros(1, 2, 2), "hur_msl", 990*ones(1, 2, 2), ...
+        "Vortex_mask_inner", ones(1, 2, 2));
+    if strlength(outerMaskName) > 0
+        env_vals.(outerMaskName) = reshape(outerMask, 1, 2, 2);
+    end
+    fileName = string(tempname) + ".mat";
+    save(fileName, "env_vals");
+end
+
+function deleteFiles(fileNames)
+    for fileName = fileNames
+        deleteIfPresent(fileName);
     end
 end
