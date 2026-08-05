@@ -58,11 +58,12 @@ You can also pass a struct directly:
 >>              'storm_year',2018, 'track_file','input/ibtracs.NA.list.v04r01.csv', ...
 >>              'storm_start',datetime(2018,9,10,0,0,0), ...
 >>              'storm_end',datetime(2018,9,18,0,0,0), ...
->>              'grid_half_size',40, 'output_half_size',40, ...
->>              'filter_domain_size',120, 'search_range',5, ...
->>              'num_radial_points',1000, ...
->>              'num_azimuth_points',360, 'max_radius_deg',10, ...
+>>              'filter_grid_length',30, 'output_grid_length',20, ...
+>>              'search_radius',1.5, 'num_radial_points',800, ...
+>>              'num_azimuth_points',24, ...
 >>              'wind_threshold_outer',10, 'wind_threshold_inner',34/1.944, ... % 34 kt ≈ 17.5 m/s (1 kt = 1/1.944 m/s)
+>>              'filter_isotach',17.5, 'filter_hp_multiplier',25, ...
+>>              'num_points_smoother',3, 'isotach_smooth_variance',2000, ...
 >>              'debug',true);
 >> env_vals = SeparateEnvHur(CONFIG);
 ```
@@ -79,15 +80,24 @@ Output is saved as `<STORM_NAME>_<DESIGNATION>_<YEAR>.mat` (e.g., `FLORENCE_AL06
 | `storm_year` | `2018` | Year of storm |
 | `storm_start` | `datetime(2018,9,6,0,0,0)` | Start time for processing |
 | `storm_end` | `datetime(2018,9,18,0,0,0)` | End time for processing |
-| `search_range` | `5` | Search radius for pressure-center detection (grid points) |
-| `grid_half_size` | `40` | Half-size of extraction grid (grid points) |
-| `output_half_size` | `40` | Half-size of output grid (grid points) |
-| `filter_domain_size` | `120` | Half-size of the filtering domain (grid points) |
-| `num_radial_points` | `1000` | Number of radial points for polar interpolation |
-| `num_azimuth_points` | `360` | Number of azimuthal points |
-| `max_radius_deg` | `10` | Maximum radius in degrees for polar grid |
+| `filter_grid_length` | `30` | Side length of square filter extraction domain (degrees) |
+| `output_grid_length` | `20` | Side length of square output and isotach-search domain (degrees) |
+| `search_radius` | `1.5` | Pressure-center search radius from track position (degrees) |
+| `num_radial_points` | GAHM `nr` | Number of radial points for polar interpolation |
+| `num_azimuth_points` | GAHM `ntheta` | Number of azimuthal points |
 | `wind_threshold_outer` | `10` | Wind threshold for outer cutline (m/s) |
 | `wind_threshold_inner` | `34/1.944` (~17.5) | Wind threshold for inner cutline (34 kt in m/s) |
+| `filter_isotach` | `17.5` | Independent isotach used to determine filter radius (m/s) |
+| `filter_hp_multiplier` | `25` | Multiplier on mean filter-isotach radius for half-power wavelength |
+| `num_points_smoother` | `3` | Circular cutline smoothing width (azimuth samples) |
+| `isotach_smooth_variance` | `2000` | Variance convergence tolerance for isotach smoothing |
+
+The source longitude and latitude spacing is detected at runtime and must be uniform and equal. Physical lengths must
+map to integer cell counts; filter and output side lengths must span even counts. Filtering uses the larger filter
+domain, while saved fields and cutline searches use the output domain. Unified configs derive azimuth and radial counts
+from GAHM's `ntheta` and `nr`. Azimuths cover 360° without a duplicate seam; radial samples include both zero and the
+`output_grid_length/2` endpoint. Smoothing is circular across the azimuth seam and is controlled by the two settings
+above.
 
 ## Module Structure
 
@@ -113,6 +123,10 @@ The output `.mat` file contains a struct named `env_vals` with:
 - Cutline distances: `distance_outer`, `distance_inner`
 - Pressure center: `min_pressure_center_lon`, `min_pressure_center_lat`
 - Metadata: `units`
+
+SeparateEnvHur produces `Vortex_mask`. Downstream readers accept both it and the external-copy compatibility name
+`Vortex_mask_outer`; `readEnvAndHurrFields2` prefers `Vortex_mask_outer` if both fields exist, while this repository's
+producer retains `Vortex_mask`.
 
 
 <!--#### DDS of ERA5 file

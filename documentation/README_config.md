@@ -37,20 +37,34 @@ Controls ERA5 data extraction and vortex scrubbing. The fields `storm_name`, `st
 | `background_file` | char | Path to ERA5 NetCDF input file. Use `<year>` as a placeholder for the storm year (resolved at runtime by `getERA5Data`) | `'/path/to/<year>/<year>.global.nc'` |
 | `storm_start` | datetime | Start time (from shared) | `storm_start` |
 | `storm_end` | datetime | End time (from shared) | `storm_end` |
-| `grid_half_size` | numeric | Half-size of extraction grid (grid points) | `40` |
-| `output_half_size` | numeric | Half-size of output grid (grid points) | `40` |
-| `filter_domain_size` | numeric | Domain size for Butterworth filtering | `120` |
-| `num_radial_points` | numeric | Radial points for polar interpolation | `1000` |
-| `num_azimuth_points` | numeric | Azimuthal points for polar interpolation | `360` |
-| `max_radius_deg` | numeric | Maximum polar grid radius (degrees) | `10` |
+| `filter_grid_length` | numeric | Side length of the square filter extraction domain (degrees) | `30` |
+| `output_grid_length` | numeric | Side length of the square output and isotach-search domain (degrees) | `20` |
+| `search_radius` | numeric | Pressure-center search radius from the track location (degrees) | `1.5` |
 | `wind_threshold_outer` | numeric | Wind speed threshold for outer cutline (m/s) | `10` |
 | `wind_threshold_inner` | numeric | Wind speed threshold for inner cutline (m/s) | `34/1.944` (~17.5, i.e. 34 kt) |
+| `filter_isotach` | numeric | Independent isotach used to derive the filtering radius (m/s) | `17.5` |
+| `filter_hp_multiplier` | numeric | Multiplier on mean filter-isotach radius for Butterworth half-power wavelength | `25` |
+| `num_points_smoother` | numeric | Circular cutline smoothing width (azimuth samples) | `3` |
+| `isotach_smooth_variance` | numeric | Variance convergence tolerance for isotach smoothing | `2000` |
 | `debug` | logical | Print debug messages | `true` |
 | `output_dir` | char | Output directory for `.mat` file | `'output'` |
 | `storm_name` | char | Storm name (from shared) | `storm_name` |
 | `storm_year` | numeric | Storm year (from shared) | `storm_year` |
 | `storm_designation` | char | Basin + storm number (from shared) | `storm_designation` |
 | `track_file` | char | Track data file path | `fullfile('input', track_file)` |
+
+SeparateEnvHur detects source-grid spacing from strictly monotonic, uniform longitude and latitude vectors; both
+directions must have equal spacing. It converts all three physical settings to cell counts. Each setting must span an
+integer number of cells, while `filter_grid_length` and `output_grid_length` must span even cell counts so their
+domains are centered. Filtering uses the larger `filter_grid_length` square; saved fields and all cutline searches use
+the `output_grid_length` square. The filter isotach is independent of the inner and outer output-mask isotachs, and its
+mean cutline radius multiplied by `filter_hp_multiplier` is the Butterworth half-power wavelength.
+
+Unified configs set `num_azimuth_points = GAHM_compute_info.ntheta` and
+`num_radial_points = GAHM_compute_info.nr`. Azimuth samples cover one revolution without duplicating the seam. Radial
+samples include the storm center and the `output_grid_length/2` endpoint, so the increment is
+`(output_grid_length/2)/(num_radial_points-1)`. The smoothing width and variance tolerance control circular isotach
+smoothing across the azimuth seam.
 
 ---
 
@@ -111,7 +125,13 @@ Controls land-roughness-based wind speed adjustment.
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `flag` | logical | Enable WAF correction | `false` |
-| `file_name` | char | Path to WAF raster (`.tif`). Ignored if `flag = false` | `'input/WAF_15deg_10km_6km_raster_test.tif'` |
+| `file_name` | char | Grid output: WAF raster (`.tif`). Point output: point-WAF MAT-file. Ignored if `flag = false` | `'input/WAF_15deg_10km_6km_raster_test.tif'` |
+
+For point output, the MAT-file must contain `WAF_points`, a struct array whose elements each have numeric, finite,
+scalar `lon` and `lat` fields and a nonempty finite `WAF` vector. All vectors have equal length and represent equal
+angular increments beginning at north and proceeding clockwise. Each requested `(lon, lat)` pair must match exactly
+one struct element (within the implementation's coordinate tolerance); `applyWAFfromPoints` reports a clear error if
+a pair is missing or duplicated.
 
 ---
 
@@ -136,7 +156,7 @@ When `env_info.type = 3`, the `.mat` file (produced by SeparateEnvHur) must cont
 | `Time(i)` | (nt) | datetime array |
 | `Lo(i,:,:)` | (nt, nlat, nlon) | Longitude grid |
 | `La(i,:,:)` | (nt, nlat, nlon) | Latitude grid |
-| `Vortex_mask(i,:,:)` | (nt, nlat, nlon) | Outer cutline mask (0 = inside, 1 = outside) |
+| `Vortex_mask(i,:,:)` | (nt, nlat, nlon) | Produced outer cutline mask (0 = inside, 1 = outside) |
 | `Vortex_mask_inner(i,:,:)` | (nt, nlat, nlon) | Inner cutline mask (0 = inside, 1 = outside) |
 | `env_msl(i,:,:)` | (nt, nlat, nlon) | Environmental mean sea level pressure (mb) |
 | `env_u10(i,:,:)` | (nt, nlat, nlon) | Environmental E-W wind velocity (m/s) |
@@ -151,6 +171,9 @@ When `env_info.type = 3`, the `.mat` file (produced by SeparateEnvHur) must cont
 | `units` | dictionary | Units metadata |
 
 Times must include all track file times; additional times (e.g., hourly) are permitted.
+
+SeparateEnvHur produces `Vortex_mask`. Readers accept the compatible external-copy field `Vortex_mask_outer` as well
+as the legacy/current `Vortex_mask`; `readEnvAndHurrFields2` prefers `Vortex_mask_outer` when both are present.
 
 ---
 
@@ -221,6 +244,9 @@ The number of longitude and latitude values must be equal and are fixed in time.
 | | `.U10` | m/s | Environmental E-W velocity |
 | | `.V10` | m/s | Environmental N-S velocity |
 | | `.Press` | mb | Environmental pressure |
+| `Points_VVor_invtapHur_out(i)` | `.datetime`, `.Lon`, `.Lat` | —/degrees | Point coordinates and timestamp |
+| | `.U10`, `.V10` | m/s | GAHM vortex + inverse-tapered hurricane velocity |
+| | `.Press` | mb | GAHM vortex + inverse-tapered hurricane pressure |
 
 ### Radial grid data (always returned)
 

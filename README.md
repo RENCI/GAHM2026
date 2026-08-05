@@ -117,17 +117,23 @@ These values are defined as plain workspace variables and automatically populate
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `background_file` | ERA5 NetCDF input file path; use `<year>` as a placeholder for `storm_year` (resolved by `getERA5Data` at runtime) | `'/path/to/<year>/<year>.global.nc'` |
-| `grid_half_size` | Half-size of extraction grid (grid points) | `40` |
-| `output_half_size` | Half-size of output grid (grid points) | `40` |
-| `filter_domain_size` | Domain size for Butterworth filter | `120` |
-| `num_radial_points` | Radial points for polar interpolation | `1000` |
-| `num_azimuth_points` | Azimuthal points | `360` |
-| `max_radius_deg` | Maximum polar grid radius (degrees) | `10` |
+| `filter_grid_length` | Side length of the square Butterworth-filter extraction domain (degrees) | `30` |
+| `output_grid_length` | Side length of the square output and isotach-search domain (degrees) | `20` |
+| `search_radius` | Pressure-center search radius from the track position (degrees) | `1.5` |
 | `wind_threshold_outer` | Outer cutline threshold (m/s) | `10` |
 | `wind_threshold_inner` | Inner cutline threshold (m/s, 34 kt) | `34/1.944` |
+| `filter_isotach` | Isotach used independently to determine the Butterworth half-power wavelength (m/s) | `17.5` |
+| `filter_hp_multiplier` | Multiplier applied to the mean filter-isotach radius for the half-power wavelength | `25` |
+| `num_points_smoother` | Width, in azimuth samples, of circular cutline smoothing | `3` |
+| `isotach_smooth_variance` | Variance convergence tolerance for isotach smoothing | `2000` |
 | `debug` | Print debug messages | `true` |
 
 > **Note:** `sepenvhur.storm_name`, `sepenvhur.storm_year`, `sepenvhur.storm_designation`, `sepenvhur.track_file`, `sepenvhur.storm_start`, and `sepenvhur.storm_end` are automatically populated from the shared variables — do not set them separately. Likewise, `storm_info.starttime` and `storm_info.endtime` are derived from `storm_start` and `storm_end`.
+>
+> SeparateEnvHur detects the uniform, equal longitude/latitude spacing in the ERA5 file and converts the physical
+> lengths above to cell counts. Each length must map to an integer number of cells, and the filter and output lengths
+> must span even cell counts. The unified config derives `num_azimuth_points` and `num_radial_points` from GAHM's
+> `ntheta` and `nr`; the polar radial grid includes both the center and the output-domain half-length endpoint.
 
 #### 3. GAHM2026 parameters
 
@@ -268,6 +274,7 @@ Dataset {
 | `Result.env_info` | Environmental field configuration |
 | `Result.Points_TC_out` | (if `output_type="points"`) Point TC output |
 | `Result.Points_Env_out` | (if `output_type="points"`) Point environmental output |
+| `Result.Points_VVor_invtapHur_out` | (if `output_type="points"`) Point GAHM vortex + inverse-tapered hurricane output |
 
 ### Gridded NetCDF output (`output_info.type = "grid"`)
 
@@ -288,6 +295,9 @@ The `.mat` file (e.g., `FLORENCE_2018_AL06.mat`) contains the `env_vals` struct 
 - Vortex masks: `Vortex_mask`, `Vortex_mask_inner`
 - Grid coordinates: `Lo`, `La`
 - Track positions: `BestTrack_lon/lat`, `min_pressure_center_lon/lat`
+
+SeparateEnvHur remains the producer of `Vortex_mask`. Readers accept both that current/legacy name and the external
+copy's compatible `Vortex_mask_outer`; `readEnvAndHurrFields2` prefers `Vortex_mask_outer` if both fields are present.
 
 ---
 
