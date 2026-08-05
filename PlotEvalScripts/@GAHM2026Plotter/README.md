@@ -30,7 +30,7 @@ obj.exportFigure(fig, 'Florence_wind_t5');
 
 ```matlab
 addpath('PlotEvalScripts')
-obj = GAHM2026Plotter.fromSepEnvHur('separated.mat');
+obj = GAHM2026Plotter.fromSepEnvHur("output/FLORENCE_AL06_2018.mat");
 
 % Plot environmental + hurricane combined
 obj.contourMap('mvelcon', 1, 5);

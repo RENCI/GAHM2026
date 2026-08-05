@@ -123,21 +123,9 @@ if output_info.type == "grid"
     logMsg(fid, "INFO", "Writing netCDF output")
     err = writeGAHM2026NetCdf(output_info.NetCDFfilename, Reggrid_out, Reggrid_TC_out, output_info);
 elseif output_info.type == "points"
-    nt = length(Reggrid_out);
-    for i = 1:nt
-        Points_TC_out(i).datetime = Reggrid_out(i).datetime;
-        Points_TC_out(i).Lon = Reggrid_out(i).Lon;
-        Points_TC_out(i).Lat = Reggrid_out(i).Lat;
-        Points_TC_out(i).U10 = Reggrid_TC_out(i).VelU;
-        Points_TC_out(i).V10 = Reggrid_TC_out(i).VelV;
-        Points_TC_out(i).Press = Reggrid_TC_out(i).Press;
-        Points_Env_out(i).datetime = Reggrid_out(i).datetime;
-        Points_Env_out(i).Lon = Reggrid_out(i).Lon;
-        Points_Env_out(i).Lat = Reggrid_out(i).Lat;
-        Points_Env_out(i).U10 = Reggrid_Env_out(i).VelU;
-        Points_Env_out(i).V10 = Reggrid_Env_out(i).VelV;
-        Points_Env_out(i).Press = Reggrid_Env_out(i).Press;
-    end
+    [Points_TC_out, Points_Env_out, Points_VVor_invtapHur_out] = ...
+        createPointOutputs(Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, ...
+            Reggrid_VVor_invtapHur_out);
 
     logMsg(fid, "INFO", "Done computing values at output points")
 end
@@ -157,6 +145,7 @@ Result.env_info        = env_info;
 if output_info.type == "points"
     Result.Points_TC_out  = Points_TC_out;
     Result.Points_Env_out = Points_Env_out;
+    Result.Points_VVor_invtapHur_out = Points_VVor_invtapHur_out;
 end
 
 logMsg(fid, "INFO", "Done.");

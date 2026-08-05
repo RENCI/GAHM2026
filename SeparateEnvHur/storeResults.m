@@ -2,9 +2,15 @@ function OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
         basic, psl, u, v, ...
         isInsideOuter, isInsideInner, distance_outer, distance_inner)
 
-    half = CONFIG.output_half_size;
+%storeResults Store one time step in the validated physical output window.
+    half = CONFIG.outputHalfWidth;
     rows = track.lat_idx(i)-half : track.lat_idx(i)+half;
     cols = track.lon_idx(i)-half : track.lon_idx(i)+half;
+    if rows(1) < 1 || rows(end) > size(era5.lon_grid, 1) || ...
+            cols(1) < 1 || cols(end) > size(era5.lon_grid, 2)
+        error("SeparateEnvHur:OutputDomainOutOfBounds", ...
+            "The configured output domain extends beyond the source grid.");
+    end
     grid_size = length(rows);
 
     OUTPUT.lon(i,:,:) = era5.lon_grid(rows, cols);

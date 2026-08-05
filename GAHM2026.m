@@ -115,8 +115,8 @@ if debug, logMsg(fid, "DEBUG", "Environmental fields loaded."); end
 WAF_data = [];
 WAF_metadata = [];
 if WAF_flag
-    if debug, logMsg(fid, "DEBUG", "Loading WAF raster from %s", WAF_info.file_name); end
-    [WAF_data, WAF_metadata] = readgeoraster(WAF_info.file_name);
+    if debug, logMsg(fid, "DEBUG", "Loading WAF data from %s", WAF_info.file_name); end
+    [WAF_data, WAF_metadata] = loadWAFData(output.type, WAF_info.file_name);
 end
 
 %% Main time loop
@@ -330,17 +330,20 @@ for ii = 1:itot
     VPrad.VVor_at(ii).Speed = squeeze(VSpeed_VPrad_10_10(ii,:,:));
     VPrad.VVor_at(ii).Press = squeeze(VPress_VPrad(ii,:,:));
 
-    % Interpolate final (blended) output back onto radial grid for diagnostic output
-    FU = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).VelU');
-    FV = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).VelV');
-    FP = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).Press');
-    for it = 1:length(theta)
-        az = thetaToAzimuth(theta(it));
-        [rad_lat, rad_lon] = reckon("rh", LatNS(ii), LonEW(ii), r_arc, az);
-        VPrad.EnvHur_final(ii).VelU(it,:) = FU(rad_lon', rad_lat');
-        VPrad.EnvHur_final(ii).VelV(it,:) = FV(rad_lon', rad_lat');
-        VPrad.EnvHur_final(ii).Speed(it,:) = hypot(VPrad.EnvHur_final(ii).VelU(it,:), VPrad.EnvHur_final(ii).VelV(it,:));
-        VPrad.EnvHur_final(ii).Press(it,:) = FP(rad_lon', rad_lat');
+    % Interpolate final grid output back onto the radial grid for diagnostics
+    if output.type == "grid"
+        FU = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).VelU');
+        FV = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).VelV');
+        FP = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).Press');
+        for it = 1:length(theta)
+            az = thetaToAzimuth(theta(it));
+            [rad_lat, rad_lon] = reckon("rh", LatNS(ii), LonEW(ii), r_arc, az);
+            VPrad.EnvHur_final(ii).VelU(it,:) = FU(rad_lon', rad_lat');
+            VPrad.EnvHur_final(ii).VelV(it,:) = FV(rad_lon', rad_lat');
+            VPrad.EnvHur_final(ii).Speed(it,:) = hypot(VPrad.EnvHur_final(ii).VelU(it,:), ...
+                VPrad.EnvHur_final(ii).VelV(it,:));
+            VPrad.EnvHur_final(ii).Press(it,:) = FP(rad_lon', rad_lat');
+        end
     end
     if ~isempty(VEnvrad_10_10)
         VPrad.Env(ii).VelU  = squeeze(VEnvrad_10_10(ii,:,:,1));
@@ -560,10 +563,8 @@ for i = 1:itot
     Reggrid_VVor_WAF_out(i) = Reggrid_VVor_out(i);
 
     if WAF_flag
-        Reggrid_VVor_WAF = applyWAFfromRaster(WAF_data, WAF_metadata, ...
-                                      Reggrid_VVor_out(i), longrid, latgrid);
-        Reggrid_VVor_WAF_out(i).VelU = Reggrid_VVor_WAF.VelU;
-        Reggrid_VVor_WAF_out(i).VelV = Reggrid_VVor_WAF.VelV;
+        Reggrid_VVor_WAF_out(i) = applyWAFforOutput(output.type, WAF_data, ...
+            WAF_metadata, Reggrid_VVor_out(i), longrid, latgrid);
     end
 
 % assemble final blended outputs by env_type

@@ -101,6 +101,7 @@ function GAHM = gahm2026Prep(GAHM_constants,env,ATCF_data_in,VEnv_10_10,...
     RQuad(1:4,1) = ATCF_data_in(ATCF_line).R34(1:4)*NM2M; %34 kt isotachs in m
     RQuad(1:4,2) = ATCF_data_in(ATCF_line).R50(1:4)*NM2M; %50 kt isotachs in m
     RQuad(1:4,3) = ATCF_data_in(ATCF_line).R64(1:4)*NM2M; %64 kt isotachs in m
+    RQuad(RQuad == 0) = NaN;
     SQuad_10_10(1:3) = one2tenF*[34, 50, 64]/MS2KT; %isotach values 10 min avg in m/s
 
     % Compute the translation velocity from backward difference

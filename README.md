@@ -15,10 +15,11 @@ V1.3, April 2026
 ```matlab
 cd GAHM2026
 R = run_GAHM2026;                          % uses default config/config_GAHM2026_default.m
-R = run_GAHM2026('config_Florence');       % uses config/config_Florence.m
 ```
 
-`run_GAHM2026` returns a `Result` struct containing all output fields (see [Output](#output) below). If the SeparateEnvHur `.mat` file does not exist (e.g., `output/FLORENCE_2018_AL06.mat`), it will automatically run SeparateEnvHur to generate it before proceeding.
+`run_GAHM2026` returns a `Result` struct containing all output fields (see [Output](#output) below). If the
+SeparateEnvHur MAT-file does not exist (for the default config, `output/FLORENCE_AL06_2018.mat`), it automatically
+runs SeparateEnvHur to generate the file before proceeding.
 
 ### Plotting
 
@@ -41,7 +42,6 @@ You can run SeparateEnvHur standalone using the same config file:
 cd GAHM2026
 addpath('SeparateEnvHur')
 env_vals = SeparateEnvHur('config/config_GAHM2026_default');  % default config
-env_vals = SeparateEnvHur('config/config_Florence');          % storm-specific config
 ```
 
 ### Plotting SeparateEnvHur output
@@ -73,7 +73,7 @@ GAHM2026/
 ├── GAHM2026.m                 — main GAHM2026 orchestrator
 ├── config/
 │   ├── config_GAHM2026_default.m — default config (SeparateEnvHur + GAHM2026)
-│   └── config_Florence.m      — example storm-specific config
+│   └── config_Ian.m           — example storm-specific config
 ├── util/                      — GAHM2026 pipeline functions and shared utilities
 ├── input/                     — track files (IBTrACS, ATCF, fort22)
 ├── output/                    — NetCDF output, warning logs
@@ -117,17 +117,23 @@ These values are defined as plain workspace variables and automatically populate
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `background_file` | ERA5 NetCDF input file path; use `<year>` as a placeholder for `storm_year` (resolved by `getERA5Data` at runtime) | `'/path/to/<year>/<year>.global.nc'` |
-| `grid_half_size` | Half-size of extraction grid (grid points) | `40` |
-| `output_half_size` | Half-size of output grid (grid points) | `40` |
-| `filter_domain_size` | Domain size for Butterworth filter | `120` |
-| `num_radial_points` | Radial points for polar interpolation | `1000` |
-| `num_azimuth_points` | Azimuthal points | `360` |
-| `max_radius_deg` | Maximum polar grid radius (degrees) | `10` |
+| `filter_grid_length` | Side length of the square Butterworth-filter extraction domain (degrees) | `30` |
+| `output_grid_length` | Side length of the square output and isotach-search domain (degrees) | `20` |
+| `search_radius` | Physical half-width (degrees) of the square pressure-center search window centered on the track location | `1.5` |
 | `wind_threshold_outer` | Outer cutline threshold (m/s) | `10` |
 | `wind_threshold_inner` | Inner cutline threshold (m/s, 34 kt) | `34/1.944` |
+| `filter_isotach` | Isotach used independently to determine the Butterworth half-power wavelength (m/s) | `17.5` |
+| `filter_hp_multiplier` | Multiplier applied to the mean filter-isotach radius for the half-power wavelength | `25` |
+| `num_points_smoother` | Width, in azimuth samples, of circular cutline smoothing | `3` |
+| `isotach_smooth_variance` | Variance convergence tolerance for isotach smoothing | `2000` |
 | `debug` | Print debug messages | `true` |
 
 > **Note:** `sepenvhur.storm_name`, `sepenvhur.storm_year`, `sepenvhur.storm_designation`, `sepenvhur.track_file`, `sepenvhur.storm_start`, and `sepenvhur.storm_end` are automatically populated from the shared variables — do not set them separately. Likewise, `storm_info.starttime` and `storm_info.endtime` are derived from `storm_start` and `storm_end`.
+>
+> SeparateEnvHur detects the uniform, equal longitude/latitude spacing in the ERA5 file and converts the physical
+> lengths above to cell counts. Each length must map to an integer number of cells, and the filter and output lengths
+> must span even cell counts. The unified config derives `num_azimuth_points` and `num_radial_points` from GAHM's
+> `ntheta` and `nr`; the polar radial grid includes both the center and the output-domain half-length endpoint.
 
 #### 3. GAHM2026 parameters
 
@@ -147,10 +153,14 @@ See [`documentation/README_config.md`](documentation/README_config.md) for full 
 The `env_info.file_name` is derived from the shared storm identity:
 
 ```matlab
-env_info.file_name = sprintf('%s_%d', storm_name, storm_year);  % e.g. 'FLORENCE_2018'
+env_info.file_name = fullfile("output", ...
+    sprintf("%s_%s_%d", storm_name, storm_designation, storm_year));
+% Default: output/FLORENCE_AL06_2018
 ```
 
-This matches the output filename that SeparateEnvHur produces (`FLORENCE_2018.mat`), so the two projects are linked without any manual coordination.
+SeparateEnvHur appends `.mat` and saves the `env_vals` struct at that path. Its generic naming rule is
+`<output_dir>/<storm_name>_<storm_designation>_<storm_year>.mat`, so the two projects are linked without manual
+coordination.
 
 ---
 
@@ -158,7 +168,8 @@ This matches the output filename that SeparateEnvHur produces (`FLORENCE_2018.ma
 
 When `run_GAHM2026` is called and `env_info.type == 3`:
 
-1. It checks whether `<env_info.file_name>.mat` exists (e.g., `output/FLORENCE_2018_AL06.mat`). This mat file contains the environmental fields needed by GAHM2026.
+1. It checks whether `<env_info.file_name>.mat` exists (for example, `output/FLORENCE_AL06_2018.mat`). This MAT-file
+   contains the environmental fields needed by GAHM2026.
 2. If the file exists → proceeds directly to GAHM2026 computation.
 3. If the file is missing → calls `SeparateEnvHur(sepenvhur)`, saves the `.mat` file, and continues to GAHM2026.
 
@@ -167,12 +178,12 @@ run_GAHM2026
   │
   ├── Load config → storm_info, sepenvhur, env_info, ...
   ├── Download IBTrACS if missing
-  ├── Check for FLORENCE_2018.mat
+  ├── Check for output/FLORENCE_AL06_2018.mat
   │     │
   │     └── Missing? ──► SeparateEnvHur(sepenvhur)
   │                         ├── Load ERA5 NetCDF
   │                         ├── Extract & filter vortex
-  │                         └── Save FLORENCE_2018.mat
+  │                         └── Save output/FLORENCE_AL06_2018.mat
   │
   ├── GAHM2026 computation
   └── Write NetCDF output
@@ -257,7 +268,7 @@ Dataset {
 
 | Field | Contents |
 |-------|----------|
-| `Result.Reggrid_out` | Grid coordinates (`.Lon`, `.Lat`), `.datetime`, `.Mask1`, `.Mask2` |
+| `Result.Reggrid_out` | Grid coordinates (`.Lon`, `.Lat`) and `.datetime`; for `env_info.type = 3` only, `.Mask1` (inner) and `.Mask2` (outer). Types 1 and 2 do not create the mask fields |
 | `Result.Reggrid_TC_out` | Final blended TC fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
 | `Result.Reggrid_Env_out` | Environmental fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
 | `Result.Reggrid_VVor_invtapHur_out` | GAHM vortex + inverse-tapered hurricane (env_type=3 only; 0 for env_type 1,2) |
@@ -266,12 +277,14 @@ Dataset {
 | `Result.VPrad` | Radial grid data: `.r`, `.theta`, `.VVor(i)`, `.Env(i)`, `.EnvVor(i)` |
 | `Result.storm_info` | Storm identity (name, year, designation) |
 | `Result.env_info` | Environmental field configuration |
-| `Result.Points_TC_out` | (if `output_type="points"`) Point TC output |
-| `Result.Points_Env_out` | (if `output_type="points"`) Point environmental output |
+| `Result.Points_TC_out` | (if `output_info.type = "points"`) Point TC output |
+| `Result.Points_Env_out` | (if `output_info.type = "points"`) Point environmental output |
+| `Result.Points_VVor_invtapHur_out` | (if `output_info.type = "points"`) Point GAHM vortex + inverse-tapered hurricane output |
 
 ### Gridded NetCDF output (`output_info.type = "grid"`)
 
-A NetCDF file is written to `output/<storm>_<year>_<designation>.nc` (e.g.,  `FLORENCE_AL06_2018.nc`) containing:
+A NetCDF file is written to `output/<storm>_<year>.nc` (for the default config, `output/FLORENCE_2018.nc`)
+containing:
 - Combined TC wind and pressure fields (`Reggrid_TC_out`)
 - Environmental fields (`Reggrid_Env_out`)
 - Grid coordinates and timestamps (`Reggrid_out`)
@@ -282,12 +295,16 @@ MATLAB structs are returned in the `Result` struct with wind velocity (U10, V10)
 
 ### SeparateEnvHur intermediate output
 
-The `.mat` file (e.g., `FLORENCE_2018_AL06.mat`) contains the `env_vals` struct with:
+The MAT-file follows `<output_dir>/<storm_name>_<storm_designation>_<storm_year>.mat`. For example,
+`output/FLORENCE_AL06_2018.mat` contains the `env_vals` struct with:
 - Environmental fields: `env_msl`, `env_u10`, `env_v10`
 - Hurricane fields: `hur_msl`, `hur_u10`, `hur_v10`
 - Vortex masks: `Vortex_mask`, `Vortex_mask_inner`
 - Grid coordinates: `Lo`, `La`
 - Track positions: `BestTrack_lon/lat`, `min_pressure_center_lon/lat`
+
+SeparateEnvHur remains the producer of `Vortex_mask`. Readers accept both that current/legacy name and the external
+copy's compatible `Vortex_mask_outer`; `readEnvAndHurrFields2` prefers `Vortex_mask_outer` if both fields are present.
 
 ---
 

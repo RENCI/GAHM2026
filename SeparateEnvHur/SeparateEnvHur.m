@@ -88,10 +88,14 @@ if era5.lon_convention == "0_360"
     track.lon(track.lon < 0) = track.lon(track.lon < 0) + 360;
 end
 
+% Convert physical lengths to cell counts once, before processing or allocation.
+CONFIG = deriveSeparateEnvHurConfig(CONFIG, era5.lon, era5.lat);
+validateSeparateEnvHurData(era5);
+
 % Compute grid indices from the actual ERA5 coordinate vectors
 track.lon_idx = interp1(era5.lon, 1:length(era5.lon), track.lon, 'nearest', 'extrap');
 track.lat_idx = interp1(era5.lat, 1:length(era5.lat), track.lat, 'nearest', 'extrap');
-track.search_range = CONFIG.search_range;
+track.search_range = CONFIG.searchRange;
 
 
 %% Initialize output arrays
@@ -99,7 +103,7 @@ OUTPUT = initializeOutputArrays(length(track.time), CONFIG);
 era5.vortex.lon = zeros(1, length(track.time));
 era5.vortex.lat = zeros(1, length(track.time));
 if CONFIG.debug
-    grid_size = 2 * CONFIG.output_half_size + 1;
+    grid_size = CONFIG.outputGridSize;
     logMsg(-1, "DEBUG", "Output arrays initialized: %d times, %dx%d grid", length(track.time), grid_size, grid_size);
 end
 
@@ -125,7 +129,12 @@ for i = 1:length(track.time)
     [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Polar coordinate interpolation done (grid size=%dx%d)", size(Xq,1), size(Xq,2)); end
 
-    [cutlineIdx_inner, isInsideInner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
+    [cutlineIdx_filter, ~, ~] = findCutline(hr_u, hr_v, Xq, Yq, ...
+                                           era5, track, CONFIG, i, CONFIG.filter_isotach);
+    filterRadiusDegrees = (mean(cutlineIdx_filter, "all") - 1) * ...
+        CONFIG.radialIncrementDegrees;
+
+    [~, isInsideInner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
                                                            era5, track, CONFIG, i, ...
                                                            CONFIG.wind_threshold_inner);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Inner cutline found: mean radius=%.1f km, points inside=%d", mean(distance_inner), sum(isInsideInner)); end
@@ -135,12 +144,12 @@ for i = 1:length(track.time)
                                            CONFIG.wind_threshold_outer);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Outer cutline found: mean radius=%.1f km, points inside=%d", mean(distance_outer), sum(isInsideOuter)); end
 
-    meanInnerRadiusDeg = mean(cutlineIdx_inner, "all") * CONFIG.max_radius_deg / CONFIG.num_radial_points;
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Mean inner vortex radius=%.4f deg", meanInnerRadiusDeg); end
-
     basic = computeBasicField(slp, u10, v10, ...
-                              track, CONFIG, i, meanInnerRadiusDeg);
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Basic field computed (mean inner radius=%.4f deg)", meanInnerRadiusDeg); end
+        track, CONFIG, i, filterRadiusDegrees);
+    if CONFIG.debug
+        logMsg(-1, "DEBUG", "Basic field computed (filter isotach radius=%.4f deg)", ...
+            filterRadiusDegrees);
+    end
 
     OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
                           basic, slp, u10, v10, ...

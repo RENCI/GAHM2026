@@ -2,7 +2,9 @@
 
 Complete reference for all configuration parameters used by GAHM2026 and SeparateEnvHur.
 
-Configuration files are located in `config/` and follow the naming convention `config_<StormName>.m`. The default config is `config/config_GAHM2026.m`. See the top-level [README](../README.md) for usage examples and auto-chaining behavior.
+Configuration files are located in `config/` and follow the naming convention `config_<StormName>.m`. The default
+config is `config/config_GAHM2026_default.m`. See the top-level [README](../README.md) for usage examples and
+auto-chaining behavior.
 
 ---
 
@@ -37,20 +39,39 @@ Controls ERA5 data extraction and vortex scrubbing. The fields `storm_name`, `st
 | `background_file` | char | Path to ERA5 NetCDF input file. Use `<year>` as a placeholder for the storm year (resolved at runtime by `getERA5Data`) | `'/path/to/<year>/<year>.global.nc'` |
 | `storm_start` | datetime | Start time (from shared) | `storm_start` |
 | `storm_end` | datetime | End time (from shared) | `storm_end` |
-| `grid_half_size` | numeric | Half-size of extraction grid (grid points) | `40` |
-| `output_half_size` | numeric | Half-size of output grid (grid points) | `40` |
-| `filter_domain_size` | numeric | Domain size for Butterworth filtering | `120` |
-| `num_radial_points` | numeric | Radial points for polar interpolation | `1000` |
-| `num_azimuth_points` | numeric | Azimuthal points for polar interpolation | `360` |
-| `max_radius_deg` | numeric | Maximum polar grid radius (degrees) | `10` |
+| `filter_grid_length` | numeric | Side length of the square filter extraction domain (degrees) | `30` |
+| `output_grid_length` | numeric | Side length of the square output and isotach-search domain (degrees) | `20` |
+| `search_radius` | numeric | Physical half-width (degrees) of the square pressure-center search window centered on the track location | `1.5` |
 | `wind_threshold_outer` | numeric | Wind speed threshold for outer cutline (m/s) | `10` |
 | `wind_threshold_inner` | numeric | Wind speed threshold for inner cutline (m/s) | `34/1.944` (~17.5, i.e. 34 kt) |
+| `filter_isotach` | numeric | Independent isotach used to derive the filtering radius (m/s) | `17.5` |
+| `filter_hp_multiplier` | numeric | Multiplier on mean filter-isotach radius for Butterworth half-power wavelength | `25` |
+| `num_points_smoother` | numeric | Circular cutline smoothing width (azimuth samples) | `3` |
+| `isotach_smooth_variance` | numeric | Variance convergence tolerance for isotach smoothing | `2000` |
 | `debug` | logical | Print debug messages | `true` |
 | `output_dir` | char | Output directory for `.mat` file | `'output'` |
 | `storm_name` | char | Storm name (from shared) | `storm_name` |
 | `storm_year` | numeric | Storm year (from shared) | `storm_year` |
 | `storm_designation` | char | Basin + storm number (from shared) | `storm_designation` |
 | `track_file` | char | Track data file path | `fullfile('input', track_file)` |
+
+SeparateEnvHur detects source-grid spacing from strictly monotonic, uniform longitude and latitude vectors; both
+directions must have equal spacing. It converts all three physical settings to cell counts. Each setting must span an
+integer number of cells, while `filter_grid_length` and `output_grid_length` must span even cell counts so their
+domains are centered. Filtering uses the larger `filter_grid_length` square; saved fields and all cutline searches use
+the `output_grid_length` square. The filter isotach is independent of the inner and outer output-mask isotachs, and its
+mean cutline radius multiplied by `filter_hp_multiplier` is the Butterworth half-power wavelength.
+
+Unified configs set `num_azimuth_points = GAHM_compute_info.ntheta` and
+`num_radial_points = GAHM_compute_info.nr`. Azimuth samples cover one revolution without duplicating the seam. Radial
+samples include the storm center and the `output_grid_length/2` endpoint, so the increment is
+`(output_grid_length/2)/(num_radial_points-1)`. The smoothing width and variance tolerance control circular isotach
+smoothing across the azimuth seam.
+
+The physical-degree settings above are the current interface. For one-period compatibility, legacy fixed-cell mode is
+available only when `filter_domain_size`, `grid_half_size`, `output_half_size`, `search_range`, and `max_radius_deg`
+are all supplied together. Partial legacy settings and combinations of legacy and physical-degree settings are
+rejected. In legacy mode only, omitted filtering and smoothing controls retain their legacy defaults.
 
 ---
 
@@ -111,7 +132,13 @@ Controls land-roughness-based wind speed adjustment.
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `flag` | logical | Enable WAF correction | `false` |
-| `file_name` | char | Path to WAF raster (`.tif`). Ignored if `flag = false` | `'input/WAF_15deg_10km_6km_raster_test.tif'` |
+| `file_name` | char | Grid output: WAF raster (`.tif`). Point output: point-WAF MAT-file. Ignored if `flag = false` | `'input/WAF_15deg_10km_6km_raster_test.tif'` |
+
+For point output, the MAT-file must contain `WAF_points`, a struct array whose elements each have real, numeric, finite,
+scalar `lon` and `lat` fields and a nonempty real, numeric, finite `WAF` vector. All vectors have equal length and
+represent equal angular increments beginning at north and proceeding clockwise. Longitude and latitude are each
+matched independently using an absolute tolerance of `1.0e-8` degrees. `applyWAFfromPoints` reports distinct clear
+errors when a requested coordinate pair has zero matches or multiple matches.
 
 ---
 
@@ -136,7 +163,7 @@ When `env_info.type = 3`, the `.mat` file (produced by SeparateEnvHur) must cont
 | `Time(i)` | (nt) | datetime array |
 | `Lo(i,:,:)` | (nt, nlat, nlon) | Longitude grid |
 | `La(i,:,:)` | (nt, nlat, nlon) | Latitude grid |
-| `Vortex_mask(i,:,:)` | (nt, nlat, nlon) | Outer cutline mask (0 = inside, 1 = outside) |
+| `Vortex_mask(i,:,:)` | (nt, nlat, nlon) | Produced outer cutline mask (0 = inside, 1 = outside) |
 | `Vortex_mask_inner(i,:,:)` | (nt, nlat, nlon) | Inner cutline mask (0 = inside, 1 = outside) |
 | `env_msl(i,:,:)` | (nt, nlat, nlon) | Environmental mean sea level pressure (mb) |
 | `env_u10(i,:,:)` | (nt, nlat, nlon) | Environmental E-W wind velocity (m/s) |
@@ -151,6 +178,9 @@ When `env_info.type = 3`, the `.mat` file (produced by SeparateEnvHur) must cont
 | `units` | dictionary | Units metadata |
 
 Times must include all track file times; additional times (e.g., hourly) are permitted.
+
+SeparateEnvHur produces `Vortex_mask`. Readers accept the compatible external-copy field `Vortex_mask_outer` as well
+as the legacy/current `Vortex_mask`; `readEnvAndHurrFields2` prefers `Vortex_mask_outer` when both are present.
 
 ---
 
@@ -196,14 +226,23 @@ The number of longitude and latitude values must be equal and are fixed in time.
 | `Reggrid_out(i)` | `.datetime` | — | Timestamp |
 | | `.Lon` | degrees | Longitude grid |
 | | `.Lat` | degrees | Latitude grid |
+| | `.Mask1` | 0/1 | Inner blending mask |
+| | `.Mask2` | 0/1 | Outer blending mask |
 | `Reggrid_TC_out(i)` | `.VelU` | m/s | Total TC E-W wind velocity |
 | | `.VelV` | m/s | Total TC N-S wind velocity |
 | | `.Press` | mb | Total TC pressure |
-| | `.Mask1` | 0/1 | Outer blending mask |
-| | `.Mask2` | 0/1 | Inner blending mask |
-| `Reggrid_Env_out(i)` | `.U10` | m/s | Environmental E-W velocity |
-| | `.V10` | m/s | Environmental N-S velocity |
+| `Reggrid_Env_out(i)` | `.VelU` | m/s | Environmental E-W velocity |
+| | `.VelV` | m/s | Environmental N-S velocity |
 | | `.Press` | mb | Environmental pressure |
+| `Reggrid_VVor_invtapHur_out(i)` | `.VelU` | m/s | GAHM vortex + inverse-tapered hurricane E-W velocity (`env_info.type = 3`) |
+| | `.VelV` | m/s | GAHM vortex + inverse-tapered hurricane N-S velocity (`env_info.type = 3`) |
+| | `.Press` | mb | GAHM vortex + inverse-tapered hurricane pressure (`env_info.type = 3`) |
+
+`Reggrid_out(i).Mask1` (inner) and `Reggrid_out(i).Mask2` (outer) are present only when `env_info.type = 3`;
+environment types 1 and 2 do not create these fields.
+
+For `env_info.type = 3`, `Reggrid_VVor_invtapHur_out` is the structure array described above. For
+`env_info.type = 1` or `2`, it is the existing numeric all-zero intermediate array rather than a structure array.
 
 ### Point output (`output_info.type = "points"`)
 
@@ -221,6 +260,13 @@ The number of longitude and latitude values must be equal and are fixed in time.
 | | `.U10` | m/s | Environmental E-W velocity |
 | | `.V10` | m/s | Environmental N-S velocity |
 | | `.Press` | mb | Environmental pressure |
+| `Points_VVor_invtapHur_out(i)` | `.datetime`, `.Lon`, `.Lat` | —/degrees | Point coordinates and timestamp |
+| | `.U10`, `.V10` | m/s | GAHM vortex + inverse-tapered hurricane velocity for type 3; zero arrays for types 1 and 2 |
+| | `.Press` | mb | GAHM vortex + inverse-tapered hurricane pressure for type 3; zero array for types 1 and 2 |
+
+When `output_info.type = "points"`, `Points_VVor_invtapHur_out` always contains `datetime`, `Lon`, `Lat`, `U10`,
+`V10`, and `Press`. For `env_info.type = 1` or `2`, its wind and pressure fields are zero arrays with the same shape as
+the point coordinates. For `env_info.type = 3`, they contain the GAHM vortex + inverse-tapered hurricane values.
 
 ### Radial grid data (always returned)
 
@@ -236,7 +282,7 @@ The number of longitude and latitude values must be equal and are fixed in time.
 
 ## Creating a Config for a New Storm
 
-1. Copy `config/config_GAHM2026.m` (or any existing storm config) to `config/config_<StormName>.m`.
+1. Copy `config/config_GAHM2026_default.m` (or any existing storm config) to `config/config_<StormName>.m`.
 2. Update the shared storm identity section:
    ```matlab
    storm_name        = 'MICHAEL';

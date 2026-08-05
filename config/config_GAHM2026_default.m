@@ -29,16 +29,16 @@ storm_end         = datetime(2018,9,14,3,0,0);
 sepenvhur.background_file    = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/<year>/<year>.nc';
 sepenvhur.storm_start        = storm_start;
 sepenvhur.storm_end          = storm_end;
-sepenvhur.grid_half_size     = 40;
-sepenvhur.output_half_size   = 40;
-sepenvhur.filter_domain_size = 120;
-sepenvhur.num_radial_points  = 1000;
-sepenvhur.num_azimuth_points = 360;
-sepenvhur.max_radius_deg     = 10;
-sepenvhur.search_range       = 6;
+sepenvhur.filter_grid_length = 30; % Degrees; filter extraction box side length
+sepenvhur.output_grid_length = 20; % Degrees; output and isotach box side length
+sepenvhur.search_radius      = 1.5; % Degrees from track location
 MS2KT = gahmPhysicalConstants().ms2kt;
 sepenvhur.wind_threshold_outer  = 20/MS2KT; % 20 kts -> m/s
 sepenvhur.wind_threshold_inner  = 34/MS2KT; % 34 kts -> m/s
+sepenvhur.filter_isotach        = 17.5; % m/s
+sepenvhur.filter_hp_multiplier  = 25;
+sepenvhur.num_points_smoother   = 3;
+sepenvhur.isotach_smooth_variance = 2000;
 sepenvhur.debug              = debug;
 sepenvhur.output_dir         = 'output';
 % Populate shared fields into sepenvhur for SeparateEnvHur consumption
@@ -75,6 +75,8 @@ GAHM_param_info.c0                  = 0;
 GAHM_compute_info.ntheta = 24;
 GAHM_compute_info.nr     = 800;
 GAHM_compute_info.delr   = 1000;
+sepenvhur.num_azimuth_points = GAHM_compute_info.ntheta;
+sepenvhur.num_radial_points  = GAHM_compute_info.nr;
 
 %% ===== Wind Adjustment Factor info =====
 WAF_info.flag      = false;    % Wind Adjustment Factor based on land roughness

@@ -251,10 +251,11 @@ obj.resetOpts();
 `GAHM2026Plotter` can ingest SeparateEnvHur output directly via the `fromSepEnvHur` static factory method.  This normalizes the `env_vals` struct into the same `Result` format used by `run_GAHM2026`, enabling all plotting methods.
 
 ```matlab
-obj = GAHM2026Plotter.fromSepEnvHur('separated.mat');
+obj = GAHM2026Plotter.fromSepEnvHur("output/FLORENCE_AL06_2018.mat");
 ```
 
-The factory accepts a `.mat` filename (containing `env_vals`) or a pre-loaded struct.  It creates:
+The factory accepts a MAT-file containing `env_vals` or the preloaded `env_vals` struct itself. SeparateEnvHur names
+these files `<output_dir>/<storm_name>_<storm_designation>_<storm_year>.mat`. It creates:
 
 | Property | Contents |
 |----------|----------|
