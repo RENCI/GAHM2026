@@ -63,10 +63,12 @@ function config = deriveSeparateEnvHurConfig(config, longitude, latitude)
         end
     end
 
-    requiredGridSize = 2*config.filterHalfWidth + 1;
+    requiredHalfWidth = max([config.filter_domain_size, config.grid_half_size, ...
+        config.output_half_size]);
+    requiredGridSize = 2*requiredHalfWidth + 1;
     if numel(longitude) < requiredGridSize || numel(latitude) < requiredGridSize
         error("SeparateEnvHur:GridTooSmall", ...
-            "The loaded grid must contain the configured filter box before allocation.");
+            "The loaded grid must accommodate the largest configured extraction half-width before allocation.");
     end
 end
 

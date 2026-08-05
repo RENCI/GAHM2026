@@ -422,6 +422,18 @@ function testLegacyConfigurationPreservesIndependentFields(testCase)
     verifyEqual(testCase, actual.filter_hp_multiplier, 25);
 end
 
+function testLegacyConfigurationUsesLargestHalfWidthForGridSize(testCase)
+    fieldNames = ["grid_half_size", "output_half_size"];
+    for fieldName = fieldNames
+        config = createLegacyGridConfig();
+        config.(fieldName) = 61;
+
+        verifyError(testCase, ...
+            @() deriveSeparateEnvHurConfig(config, 0:0.25:30, 0:0.25:30), ...
+            "SeparateEnvHur:GridTooSmall");
+    end
+end
+
 function testConfigurationRejectsMixedModes(testCase)
     config = createPhysicalGridConfig();
     config.search_range = 6;
