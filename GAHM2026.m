@@ -115,21 +115,8 @@ if debug, logMsg(fid, "DEBUG", "Environmental fields loaded."); end
 WAF_data = [];
 WAF_metadata = [];
 if WAF_flag
-    if output.type == "grid"
-        if debug, logMsg(fid, "DEBUG", "Loading WAF raster from %s", WAF_info.file_name); end
-        [WAF_data, WAF_metadata] = readgeoraster(WAF_info.file_name);
-    elseif output.type == "points"
-        if debug, logMsg(fid, "DEBUG", "Loading WAF points from %s", WAF_info.file_name); end
-        WAF_file = load(WAF_info.file_name, "WAF_points");
-        if ~isfield(WAF_file, "WAF_points")
-            error("GAHM2026:MissingWafPoints", ...
-                "The point WAF file must contain a variable named WAF_points.");
-        end
-        WAF_data = WAF_file.WAF_points;
-    else
-        error("GAHM2026:InvalidOutputType", ...
-            "Output type must be either grid or points when WAF is enabled.");
-    end
+    if debug, logMsg(fid, "DEBUG", "Loading WAF data from %s", WAF_info.file_name); end
+    [WAF_data, WAF_metadata] = loadWAFData(output.type, WAF_info.file_name);
 end
 
 %% Main time loop
@@ -576,14 +563,8 @@ for i = 1:itot
     Reggrid_VVor_WAF_out(i) = Reggrid_VVor_out(i);
 
     if WAF_flag
-        if output.type == "grid"
-            Reggrid_VVor_WAF = applyWAFfromRaster(WAF_data, WAF_metadata, ...
-                Reggrid_VVor_out(i), longrid, latgrid);
-        elseif output.type == "points"
-            Reggrid_VVor_WAF = applyWAFfromPoints(WAF_data, Reggrid_VVor_out(i), longrid, latgrid);
-        end
-        Reggrid_VVor_WAF_out(i).VelU = Reggrid_VVor_WAF.VelU;
-        Reggrid_VVor_WAF_out(i).VelV = Reggrid_VVor_WAF.VelV;
+        Reggrid_VVor_WAF_out(i) = applyWAFforOutput(output.type, WAF_data, ...
+            WAF_metadata, Reggrid_VVor_out(i), longrid, latgrid);
     end
 
 % assemble final blended outputs by env_type

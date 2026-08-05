@@ -169,37 +169,109 @@ function testMissingVelocityFieldsRaiseError(testCase)
         "applyWAFfromPoints:MissingVelocityField");
 end
 
-function testMainPipelineDispatchesWafByOutputType(testCase)
-    source = readlines(fullfile(testCase.TestData.ProjectDirectory, "GAHM2026.m"));
-    source = join(source, newline);
+function testPointWafMatLoading(testCase)
+    fileName = string(tempname) + ".mat";
+    cleanupFile = onCleanup(@() deleteIfPresent(fileName));
+    WAF_points = createWafPoint(-75, 35, [1, 2, 3, 4]);
+    save(fileName, "WAF_points");
 
-    verifySubstring(testCase, source, ...
-        "[WAF_data, WAF_metadata] = readgeoraster(WAF_info.file_name)");
-    verifySubstring(testCase, source, ...
-        "load(WAF_info.file_name, ""WAF_points"")");
-    verifySubstring(testCase, source, "applyWAFfromRaster(WAF_data, WAF_metadata");
-    verifySubstring(testCase, source, ...
-        "applyWAFfromPoints(WAF_data, Reggrid_VVor_out(i), longrid, latgrid)");
+    [actual, metadata] = loadWAFData("points", fileName);
+
+    verifyEqual(testCase, actual, WAF_points);
+    verifyEmpty(testCase, metadata);
 end
 
-function testPointWafInputIsValidatedAndGridDiagnosticIsGuarded(testCase)
+function testPointWafMatLoadingRequiresNamedVariable(testCase)
+    fileName = string(tempname) + ".mat";
+    cleanupFile = onCleanup(@() deleteIfPresent(fileName));
+    unrelated = 1;
+    save(fileName, "unrelated");
+
+    verifyError(testCase, @() loadWAFData("points", fileName), ...
+        "GAHM2026:MissingWafPoints");
+end
+
+function testPointWafDispatchPreservesPressureAndMetadata(testCase)
+    wafPoints = createWafPoint(-75, 35, [1, 2, 3, 4]);
+    vortex = struct("VelU", -10, "VelV", 0, "Speed", 10, ...
+        "Press", 975, "StormName", "Synthetic");
+
+    actual = applyWAFforOutput("points", wafPoints, [], vortex, -75, 35);
+
+    verifyEqual(testCase, actual.VelU, -20, "AbsTol", 1.0e-12);
+    verifyEqual(testCase, actual.VelV, 0, "AbsTol", 1.0e-12);
+    verifyEqual(testCase, actual.Speed, 20, "AbsTol", 1.0e-12);
+    verifyEqual(testCase, actual.Press, 975);
+    verifyEqual(testCase, actual.StormName, "Synthetic");
+end
+
+function testGridWafDispatchPreservesPressure(testCase)
+    raster = 2*ones(2, 2, 4);
+    metadata = struct("LongitudeLimits", [-76, -74], "LatitudeLimits", [34, 36]);
+    vortex = struct("VelU", -10, "VelV", 0, "Press", 980, "Tag", 17);
+
+    actual = applyWAFforOutput("grid", raster, metadata, vortex, -75, 35);
+
+    verifyEqual(testCase, actual.VelU, -20, "AbsTol", 1.0e-12);
+    verifyEqual(testCase, actual.VelV, 0, "AbsTol", 1.0e-12);
+    verifyEqual(testCase, actual.Press, 980);
+    verifyEqual(testCase, actual.Tag, 17);
+end
+
+function testWafHelpersRejectInvalidOutputTypes(testCase)
+    verifyError(testCase, @() loadWAFData("invalid", "unused"), ...
+        "GAHM2026:InvalidOutputType");
+    verifyError(testCase, ...
+        @() applyWAFforOutput("invalid", [], [], struct(), [], []), ...
+        "GAHM2026:InvalidOutputType");
+end
+
+function testPointPackagingCopiesAllFieldsValuesAndShapes(testCase)
+    coordinates = createCoordinates();
+    tc = createRegularField(1);
+    environment = createRegularField(10);
+    intermediate = createRegularField(100);
+
+    [pointsTc, pointsEnvironment, pointsIntermediate] = ...
+        createPointOutputs(coordinates, tc, environment, intermediate);
+
+    verifyPointResult(testCase, pointsTc, coordinates, tc);
+    verifyPointResult(testCase, pointsEnvironment, coordinates, environment);
+    verifyPointResult(testCase, pointsIntermediate, coordinates, intermediate);
+end
+
+function testPointPackagingCreatesShapedZerosForTypeOneAndTwoIntermediate(testCase)
+    coordinates = createCoordinates();
+    tc = createRegularField(1);
+    environment = createRegularField(10);
+
+    [~, ~, intermediate] = createPointOutputs(coordinates, tc, environment, 0);
+
+    verifyEqual(testCase, intermediate.datetime, coordinates.datetime);
+    verifyEqual(testCase, intermediate.Lon, coordinates.Lon);
+    verifyEqual(testCase, intermediate.Lat, coordinates.Lat);
+    verifySize(testCase, intermediate.U10, size(coordinates.Lon));
+    verifyEqual(testCase, intermediate.U10, zeros(size(coordinates.Lon)));
+    verifyEqual(testCase, intermediate.V10, zeros(size(coordinates.Lon)));
+    verifyEqual(testCase, intermediate.Press, zeros(size(coordinates.Lon)));
+end
+
+function testGridDiagnosticGuardOnlyStructuralBecauseFullFixtureIsDisproportionate(testCase)
+    % A complete GAHM radial diagnostic fixture requires track and environmental datasets.
     source = join(readlines(fullfile(testCase.TestData.ProjectDirectory, "GAHM2026.m")), newline);
 
-    verifySubstring(testCase, source, "isfield(WAF_file, ""WAF_points"")");
     verifySubstring(testCase, source, "if output.type == ""grid""" + newline + ...
         "        FU = griddedInterpolant");
 end
 
-function testPointIntermediateResultIsPackaged(testCase)
+function testCallerRetainsGenericAssignmentsStructuralDueToNoPracticalRunSeam(testCase)
     source = join(readlines(fullfile(testCase.TestData.ProjectDirectory, "run_GAHM2026.m")), newline);
-    requiredFields = ["datetime", "Lon", "Lat", "U10", "V10", "Press"];
+    genericFields = ["Reggrid_out", "Reggrid_TC_out", "Reggrid_Env_out", ...
+        "Reggrid_VVor_invtapHur_out"];
 
-    for fieldName = requiredFields
-        verifySubstring(testCase, source, "Points_VVor_invtapHur_out(i)." + fieldName);
+    for fieldName = genericFields
+        verifySubstring(testCase, source, "Result." + fieldName);
     end
-    verifySubstring(testCase, source, ...
-        "Result.Points_VVor_invtapHur_out = Points_VVor_invtapHur_out");
-    verifySubstring(testCase, source, "Result.Reggrid_VVor_invtapHur_out");
 end
 
 function wafPoint = createWafPoint(longitude, latitude, waf)
@@ -212,4 +284,32 @@ end
 
 function callWithWaf(wafPoints)
     applyWAFfromPoints(wafPoints, struct("VelU", 0, "VelV", -10), -75, 35);
+end
+
+function coordinates = createCoordinates()
+    coordinates = struct("datetime", datetime(2026, 8, 5, 12, 0, 0), ...
+        "Lon", [-75; -74], "Lat", [35; 36]);
+end
+
+function field = createRegularField(offset)
+    field = struct("VelU", offset + [1; 2], "VelV", offset + [3; 4], ...
+        "Press", offset + [5; 6]);
+end
+
+function verifyPointResult(testCase, actual, coordinates, expectedField)
+    verifyEqual(testCase, fieldnames(actual), ...
+        {'datetime'; 'Lon'; 'Lat'; 'U10'; 'V10'; 'Press'});
+    verifyEqual(testCase, actual.datetime, coordinates.datetime);
+    verifyEqual(testCase, actual.Lon, coordinates.Lon);
+    verifyEqual(testCase, actual.Lat, coordinates.Lat);
+    verifyEqual(testCase, actual.U10, expectedField.VelU);
+    verifyEqual(testCase, actual.V10, expectedField.VelV);
+    verifyEqual(testCase, actual.Press, expectedField.Press);
+    verifySize(testCase, actual.U10, size(coordinates.Lon));
+end
+
+function deleteIfPresent(fileName)
+    if isfile(fileName)
+        delete(fileName);
+    end
 end
