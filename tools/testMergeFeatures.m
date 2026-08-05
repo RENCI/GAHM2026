@@ -483,20 +483,130 @@ function testEra5DimensionsMustMatchCoordinatesAndTime(testCase)
         "SeparateEnvHur:DimensionMismatch");
 end
 
-function testComputeBasicFieldUsesDirectHalfPowerWavelength(testCase)
+function testComputeBasicFieldDerivesFilterFromNormalizedConfig(testCase)
     field = reshape(sin(1:6561), 81, 81);
     track = struct("lat_idx", 41, "lon_idx", 41);
-    config = struct("filter_domain_size", 20);
-    wavelength = 10;
+    config = struct("filterHalfWidth", 20, "gridSpacingDegrees", 0.5, ...
+        "filter_hp_multiplier", 5);
+    filterRadius = 2;
+    wavelength = filterRadius*config.filter_hp_multiplier;
     filter = designfilt("lowpassiir", FilterOrder=5, HalfPowerFrequency=1/wavelength, ...
-        DesignMethod="butter", SampleRate=4);
+        DesignMethod="butter", SampleRate=1/config.gridSpacingDegrees);
     rows = 21:61;
     average = mean(field(rows, rows), "all");
     expected = applyButterworthFilter2D(field-average, filter, rows, rows) + average;
 
-    actual = computeBasicField(field, field, field, track, config, 1, wavelength);
+    actual = computeBasicField(field, field, field, track, config, 1, filterRadius);
 
     verifyEqual(testCase, actual.slp, expected, AbsTol=1.0e-12);
+end
+
+function testPolarGeometryHasEndpointSafeAzimuthRows(testCase)
+    for azimuthCount = [24, 360]
+        [era5, track, config] = createSyntheticPolarInputs(azimuthCount);
+
+        [Xq, Yq] = convertToPolarCoords(era5, track, config, 1);
+        angles = mod(atan2d(Yq(:, end), Xq(:, end)), 360);
+
+        verifySize(testCase, Xq, [azimuthCount, config.numRadialPoints]);
+        verifyEqual(testCase, angles, (0:azimuthCount-1)'*360/azimuthCount, ...
+            AbsTol=1.0e-10);
+        verifyEqual(testCase, numel(unique(round(angles, 10))), azimuthCount);
+    end
+end
+
+function testCutlineExtractionUsesCorrespondingPolarRow(testCase)
+    for azimuthCount = [24, 360]
+        radialCount = 8;
+        Xq = repmat((1:azimuthCount)', 1, radialCount);
+        Yq = repmat(1:radialCount, azimuthCount, 1);
+        cutlineIndex = mod((1:azimuthCount)'-1, radialCount) + 1;
+
+        [longitude, latitude] = extractCutlineCoords(cutlineIndex, Xq, Yq);
+
+        verifyEqual(testCase, longitude, 1:azimuthCount);
+        verifyEqual(testCase, latitude, cutlineIndex');
+    end
+end
+
+function testCircularSmoothUsesRequestedWidthAndMiddleCopy(testCase)
+    values = (1:24)';
+    expectedTripled = movmean([values; values; values], 5);
+
+    actual = applyCircularSmooth(values, 24, 5);
+
+    verifyEqual(testCase, actual, expectedTripled(25:48));
+end
+
+function testOutputArraysUseConfiguredGeometryAndLogicalMasks(testCase)
+    for azimuthCount = [24, 360]
+        config = struct("outputGridSize", 9, "numAzimuthPoints", azimuthCount);
+
+        output = initializeOutputArrays(2, config);
+
+        verifySize(testCase, output.mask, [2, 9, 9]);
+        verifyTrue(testCase, islogical(output.mask));
+        verifyTrue(testCase, islogical(output.mask_inner));
+        verifySize(testCase, output.distance_outer, [2, azimuthCount]);
+        verifySize(testCase, output.distance_inner, [2, azimuthCount]);
+    end
+end
+
+function testDistanceUsesActualAzimuthVectorLength(testCase)
+    radiusDegrees = ones(1, 360);
+
+    actual = computeDistanceKm(radiusDegrees, 60);
+
+    verifySize(testCase, actual, [1, 360]);
+    verifyEqual(testCase, actual(1), 111.32*cosd(60), AbsTol=1.0e-10);
+    verifyEqual(testCase, actual(91), 110.54, AbsTol=1.0e-10);
+end
+
+function testNaNWindTerminatesEachRadialSearch(testCase)
+    [era5, track, config] = createSyntheticPolarInputs(24);
+    config.numRadialPoints = 10;
+    config.radialIncrementDegrees = 1;
+    config.outputHalfWidth = 2;
+    config.isotach_smooth_variance = Inf;
+    config.num_points_smoother = 3;
+    angles = (0:23)'*15;
+    radii = 0:9;
+    [Xq, Yq] = pol2cart(deg2rad(angles), ones(24, 1)*radii);
+    hrU = -20*sind(angles)*ones(1, 10);
+    hrV = 20*cosd(angles)*ones(1, 10);
+    hrU(:, 4) = NaN;
+    hrV(:, 4) = NaN;
+
+    cutlineIndex = findCutline(hrU, hrV, Xq, Yq, era5, track, config, 1, 10);
+
+    verifyEqual(testCase, cutlineIndex, 4*ones(24, 1));
+end
+
+function testOutputDomainNearGridEdgeRaisesClearError(testCase)
+    [era5, track, config] = createSyntheticPolarInputs(24);
+    track.lat_idx = 1;
+    config.outputHalfWidth = 2;
+    config.numRadialPoints = 10;
+    config.radialIncrementDegrees = 1;
+    config.isotach_smooth_variance = Inf;
+    config.num_points_smoother = 3;
+    [Xq, Yq] = meshgrid(0:9, 1:24);
+    wind = zeros(24, 10);
+
+    verifyError(testCase, ...
+        @() findCutline(wind, wind, Xq, Yq, era5, track, config, 1, 10), ...
+        "SeparateEnvHur:OutputDomainOutOfBounds");
+end
+
+function testSmoothingAndConvexityRespectIterationBounds(testCase)
+    alternating = repmat([1; 100], 12, 1);
+    smoothed = smoothCutline(alternating, -1, 24, 1);
+    verifyEqual(testCase, smoothed, alternating);
+
+    Xq = zeros(24, 100);
+    Yq = zeros(24, 100);
+    convexResult = ensureConvexCutline(alternating, Xq, Yq, 24, 1);
+    verifyEqual(testCase, convexResult, alternating);
 end
 
 function testDefaultConfigDerivesSeparateEnvHurPointCounts(testCase)
@@ -522,6 +632,19 @@ function config = createLegacyGridConfig()
         "output_half_size", 40, "search_range", 6, "max_radius_deg", 12, ...
         "num_azimuth_points", 24, "num_radial_points", 800, ...
         "wind_threshold_inner", 17.5);
+end
+
+function [era5, track, config] = createSyntheticPolarInputs(azimuthCount)
+    coordinates = -10:0.5:10;
+    [longitudeGrid, latitudeGrid] = meshgrid(coordinates, coordinates);
+    era5 = struct("lon", coordinates, "lat", coordinates, ...
+        "lon_grid", longitudeGrid, "lat_grid", latitudeGrid, ...
+        "u10", zeros(41, 41, 1), "v10", zeros(41, 41, 1), ...
+        "vortex", struct("lon", 0, "lat", 0));
+    track = struct("lon_idx", 21, "lat_idx", 21, "lon", 0, "lat", 0);
+    config = struct("outputHalfWidth", 20, "outputGridSize", 41, ...
+        "numAzimuthPoints", azimuthCount, "numRadialPoints", 21, ...
+        "radialIncrementDegrees", 0.5, "gridSpacingDegrees", 0.5);
 end
 
 function vortexPoints = createWind(speed, direction)

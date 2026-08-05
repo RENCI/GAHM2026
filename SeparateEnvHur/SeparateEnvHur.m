@@ -144,9 +144,8 @@ for i = 1:length(track.time)
                                            CONFIG.wind_threshold_outer);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Outer cutline found: mean radius=%.1f km, points inside=%d", mean(distance_outer), sum(isInsideOuter)); end
 
-    halfPowerWavelengthDegrees = filterRadiusDegrees*CONFIG.filter_hp_multiplier;
     basic = computeBasicField(slp, u10, v10, ...
-        track, CONFIG, i, halfPowerWavelengthDegrees);
+        track, CONFIG, i, filterRadiusDegrees);
     if CONFIG.debug
         logMsg(-1, "DEBUG", "Basic field computed (filter isotach radius=%.4f deg)", ...
             filterRadiusDegrees);
