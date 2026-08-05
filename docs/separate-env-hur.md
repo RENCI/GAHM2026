@@ -15,11 +15,14 @@ automatically runs this preprocessing step if the configured MAT-file does not e
 
 The ERA5 NetCDF input must contain `msl`, `u10`, `v10`, `time`, longitude, and latitude data. The source longitude and
 latitude spacing must be uniform and equal. Filtering requires MATLAB's Signal Processing Toolbox (`designfilt` and
-`filtfilt`), and storm selection requires the configured IBTrACS track file.
+`filtfilt`), and storm selection requires the configured IBTrACS track file. For standalone use, that track file must
+already exist at its configured path. `run_GAHM2026` downloads a missing configured IBTrACS file automatically, or you
+can download it manually before calling SeparateEnvHur directly.
 
 From the repository root, run the default Florence configuration independently with:
 
 ```matlab
+addpath("util")
 addpath("SeparateEnvHur")
 env_vals = SeparateEnvHur("config/config_GAHM2026_default");
 ```
@@ -32,8 +35,9 @@ See [Configuration]({{ '/configuration/' | relative_url }}) for the unified sett
   the smaller square saved in the result and used for cutline searches.
 - At each time, the pressure center is the minimum sea-level pressure within the configured search radius around the
   best-track position.
-- Polar interpolation finds an outer cutline at the configured 10 m/s wind threshold and an inner cutline at 34 kt
-  (about 17.5 m/s). The cutlines are smoothed circularly across the azimuth seam.
+- Polar interpolation finds an outer cutline at the default 20 kt (about 10.3 m/s) wind threshold and an inner
+  cutline at the default 34 kt (about 17.5 m/s) threshold. Both thresholds are configurable. The cutlines are smoothed
+  circularly across the azimuth seam.
 - A separate, independently configured filter isotach determines the filter radius; it is not tied to either cutline.
 - A Butterworth spatial filter uses that radius and the half-power multiplier to estimate environmental pressure and
   wind on the larger domain.
