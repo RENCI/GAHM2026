@@ -6,6 +6,7 @@ end
 function setupOnce(testCase)
     toolsDirectory = fileparts(mfilename("fullpath"));
     projectDirectory = fileparts(toolsDirectory);
+    testCase.TestData.ProjectDirectory = projectDirectory;
     testCase.TestData.OriginalPath = path;
     addpath(fullfile(projectDirectory, "util"));
 end
@@ -166,6 +167,39 @@ function testMissingVelocityFieldsRaiseError(testCase)
         "applyWAFfromPoints:MissingVelocityField");
     verifyError(testCase, @() applyWAFfromPoints(wafPoints, struct("VelU", 0), -75, 35), ...
         "applyWAFfromPoints:MissingVelocityField");
+end
+
+function testMainPipelineDispatchesWafByOutputType(testCase)
+    source = readlines(fullfile(testCase.TestData.ProjectDirectory, "GAHM2026.m"));
+    source = join(source, newline);
+
+    verifySubstring(testCase, source, ...
+        "[WAF_data, WAF_metadata] = readgeoraster(WAF_info.file_name)");
+    verifySubstring(testCase, source, ...
+        "load(WAF_info.file_name, ""WAF_points"")");
+    verifySubstring(testCase, source, "applyWAFfromRaster(WAF_data, WAF_metadata");
+    verifySubstring(testCase, source, ...
+        "applyWAFfromPoints(WAF_data, Reggrid_VVor_out(i), longrid, latgrid)");
+end
+
+function testPointWafInputIsValidatedAndGridDiagnosticIsGuarded(testCase)
+    source = join(readlines(fullfile(testCase.TestData.ProjectDirectory, "GAHM2026.m")), newline);
+
+    verifySubstring(testCase, source, "isfield(WAF_file, ""WAF_points"")");
+    verifySubstring(testCase, source, "if output.type == ""grid""" + newline + ...
+        "        FU = griddedInterpolant");
+end
+
+function testPointIntermediateResultIsPackaged(testCase)
+    source = join(readlines(fullfile(testCase.TestData.ProjectDirectory, "run_GAHM2026.m")), newline);
+    requiredFields = ["datetime", "Lon", "Lat", "U10", "V10", "Press"];
+
+    for fieldName = requiredFields
+        verifySubstring(testCase, source, "Points_VVor_invtapHur_out(i)." + fieldName);
+    end
+    verifySubstring(testCase, source, ...
+        "Result.Points_VVor_invtapHur_out = Points_VVor_invtapHur_out");
+    verifySubstring(testCase, source, "Result.Reggrid_VVor_invtapHur_out");
 end
 
 function wafPoint = createWafPoint(longitude, latitude, waf)
