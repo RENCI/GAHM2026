@@ -2,7 +2,9 @@
 
 Complete reference for all configuration parameters used by GAHM2026 and SeparateEnvHur.
 
-Configuration files are located in `config/` and follow the naming convention `config_<StormName>.m`. The default config is `config/config_GAHM2026.m`. See the top-level [README](../README.md) for usage examples and auto-chaining behavior.
+Configuration files are located in `config/` and follow the naming convention `config_<StormName>.m`. The default
+config is `config/config_GAHM2026_default.m`. See the top-level [README](../README.md) for usage examples and
+auto-chaining behavior.
 
 ---
 
@@ -280,7 +282,7 @@ the point coordinates. For `env_info.type = 3`, they contain the GAHM vortex + i
 
 ## Creating a Config for a New Storm
 
-1. Copy `config/config_GAHM2026.m` (or any existing storm config) to `config/config_<StormName>.m`.
+1. Copy `config/config_GAHM2026_default.m` (or any existing storm config) to `config/config_<StormName>.m`.
 2. Update the shared storm identity section:
    ```matlab
    storm_name        = 'MICHAEL';

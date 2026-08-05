@@ -32,14 +32,15 @@ The main function `SeparateEnvHur.m` processes ERA5 reanalysis data for a specif
 
 ### Recommended: unified config (shared with GAHM2026)
 
-SeparateEnvHur shares a configuration file with GAHM2026.  The default config is `config/config_GAHM2026.m` in the project root; storm-specific configs follow the same pattern (e.g., `config/config_Florence.m`).
+SeparateEnvHur shares a configuration file with GAHM2026. The default config is
+`config/config_GAHM2026_default.m` in the project root; storm-specific configs follow the same pattern (for example,
+`config/config_Ian.m`).
 
 Running via `run_GAHM2026` is the simplest approach — it auto-runs SeparateEnvHur when the `.mat` file is missing:
 
 ```matlab
 >> cd GAHM2026
->> run_GAHM2026                          % uses config/config_GAHM2026.m
->> run_GAHM2026('config_Florence')       % uses config/config_Florence.m
+>> run_GAHM2026                          % uses config/config_GAHM2026_default.m
 ```
 
 To run SeparateEnvHur standalone with a unified config:
@@ -47,14 +48,14 @@ To run SeparateEnvHur standalone with a unified config:
 ```matlab
 >> cd GAHM2026
 >> addpath('SeparateEnvHur')
->> env_vals = SeparateEnvHur('config/config_GAHM2026');
+>> env_vals = SeparateEnvHur('config/config_GAHM2026_default');
 ```
 
 You can also pass a struct directly:
 
 ```matlab
 >> CONFIG = struct('background_file','path/to/era5.nc', 'storm_name','FLORENCE', ...
->>              'storm_designation','AL062018', ...
+>>              'storm_designation','AL06', ...
 >>              'storm_year',2018, 'track_file','input/ibtracs.NA.list.v04r01.csv', ...
 >>              'storm_start',datetime(2018,9,10,0,0,0), ...
 >>              'storm_end',datetime(2018,9,18,0,0,0), ...
@@ -68,7 +69,8 @@ You can also pass a struct directly:
 >> env_vals = SeparateEnvHur(CONFIG);
 ```
 
-Output is saved as `<STORM_NAME>_<DESIGNATION>_<YEAR>.mat` (e.g., `FLORENCE_AL062018_2018.mat`).  If `output_dir` is set in the config, the file is saved there (e.g., `output/FLORENCE_AL062018_2018.mat`).
+Output uses `<STORM_NAME>_<DESIGNATION>_<YEAR>.mat`. If `output_dir` is set, the file is saved there; the default
+config therefore writes `output/FLORENCE_AL06_2018.mat`. The MAT-file contains the top-level `env_vals` struct.
 
 ## Configuration Parameters
 

@@ -15,10 +15,11 @@ V1.3, April 2026
 ```matlab
 cd GAHM2026
 R = run_GAHM2026;                          % uses default config/config_GAHM2026_default.m
-R = run_GAHM2026('config_Florence');       % uses config/config_Florence.m
 ```
 
-`run_GAHM2026` returns a `Result` struct containing all output fields (see [Output](#output) below). If the SeparateEnvHur `.mat` file does not exist (e.g., `output/FLORENCE_2018_AL06.mat`), it will automatically run SeparateEnvHur to generate it before proceeding.
+`run_GAHM2026` returns a `Result` struct containing all output fields (see [Output](#output) below). If the
+SeparateEnvHur MAT-file does not exist (for the default config, `output/FLORENCE_AL06_2018.mat`), it automatically
+runs SeparateEnvHur to generate the file before proceeding.
 
 ### Plotting
 
@@ -41,7 +42,6 @@ You can run SeparateEnvHur standalone using the same config file:
 cd GAHM2026
 addpath('SeparateEnvHur')
 env_vals = SeparateEnvHur('config/config_GAHM2026_default');  % default config
-env_vals = SeparateEnvHur('config/config_Florence');          % storm-specific config
 ```
 
 ### Plotting SeparateEnvHur output
@@ -73,7 +73,7 @@ GAHM2026/
 ├── GAHM2026.m                 — main GAHM2026 orchestrator
 ├── config/
 │   ├── config_GAHM2026_default.m — default config (SeparateEnvHur + GAHM2026)
-│   └── config_Florence.m      — example storm-specific config
+│   └── config_Ian.m           — example storm-specific config
 ├── util/                      — GAHM2026 pipeline functions and shared utilities
 ├── input/                     — track files (IBTrACS, ATCF, fort22)
 ├── output/                    — NetCDF output, warning logs
@@ -153,10 +153,14 @@ See [`documentation/README_config.md`](documentation/README_config.md) for full 
 The `env_info.file_name` is derived from the shared storm identity:
 
 ```matlab
-env_info.file_name = sprintf('%s_%d', storm_name, storm_year);  % e.g. 'FLORENCE_2018'
+env_info.file_name = fullfile("output", ...
+    sprintf("%s_%s_%d", storm_name, storm_designation, storm_year));
+% Default: output/FLORENCE_AL06_2018
 ```
 
-This matches the output filename that SeparateEnvHur produces (`FLORENCE_2018.mat`), so the two projects are linked without any manual coordination.
+SeparateEnvHur appends `.mat` and saves the `env_vals` struct at that path. Its generic naming rule is
+`<output_dir>/<storm_name>_<storm_designation>_<storm_year>.mat`, so the two projects are linked without manual
+coordination.
 
 ---
 
@@ -164,7 +168,8 @@ This matches the output filename that SeparateEnvHur produces (`FLORENCE_2018.ma
 
 When `run_GAHM2026` is called and `env_info.type == 3`:
 
-1. It checks whether `<env_info.file_name>.mat` exists (e.g., `output/FLORENCE_2018_AL06.mat`). This mat file contains the environmental fields needed by GAHM2026.
+1. It checks whether `<env_info.file_name>.mat` exists (for example, `output/FLORENCE_AL06_2018.mat`). This MAT-file
+   contains the environmental fields needed by GAHM2026.
 2. If the file exists → proceeds directly to GAHM2026 computation.
 3. If the file is missing → calls `SeparateEnvHur(sepenvhur)`, saves the `.mat` file, and continues to GAHM2026.
 
@@ -173,12 +178,12 @@ run_GAHM2026
   │
   ├── Load config → storm_info, sepenvhur, env_info, ...
   ├── Download IBTrACS if missing
-  ├── Check for FLORENCE_2018.mat
+  ├── Check for output/FLORENCE_AL06_2018.mat
   │     │
   │     └── Missing? ──► SeparateEnvHur(sepenvhur)
   │                         ├── Load ERA5 NetCDF
   │                         ├── Extract & filter vortex
-  │                         └── Save FLORENCE_2018.mat
+  │                         └── Save output/FLORENCE_AL06_2018.mat
   │
   ├── GAHM2026 computation
   └── Write NetCDF output
@@ -278,7 +283,8 @@ Dataset {
 
 ### Gridded NetCDF output (`output_info.type = "grid"`)
 
-A NetCDF file is written to `output/<storm>_<year>_<designation>.nc` (e.g.,  `FLORENCE_AL06_2018.nc`) containing:
+A NetCDF file is written to `output/<storm>_<year>.nc` (for the default config, `output/FLORENCE_2018.nc`)
+containing:
 - Combined TC wind and pressure fields (`Reggrid_TC_out`)
 - Environmental fields (`Reggrid_Env_out`)
 - Grid coordinates and timestamps (`Reggrid_out`)
@@ -289,7 +295,8 @@ MATLAB structs are returned in the `Result` struct with wind velocity (U10, V10)
 
 ### SeparateEnvHur intermediate output
 
-The `.mat` file (e.g., `FLORENCE_2018_AL06.mat`) contains the `env_vals` struct with:
+The MAT-file follows `<output_dir>/<storm_name>_<storm_designation>_<storm_year>.mat`. For example,
+`output/FLORENCE_AL06_2018.mat` contains the `env_vals` struct with:
 - Environmental fields: `env_msl`, `env_u10`, `env_v10`
 - Hurricane fields: `hur_msl`, `hur_u10`, `hur_v10`
 - Vortex masks: `Vortex_mask`, `Vortex_mask_inner`

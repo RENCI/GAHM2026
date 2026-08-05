@@ -61,7 +61,7 @@ classdef GAHM2026Plotter < handle
 %   obj.timeSeriesPlot({'Vmax','Pc','Rmax'}, 10);
 %
 % EXAMPLE (SeparateEnvHur)
-%   obj = GAHM2026Plotter.fromSepEnvHur('separated.mat');
+%   obj = GAHM2026Plotter.fromSepEnvHur("output/FLORENCE_AL06_2018.mat");
 %   obj.contourMap('mvelcon', 1, 5);
 %   obj.differenceMap(obj.EnvData, obj.HurData, 'speed', 2, 5);
 %
