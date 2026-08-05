@@ -236,6 +236,9 @@ The number of longitude and latitude values must be equal and are fixed in time.
 | | `.VelV` | m/s | GAHM vortex + inverse-tapered hurricane N-S velocity (`env_info.type = 3`) |
 | | `.Press` | mb | GAHM vortex + inverse-tapered hurricane pressure (`env_info.type = 3`) |
 
+`Reggrid_out(i).Mask1` (inner) and `Reggrid_out(i).Mask2` (outer) are present only when `env_info.type = 3`;
+environment types 1 and 2 do not create these fields.
+
 For `env_info.type = 3`, `Reggrid_VVor_invtapHur_out` is the structure array described above. For
 `env_info.type = 1` or `2`, it is the existing numeric all-zero intermediate array rather than a structure array.
 

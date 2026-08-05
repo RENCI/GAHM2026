@@ -263,7 +263,7 @@ Dataset {
 
 | Field | Contents |
 |-------|----------|
-| `Result.Reggrid_out` | Grid coordinates (`.Lon`, `.Lat`), `.datetime`, `.Mask1`, `.Mask2` |
+| `Result.Reggrid_out` | Grid coordinates (`.Lon`, `.Lat`) and `.datetime`; for `env_info.type = 3` only, `.Mask1` (inner) and `.Mask2` (outer). Types 1 and 2 do not create the mask fields |
 | `Result.Reggrid_TC_out` | Final blended TC fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
 | `Result.Reggrid_Env_out` | Environmental fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
 | `Result.Reggrid_VVor_invtapHur_out` | GAHM vortex + inverse-tapered hurricane (env_type=3 only; 0 for env_type 1,2) |
