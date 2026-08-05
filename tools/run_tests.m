@@ -18,6 +18,9 @@ function success = run_tests()
     addpath(fullfile(projdir, 'util'))
     addpath(fullfile(projdir, 'SeparateEnvHur'))
 
+    focusedResults = runtests(fullfile(toolsdir, "testMergeFeatures.m"));
+    assertSuccess(focusedResults);
+
     compare_to_baseline
 
     success = (total_fail == 0 && total_pass > 0);
