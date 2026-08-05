@@ -1,15 +1,13 @@
-function basic = computeBasicField(psl, u, v, track, CONFIG, i, meanInnerRadiusDeg)
+function basic = computeBasicField(psl, u, v, track, CONFIG, i, halfPowerWavelength)
     half = CONFIG.filter_domain_size;
     rows = track.lat_idx(i)-half : track.lat_idx(i)+half;
     cols = track.lon_idx(i)-half : track.lon_idx(i)+half;
 
-    FILTER_RADIUS_SCALE = 0.04;
     FILTER_ORDER = 5;
     SAMPLE_RATE = 4;
-    half_power_wl = meanInnerRadiusDeg / FILTER_RADIUS_SCALE;
     lowpassFilter = designfilt('lowpassiir', ...
                     'FilterOrder', FILTER_ORDER, ...
-                    'HalfPowerFrequency', 1/half_power_wl, ...
+                    'HalfPowerFrequency', 1/halfPowerWavelength, ...
                     'DesignMethod', 'butter', ...
                     'SampleRate', SAMPLE_RATE);
 

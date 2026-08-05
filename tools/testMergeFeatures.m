@@ -363,7 +363,7 @@ end
 function testPhysicalGridConfigurationDerivesCellCounts(testCase)
     config = createPhysicalGridConfig();
 
-    actual = deriveConfiguration(config, 0:0.25:40, 0:0.25:40);
+    actual = deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.25:40);
 
     verifyEqual(testCase, actual.gridSpacingDegrees, 0.25);
     verifyEqual(testCase, actual.outputGridSize, 81);
@@ -379,14 +379,14 @@ function testPhysicalGridConfigurationRejectsNonSquareSpacing(testCase)
     config = createPhysicalGridConfig();
 
     verifyError(testCase, ...
-        @() deriveConfiguration(config, 0:0.25:40, 0:0.2501:40), ...
+        @() deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.2501:40), ...
         "SeparateEnvHur:NonSquareGridSpacing");
 end
 
 function testPhysicalGridConfigurationAcceptsRoundoffInSpacing(testCase)
     config = createPhysicalGridConfig();
 
-    actual = deriveConfiguration(config, 0:0.25:40, 0:(0.25 + eps(0.25)):40);
+    actual = deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:(0.25 + eps(0.25)):40);
 
     verifyEqual(testCase, actual.gridSpacingDegrees, 0.25, AbsTol=1.0e-12);
 end
@@ -396,7 +396,7 @@ function testPhysicalGridConfigurationRejectsFractionalCells(testCase)
     config.output_grid_length = 20.1;
 
     verifyError(testCase, ...
-        @() deriveConfiguration(config, 0:0.25:40, 0:0.25:40), ...
+        @() deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.25:40), ...
         "SeparateEnvHur:NonIntegerCellCount");
 end
 
@@ -404,8 +404,95 @@ function testPhysicalGridConfigurationRejectsUndersizedArrays(testCase)
     config = createPhysicalGridConfig();
 
     verifyError(testCase, ...
-        @() deriveConfiguration(config, 0:0.25:20, 0:0.25:20), ...
+        @() deriveSeparateEnvHurConfig(config, 0:0.25:20, 0:0.25:20), ...
         "SeparateEnvHur:GridTooSmall");
+end
+
+function testLegacyConfigurationPreservesIndependentFields(testCase)
+    config = createLegacyGridConfig();
+
+    actual = deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.25:40);
+
+    verifyEqual(testCase, actual.filter_domain_size, 60);
+    verifyEqual(testCase, actual.grid_half_size, 35);
+    verifyEqual(testCase, actual.output_half_size, 40);
+    verifyEqual(testCase, actual.search_range, 6);
+    verifyEqual(testCase, actual.max_radius_deg, 12);
+    verifyEqual(testCase, actual.filter_isotach, actual.wind_threshold_inner);
+    verifyEqual(testCase, actual.filter_hp_multiplier, 25);
+end
+
+function testConfigurationRejectsMixedModes(testCase)
+    config = createPhysicalGridConfig();
+    config.search_range = 6;
+
+    verifyError(testCase, @() deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.25:40), ...
+        "SeparateEnvHur:MixedConfigurationModes");
+end
+
+function testConfigurationRejectsPartialPhysicalMode(testCase)
+    config = rmfield(createPhysicalGridConfig(), "search_radius");
+
+    verifyError(testCase, @() deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.25:40), ...
+        "SeparateEnvHur:PartialConfigurationMode");
+end
+
+function testConfigurationRejectsNonuniformCoordinates(testCase)
+    config = createPhysicalGridConfig();
+    longitude = [0:0.25:20, 20.3:0.25:40];
+
+    verifyError(testCase, @() deriveSeparateEnvHurConfig(config, longitude, 0:0.25:40), ...
+        "SeparateEnvHur:NonuniformCoordinates");
+end
+
+function testConfigurationRejectsInvalidCoordinatesAndCounts(testCase)
+    config = createPhysicalGridConfig();
+    verifyError(testCase, @() deriveSeparateEnvHurConfig(config, [0, NaN], [0, 0.25]), ...
+        "SeparateEnvHur:InvalidCoordinates");
+
+    config.num_radial_points = 2.5;
+    verifyError(testCase, @() deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.25:40), ...
+        "SeparateEnvHur:InvalidPointCount");
+end
+
+function testConfigurationRejectsNonpositivePhysicalLength(testCase)
+    config = createPhysicalGridConfig();
+    config.search_radius = 0;
+
+    verifyError(testCase, @() deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.25:40), ...
+        "SeparateEnvHur:InvalidPhysicalLength");
+end
+
+function testEra5DimensionsMustMatchCoordinatesAndTime(testCase)
+    era5 = struct("lon", 1:4, "lat", 1:3, "time", 1:2, ...
+        "u10", zeros(4, 3, 2), "v10", zeros(4, 3, 2), "msl", zeros(4, 3, 1));
+
+    verifyError(testCase, @() validateSeparateEnvHurData(era5), ...
+        "SeparateEnvHur:DimensionMismatch");
+end
+
+function testComputeBasicFieldUsesDirectHalfPowerWavelength(testCase)
+    field = reshape(sin(1:6561), 81, 81);
+    track = struct("lat_idx", 41, "lon_idx", 41);
+    config = struct("filter_domain_size", 20);
+    wavelength = 10;
+    filter = designfilt("lowpassiir", FilterOrder=5, HalfPowerFrequency=1/wavelength, ...
+        DesignMethod="butter", SampleRate=4);
+    rows = 21:61;
+    average = mean(field(rows, rows), "all");
+    expected = applyButterworthFilter2D(field-average, filter, rows, rows) + average;
+
+    actual = computeBasicField(field, field, field, track, config, 1, wavelength);
+
+    verifyEqual(testCase, actual.slp, expected, AbsTol=1.0e-12);
+end
+
+function testDefaultConfigDerivesSeparateEnvHurPointCounts(testCase)
+    projectDirectory = testCase.TestData.ProjectDirectory;
+    run(fullfile(projectDirectory, "config", "config_GAHM2026_default.m"));
+
+    verifyEqual(testCase, sepenvhur.num_azimuth_points, GAHM_compute_info.ntheta);
+    verifyEqual(testCase, sepenvhur.num_radial_points, GAHM_compute_info.nr);
 end
 
 function wafPoint = createWafPoint(longitude, latitude, waf)
@@ -418,9 +505,11 @@ function config = createPhysicalGridConfig()
         "num_radial_points", 800);
 end
 
-function config = deriveConfiguration(config, longitude, latitude)
-    coordinateData = struct("lon", longitude, "lat", latitude);
-    config = SeparateEnvHur(config, struct.empty, coordinateData);
+function config = createLegacyGridConfig()
+    config = struct("filter_domain_size", 60, "grid_half_size", 35, ...
+        "output_half_size", 40, "search_range", 6, "max_radius_deg", 12, ...
+        "num_azimuth_points", 24, "num_radial_points", 800, ...
+        "wind_threshold_inner", 17.5);
 end
 
 function vortexPoints = createWind(speed, direction)
