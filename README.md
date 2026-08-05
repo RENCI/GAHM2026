@@ -119,7 +119,7 @@ These values are defined as plain workspace variables and automatically populate
 | `background_file` | ERA5 NetCDF input file path; use `<year>` as a placeholder for `storm_year` (resolved by `getERA5Data` at runtime) | `'/path/to/<year>/<year>.global.nc'` |
 | `filter_grid_length` | Side length of the square Butterworth-filter extraction domain (degrees) | `30` |
 | `output_grid_length` | Side length of the square output and isotach-search domain (degrees) | `20` |
-| `search_radius` | Pressure-center search radius from the track position (degrees) | `1.5` |
+| `search_radius` | Physical half-width (degrees) of the square pressure-center search window centered on the track location | `1.5` |
 | `wind_threshold_outer` | Outer cutline threshold (m/s) | `10` |
 | `wind_threshold_inner` | Inner cutline threshold (m/s, 34 kt) | `34/1.944` |
 | `filter_isotach` | Isotach used independently to determine the Butterworth half-power wavelength (m/s) | `17.5` |
@@ -272,9 +272,9 @@ Dataset {
 | `Result.VPrad` | Radial grid data: `.r`, `.theta`, `.VVor(i)`, `.Env(i)`, `.EnvVor(i)` |
 | `Result.storm_info` | Storm identity (name, year, designation) |
 | `Result.env_info` | Environmental field configuration |
-| `Result.Points_TC_out` | (if `output_type="points"`) Point TC output |
-| `Result.Points_Env_out` | (if `output_type="points"`) Point environmental output |
-| `Result.Points_VVor_invtapHur_out` | (if `output_type="points"`) Point GAHM vortex + inverse-tapered hurricane output |
+| `Result.Points_TC_out` | (if `output_info.type = "points"`) Point TC output |
+| `Result.Points_Env_out` | (if `output_info.type = "points"`) Point environmental output |
+| `Result.Points_VVor_invtapHur_out` | (if `output_info.type = "points"`) Point GAHM vortex + inverse-tapered hurricane output |
 
 ### Gridded NetCDF output (`output_info.type = "grid"`)
 

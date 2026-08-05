@@ -82,7 +82,7 @@ Output is saved as `<STORM_NAME>_<DESIGNATION>_<YEAR>.mat` (e.g., `FLORENCE_AL06
 | `storm_end` | `datetime(2018,9,18,0,0,0)` | End time for processing |
 | `filter_grid_length` | `30` | Side length of square filter extraction domain (degrees) |
 | `output_grid_length` | `20` | Side length of square output and isotach-search domain (degrees) |
-| `search_radius` | `1.5` | Pressure-center search radius from track position (degrees) |
+| `search_radius` | `1.5` | Physical half-width (degrees) of the square pressure-center search window centered on the track location |
 | `num_radial_points` | GAHM `nr` | Number of radial points for polar interpolation |
 | `num_azimuth_points` | GAHM `ntheta` | Number of azimuthal points |
 | `wind_threshold_outer` | `10` | Wind threshold for outer cutline (m/s) |
@@ -98,6 +98,11 @@ domain, while saved fields and cutline searches use the output domain. Unified c
 from GAHM's `ntheta` and `nr`. Azimuths cover 360° without a duplicate seam; radial samples include both zero and the
 `output_grid_length/2` endpoint. Smoothing is circular across the azimuth seam and is controlled by the two settings
 above.
+
+The physical-degree settings are the current interface. For one-period compatibility, legacy fixed-cell mode is
+available only when `filter_domain_size`, `grid_half_size`, `output_half_size`, `search_range`, and `max_radius_deg`
+are all supplied together. Partial legacy settings and combinations of legacy and physical-degree settings are
+rejected. In legacy mode only, omitted filtering and smoothing controls retain their legacy defaults.
 
 ## Module Structure
 

@@ -39,7 +39,7 @@ Controls ERA5 data extraction and vortex scrubbing. The fields `storm_name`, `st
 | `storm_end` | datetime | End time (from shared) | `storm_end` |
 | `filter_grid_length` | numeric | Side length of the square filter extraction domain (degrees) | `30` |
 | `output_grid_length` | numeric | Side length of the square output and isotach-search domain (degrees) | `20` |
-| `search_radius` | numeric | Pressure-center search radius from the track location (degrees) | `1.5` |
+| `search_radius` | numeric | Physical half-width (degrees) of the square pressure-center search window centered on the track location | `1.5` |
 | `wind_threshold_outer` | numeric | Wind speed threshold for outer cutline (m/s) | `10` |
 | `wind_threshold_inner` | numeric | Wind speed threshold for inner cutline (m/s) | `34/1.944` (~17.5, i.e. 34 kt) |
 | `filter_isotach` | numeric | Independent isotach used to derive the filtering radius (m/s) | `17.5` |
@@ -65,6 +65,11 @@ Unified configs set `num_azimuth_points = GAHM_compute_info.ntheta` and
 samples include the storm center and the `output_grid_length/2` endpoint, so the increment is
 `(output_grid_length/2)/(num_radial_points-1)`. The smoothing width and variance tolerance control circular isotach
 smoothing across the azimuth seam.
+
+The physical-degree settings above are the current interface. For one-period compatibility, legacy fixed-cell mode is
+available only when `filter_domain_size`, `grid_half_size`, `output_half_size`, `search_range`, and `max_radius_deg`
+are all supplied together. Partial legacy settings and combinations of legacy and physical-degree settings are
+rejected. In legacy mode only, omitted filtering and smoothing controls retain their legacy defaults.
 
 ---
 
@@ -127,11 +132,11 @@ Controls land-roughness-based wind speed adjustment.
 | `flag` | logical | Enable WAF correction | `false` |
 | `file_name` | char | Grid output: WAF raster (`.tif`). Point output: point-WAF MAT-file. Ignored if `flag = false` | `'input/WAF_15deg_10km_6km_raster_test.tif'` |
 
-For point output, the MAT-file must contain `WAF_points`, a struct array whose elements each have numeric, finite,
-scalar `lon` and `lat` fields and a nonempty finite `WAF` vector. All vectors have equal length and represent equal
-angular increments beginning at north and proceeding clockwise. Each requested `(lon, lat)` pair must match exactly
-one struct element (within the implementation's coordinate tolerance); `applyWAFfromPoints` reports a clear error if
-a pair is missing or duplicated.
+For point output, the MAT-file must contain `WAF_points`, a struct array whose elements each have real, numeric, finite,
+scalar `lon` and `lat` fields and a nonempty real, numeric, finite `WAF` vector. All vectors have equal length and
+represent equal angular increments beginning at north and proceeding clockwise. Longitude and latitude are each
+matched independently using an absolute tolerance of `1.0e-8` degrees. `applyWAFfromPoints` reports distinct clear
+errors when a requested coordinate pair has zero matches or multiple matches.
 
 ---
 
@@ -219,13 +224,13 @@ The number of longitude and latitude values must be equal and are fixed in time.
 | `Reggrid_out(i)` | `.datetime` | — | Timestamp |
 | | `.Lon` | degrees | Longitude grid |
 | | `.Lat` | degrees | Latitude grid |
+| | `.Mask1` | 0/1 | Outer blending mask |
+| | `.Mask2` | 0/1 | Inner blending mask |
 | `Reggrid_TC_out(i)` | `.VelU` | m/s | Total TC E-W wind velocity |
 | | `.VelV` | m/s | Total TC N-S wind velocity |
 | | `.Press` | mb | Total TC pressure |
-| | `.Mask1` | 0/1 | Outer blending mask |
-| | `.Mask2` | 0/1 | Inner blending mask |
-| `Reggrid_Env_out(i)` | `.U10` | m/s | Environmental E-W velocity |
-| | `.V10` | m/s | Environmental N-S velocity |
+| `Reggrid_Env_out(i)` | `.VelU` | m/s | Environmental E-W velocity |
+| | `.VelV` | m/s | Environmental N-S velocity |
 | | `.Press` | mb | Environmental pressure |
 
 ### Point output (`output_info.type = "points"`)
