@@ -224,14 +224,20 @@ The number of longitude and latitude values must be equal and are fixed in time.
 | `Reggrid_out(i)` | `.datetime` | — | Timestamp |
 | | `.Lon` | degrees | Longitude grid |
 | | `.Lat` | degrees | Latitude grid |
-| | `.Mask1` | 0/1 | Outer blending mask |
-| | `.Mask2` | 0/1 | Inner blending mask |
+| | `.Mask1` | 0/1 | Inner blending mask |
+| | `.Mask2` | 0/1 | Outer blending mask |
 | `Reggrid_TC_out(i)` | `.VelU` | m/s | Total TC E-W wind velocity |
 | | `.VelV` | m/s | Total TC N-S wind velocity |
 | | `.Press` | mb | Total TC pressure |
 | `Reggrid_Env_out(i)` | `.VelU` | m/s | Environmental E-W velocity |
 | | `.VelV` | m/s | Environmental N-S velocity |
 | | `.Press` | mb | Environmental pressure |
+| `Reggrid_VVor_invtapHur_out(i)` | `.VelU` | m/s | GAHM vortex + inverse-tapered hurricane E-W velocity (`env_info.type = 3`) |
+| | `.VelV` | m/s | GAHM vortex + inverse-tapered hurricane N-S velocity (`env_info.type = 3`) |
+| | `.Press` | mb | GAHM vortex + inverse-tapered hurricane pressure (`env_info.type = 3`) |
+
+For `env_info.type = 3`, `Reggrid_VVor_invtapHur_out` is the structure array described above. For
+`env_info.type = 1` or `2`, it is the existing numeric all-zero intermediate array rather than a structure array.
 
 ### Point output (`output_info.type = "points"`)
 
@@ -250,8 +256,12 @@ The number of longitude and latitude values must be equal and are fixed in time.
 | | `.V10` | m/s | Environmental N-S velocity |
 | | `.Press` | mb | Environmental pressure |
 | `Points_VVor_invtapHur_out(i)` | `.datetime`, `.Lon`, `.Lat` | —/degrees | Point coordinates and timestamp |
-| | `.U10`, `.V10` | m/s | GAHM vortex + inverse-tapered hurricane velocity |
-| | `.Press` | mb | GAHM vortex + inverse-tapered hurricane pressure |
+| | `.U10`, `.V10` | m/s | GAHM vortex + inverse-tapered hurricane velocity for type 3; zero arrays for types 1 and 2 |
+| | `.Press` | mb | GAHM vortex + inverse-tapered hurricane pressure for type 3; zero array for types 1 and 2 |
+
+When `output_info.type = "points"`, `Points_VVor_invtapHur_out` always contains `datetime`, `Lon`, `Lat`, `U10`,
+`V10`, and `Press`. For `env_info.type = 1` or `2`, its wind and pressure fields are zero arrays with the same shape as
+the point coordinates. For `env_info.type = 3`, they contain the GAHM vortex + inverse-tapered hurricane values.
 
 ### Radial grid data (always returned)
 
