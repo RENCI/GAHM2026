@@ -28,7 +28,7 @@ else
     pres_units = 'mb';
 end
 
-f_out = [FileName '.nc'];
+f_out = FileName + ".nc";
 assert(~exist(f_out, 'file'), f_out + " already exists. Terminal.")
 
 [yi,xi] = size(Reggrid_out(1).Lon);

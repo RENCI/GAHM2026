@@ -23,10 +23,10 @@ track_file        = 'ibtracs.NA.list.v04r01.csv';
 storm_designation = 'AL06';
 debug             = false;
 storm_start       = datetime(2018,9,14,0,0,0);
-storm_end         = datetime(2018,9,14,3,0,0);
+storm_end         = datetime(2018,9,14,12,0,0);
 
 %% ===== SeparateEnvHur parameters =====
-sepenvhur.background_file    = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global/uvp/<year>/<year>.nc';
+sepenvhur.background_file    = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/regional/wna/uvp/<year>/<year>.wna.nc';
 sepenvhur.storm_start        = storm_start;
 sepenvhur.storm_end          = storm_end;
 sepenvhur.filter_grid_length = 30; % Degrees; filter extraction box side length

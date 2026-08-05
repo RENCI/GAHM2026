@@ -72,7 +72,7 @@ end
 
 %% Check for existing output file before running
 if output_info.type == "grid"
-    f_out = [output_info.NetCDFfilename '.nc'];
+    f_out = output_info.NetCDFfilename + ".nc";
     assert(~exist(f_out, 'file'), f_out + " already exists. Delete or rename it before running.")
 end
 
