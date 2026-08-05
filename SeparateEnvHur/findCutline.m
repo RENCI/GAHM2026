@@ -22,8 +22,9 @@ function [cutlineIdx, isInsideOuter, distance] = findCutline( ...
     centerLat = era5.vortex.lat(i);
     start_dist = 2 * hypot(centerLon - track.lon(i), centerLat - track.lat(i));
     MIN_START_DEG = 1;
-    minStartIndex = round(MIN_START_DEG/CONFIG.radialIncrementDegrees);
-    startIndex = max(minStartIndex, round(start_dist/CONFIG.radialIncrementDegrees));
+    minStartIndex = round(MIN_START_DEG/CONFIG.radialIncrementDegrees) + 1;
+    startIndex = max(minStartIndex, ...
+        round(start_dist/CONFIG.radialIncrementDegrees) + 1);
     startIndex = min(max(startIndex, 1), maxSearchIndex);
 
     cutlineIdx = zeros(numAzimuthPoints, 1);
@@ -32,13 +33,16 @@ function [cutlineIdx, isInsideOuter, distance] = findCutline( ...
         angle = (j-1)*angleIncrement;
         cutlineIdx(j) = startIndex;
 
-        while cutlineIdx(j) < maxSearchIndex
-            cutlineIdx(j) = cutlineIdx(j) + 1;
+        while cutlineIdx(j) <= maxSearchIndex
             tan_wind = -hr_u(j, cutlineIdx(j))*sind(angle) + ...
                         hr_v(j, cutlineIdx(j))*cosd(angle);
             if isnan(tan_wind) || tan_wind < wind_threshold
                 break
             end
+            if cutlineIdx(j) == maxSearchIndex
+                break
+            end
+            cutlineIdx(j) = cutlineIdx(j) + 1;
         end
     end
 
@@ -59,6 +63,6 @@ function [cutlineIdx, isInsideOuter, distance] = findCutline( ...
 
     isInsideOuter = inpolygon(domain_lon(:), domain_lat(:), lon_newv', lat_newv');
 
-    count_deg = cutlineIdx*CONFIG.radialIncrementDegrees;
+    count_deg = (cutlineIdx-1)*CONFIG.radialIncrementDegrees;
     distance = computeDistanceKm(count_deg, track.lat(i));
 end

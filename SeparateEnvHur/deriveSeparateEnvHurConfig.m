@@ -23,6 +23,10 @@ function config = deriveSeparateEnvHurConfig(config, longitude, latitude)
 
     validatePointCount(config, "num_azimuth_points");
     validatePointCount(config, "num_radial_points");
+    if config.num_radial_points < 2
+        error("SeparateEnvHur:InvalidRadialPointCount", ...
+            "num_radial_points must be an integer scalar of at least two.");
+    end
     config.gridSpacingDegrees = gridSpacingDegrees;
     config.numAzimuthPoints = config.num_azimuth_points;
     config.numRadialPoints = config.num_radial_points;
@@ -42,7 +46,8 @@ function config = deriveSeparateEnvHurConfig(config, longitude, latitude)
         config.filterHalfWidth = filterCells/2;
         config.outputHalfWidth = outputCells/2;
         config.outputGridSize = outputCells + 1;
-        config.radialIncrementDegrees = (config.output_grid_length/2)/config.numRadialPoints;
+        config.radialIncrementDegrees = ...
+            (config.output_grid_length/2)/(config.numRadialPoints-1);
         config.filter_domain_size = config.filterHalfWidth;
         config.grid_half_size = config.outputHalfWidth;
         config.output_half_size = config.outputHalfWidth;
@@ -54,12 +59,18 @@ function config = deriveSeparateEnvHurConfig(config, longitude, latitude)
         config.outputHalfWidth = config.output_half_size;
         config.outputGridSize = 2*config.output_half_size + 1;
         config.searchRange = config.search_range;
-        config.radialIncrementDegrees = config.max_radius_deg/config.numRadialPoints;
+        config.radialIncrementDegrees = config.max_radius_deg/(config.numRadialPoints-1);
         if ~isfield(config, "filter_isotach")
             config.filter_isotach = config.wind_threshold_inner;
         end
         if ~isfield(config, "filter_hp_multiplier")
             config.filter_hp_multiplier = 25;
+        end
+        if ~isfield(config, "num_points_smoother")
+            config.num_points_smoother = 3;
+        end
+        if ~isfield(config, "isotach_smooth_variance")
+            config.isotach_smooth_variance = 2000;
         end
     end
 

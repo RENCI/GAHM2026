@@ -372,7 +372,9 @@ function testPhysicalGridConfigurationDerivesCellCounts(testCase)
     verifyEqual(testCase, actual.searchRange, 6);
     verifyEqual(testCase, actual.numAzimuthPoints, 24);
     verifyEqual(testCase, actual.numRadialPoints, 800);
-    verifyEqual(testCase, actual.radialIncrementDegrees, 0.0125);
+    verifyEqual(testCase, actual.radialIncrementDegrees, 10/799);
+    verifyEqual(testCase, ...
+        (actual.numRadialPoints-1)*actual.radialIncrementDegrees, 10);
 end
 
 function testPhysicalGridConfigurationRejectsNonSquareSpacing(testCase)
@@ -418,6 +420,8 @@ function testLegacyConfigurationPreservesIndependentFields(testCase)
     verifyEqual(testCase, actual.output_half_size, 40);
     verifyEqual(testCase, actual.search_range, 6);
     verifyEqual(testCase, actual.max_radius_deg, 12);
+    verifyEqual(testCase, ...
+        (actual.numRadialPoints-1)*actual.radialIncrementDegrees, 12);
     verifyEqual(testCase, actual.filter_isotach, actual.wind_threshold_inner);
     verifyEqual(testCase, actual.filter_hp_multiplier, 25);
 end
@@ -465,6 +469,10 @@ function testConfigurationRejectsInvalidCoordinatesAndCounts(testCase)
     config.num_radial_points = 2.5;
     verifyError(testCase, @() deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.25:40), ...
         "SeparateEnvHur:InvalidPointCount");
+
+    config.num_radial_points = 1;
+    verifyError(testCase, @() deriveSeparateEnvHurConfig(config, 0:0.25:40, 0:0.25:40), ...
+        "SeparateEnvHur:InvalidRadialPointCount");
 end
 
 function testConfigurationRejectsNonpositivePhysicalLength(testCase)
@@ -552,8 +560,8 @@ function testOutputArraysUseConfiguredGeometryAndLogicalMasks(testCase)
     end
 end
 
-function testDistanceUsesActualAzimuthVectorLength(testCase)
-    radiusDegrees = ones(1, 360);
+function testDistanceUsesActualAzimuthVectorLengthAndReturnsRow(testCase)
+    radiusDegrees = ones(360, 1);
 
     actual = computeDistanceKm(radiusDegrees, 60);
 
@@ -582,6 +590,27 @@ function testNaNWindTerminatesEachRadialSearch(testCase)
     verifyEqual(testCase, cutlineIndex, 4*ones(24, 1));
 end
 
+function testFindCutlineExaminesConvertedStartIndexAndUsesZeroBasedRadius(testCase)
+    [era5, track, config] = createSyntheticPolarInputs(24);
+    config.numRadialPoints = 4;
+    config.radialIncrementDegrees = 1;
+    config.outputHalfWidth = 2;
+    config.isotach_smooth_variance = Inf;
+    config.num_points_smoother = 3;
+    angles = (0:23)'*15;
+    radii = 0:3;
+    [Xq, Yq] = pol2cart(deg2rad(angles), ones(24, 1)*radii);
+    hrU = zeros(24, 4);
+    hrV = zeros(24, 4);
+
+    [cutlineIndex, ~, distance] = findCutline( ...
+        hrU, hrV, Xq, Yq, era5, track, config, 1, 10);
+
+    verifyEqual(testCase, cutlineIndex, 2*ones(24, 1));
+    verifySize(testCase, distance, [1, 24]);
+    verifyEqual(testCase, distance(1), 111.32, AbsTol=1.0e-10);
+end
+
 function testOutputDomainNearGridEdgeRaisesClearError(testCase)
     [era5, track, config] = createSyntheticPolarInputs(24);
     track.lat_idx = 1;
@@ -600,13 +629,36 @@ end
 
 function testSmoothingAndConvexityRespectIterationBounds(testCase)
     alternating = repmat([1; 100], 12, 1);
-    smoothed = smoothCutline(alternating, -1, 24, 1);
+    [smoothed, smoothIterations] = smoothCutline(alternating, -1, 24, 1);
     verifyEqual(testCase, smoothed, alternating);
+    verifyEqual(testCase, smoothIterations, 200);
 
     Xq = zeros(24, 100);
     Yq = zeros(24, 100);
-    convexResult = ensureConvexCutline(alternating, Xq, Yq, 24, 1);
+    [convexResult, convexIterations] = ensureConvexCutline( ...
+        alternating, Xq, Yq, 24, 1);
     verifyEqual(testCase, convexResult, alternating);
+    verifyEqual(testCase, convexIterations, 200);
+end
+
+function testLegacyConfigurationRunsFindCutlineWithoutSmoothingFields(testCase)
+    legacyConfig = createLegacyGridConfig();
+    legacyConfig.num_radial_points = 4;
+    actual = deriveSeparateEnvHurConfig(legacyConfig, -40:0.5:40, -40:0.5:40);
+    [era5, track] = createSyntheticPolarInputs(24);
+    actual.outputHalfWidth = 2;
+    angles = (0:23)'*15;
+    radii = (0:actual.numRadialPoints-1)*actual.radialIncrementDegrees;
+    [Xq, Yq] = pol2cart(deg2rad(angles), ones(24, 1)*radii);
+    hrU = -20*sind(angles)*ones(1, actual.numRadialPoints);
+    hrV = 20*cosd(angles)*ones(1, actual.numRadialPoints);
+
+    [~, ~, distance] = findCutline( ...
+        hrU, hrV, Xq, Yq, era5, track, actual, 1, 10);
+
+    verifyEqual(testCase, actual.num_points_smoother, 3);
+    verifyEqual(testCase, actual.isotach_smooth_variance, 2000);
+    verifySize(testCase, distance, [1, 24]);
 end
 
 function testDefaultConfigDerivesSeparateEnvHurPointCounts(testCase)
