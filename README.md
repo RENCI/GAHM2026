@@ -6,7 +6,7 @@ When using gridded environmental fields (`env_info.type = 3`), **SeparateEnvHur*
 
 Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 
-V1.3, April 2026
+V1.4, August 2026
 
 ---
 
