@@ -191,6 +191,26 @@ function testPointWafMatLoadingRequiresNamedVariable(testCase)
         "GAHM2026:MissingWafPoints");
 end
 
+function testGridWafGeoTiffLoading(testCase)
+    fileName = string(tempname) + ".tif";
+    cleanupFile = onCleanup(@() deleteIfPresent(fileName));
+    expectedRaster = uint16([1, 2; 3, 4]);
+    latitudeLimits = [34, 36];
+    longitudeLimits = [-76, -74];
+    reference = georefcells(latitudeLimits, longitudeLimits, size(expectedRaster), ...
+        ColumnsStartFrom="north");
+    geotiffwrite(fileName, expectedRaster, reference, CoordRefSysCode=4326);
+
+    [actualRaster, actualReference] = loadWAFData("grid", fileName);
+
+    verifyEqual(testCase, actualRaster, expectedRaster);
+    verifyEqual(testCase, actualReference.RasterSize, size(expectedRaster));
+    verifyEqual(testCase, actualReference.LatitudeLimits, latitudeLimits, ...
+        AbsTol=1.0e-12);
+    verifyEqual(testCase, actualReference.LongitudeLimits, longitudeLimits, ...
+        AbsTol=1.0e-12);
+end
+
 function testPointWafDispatchPreservesPressureAndMetadata(testCase)
     wafPoints = createWafPoint(-75, 35, [1, 2, 3, 4]);
     vortex = struct("VelU", -10, "VelV", 0, "Speed", 10, ...
