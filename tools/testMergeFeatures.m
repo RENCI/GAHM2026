@@ -261,19 +261,23 @@ function testPointPackagingCopiesAllFieldsValuesAndShapes(testCase)
 end
 
 function testPointPackagingCreatesShapedZerosForTypeOneAndTwoIntermediate(testCase)
-    coordinates = createCoordinates();
-    tc = createRegularField(1);
-    environment = createRegularField(10);
+    coordinates = repmat(createCoordinates(), 1, 2);
+    coordinates(2).datetime = coordinates(1).datetime + hours(1);
+    tc = repmat(createRegularField(1), 1, 2);
+    environment = repmat(createRegularField(10), 1, 2);
 
     [~, ~, intermediate] = createPointOutputs(coordinates, tc, environment, 0);
 
-    verifyEqual(testCase, intermediate.datetime, coordinates.datetime);
-    verifyEqual(testCase, intermediate.Lon, coordinates.Lon);
-    verifyEqual(testCase, intermediate.Lat, coordinates.Lat);
-    verifySize(testCase, intermediate.U10, size(coordinates.Lon));
-    verifyEqual(testCase, intermediate.U10, zeros(size(coordinates.Lon)));
-    verifyEqual(testCase, intermediate.V10, zeros(size(coordinates.Lon)));
-    verifyEqual(testCase, intermediate.Press, zeros(size(coordinates.Lon)));
+    verifySize(testCase, intermediate, [1, 2]);
+    for timeIndex = 1:2
+        verifyEqual(testCase, intermediate(timeIndex).datetime, coordinates(timeIndex).datetime);
+        verifyEqual(testCase, intermediate(timeIndex).Lon, coordinates(timeIndex).Lon);
+        verifyEqual(testCase, intermediate(timeIndex).Lat, coordinates(timeIndex).Lat);
+        verifySize(testCase, intermediate(timeIndex).U10, size(coordinates(timeIndex).Lon));
+        verifyEqual(testCase, intermediate(timeIndex).U10, zeros(size(coordinates(timeIndex).Lon)));
+        verifyEqual(testCase, intermediate(timeIndex).V10, zeros(size(coordinates(timeIndex).Lon)));
+        verifyEqual(testCase, intermediate(timeIndex).Press, zeros(size(coordinates(timeIndex).Lon)));
+    end
 end
 
 function testGridDiagnosticGuardOnlyStructuralBecauseFullFixtureIsDisproportionate(testCase)

@@ -14,12 +14,14 @@ function [pointsTc, pointsEnvironment, pointsIntermediate] = createPointOutputs(
     pointsTc = repmat(pointTemplate, 1, timeCount);
     pointsEnvironment = repmat(pointTemplate, 1, timeCount);
     pointsIntermediate = repmat(pointTemplate, 1, timeCount);
+    isZeroIntermediate = isnumeric(intermediateFields) && ...
+        isscalar(intermediateFields) && intermediateFields == 0;
 
     for timeIndex = 1:timeCount
         pointsTc(timeIndex) = createPointResult(coordinates(timeIndex), tcFields(timeIndex));
         pointsEnvironment(timeIndex) = createPointResult( ...
             coordinates(timeIndex), environmentFields(timeIndex));
-        if isnumeric(intermediateFields(timeIndex)) && intermediateFields(timeIndex) == 0
+        if isZeroIntermediate
             zeroFields = struct("VelU", zeros(size(coordinates(timeIndex).Lon)), ...
                 "VelV", zeros(size(coordinates(timeIndex).Lon)), ...
                 "Press", zeros(size(coordinates(timeIndex).Lon)));
