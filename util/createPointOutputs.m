@@ -15,7 +15,7 @@ function [pointsTc, pointsEnvironment, pointsIntermediate] = createPointOutputs(
     pointsEnvironment = repmat(pointTemplate, 1, timeCount);
     pointsIntermediate = repmat(pointTemplate, 1, timeCount);
     isZeroIntermediate = isnumeric(intermediateFields) && ...
-        isscalar(intermediateFields) && intermediateFields == 0;
+        ~isempty(intermediateFields) && all(intermediateFields(:) == 0);
 
     for timeIndex = 1:timeCount
         pointsTc(timeIndex) = createPointResult(coordinates(timeIndex), tcFields(timeIndex));

@@ -281,6 +281,26 @@ function testPointPackagingCreatesShapedZerosForTypeOneAndTwoIntermediate(testCa
     end
 end
 
+function testPointPackagingAcceptsMultiTimeZeroIntermediate(testCase)
+    coordinates = repmat(createCoordinates(), 1, 2);
+    coordinates(2).datetime = coordinates(1).datetime + hours(1);
+    tc = repmat(createRegularField(1), 1, 2);
+    environment = repmat(createRegularField(10), 1, 2);
+    upstreamIntermediate = zeros(1, numel(coordinates));
+
+    [~, ~, intermediate] = createPointOutputs( ...
+        coordinates, tc, environment, upstreamIntermediate);
+
+    for timeIndex = 1:numel(coordinates)
+        verifyEqual(testCase, intermediate(timeIndex).U10, ...
+            zeros(size(coordinates(timeIndex).Lon)));
+        verifyEqual(testCase, intermediate(timeIndex).V10, ...
+            zeros(size(coordinates(timeIndex).Lon)));
+        verifyEqual(testCase, intermediate(timeIndex).Press, ...
+            zeros(size(coordinates(timeIndex).Lon)));
+    end
+end
+
 function testGridDiagnosticGuardOnlyStructuralBecauseFullFixtureIsDisproportionate(testCase)
     % A complete GAHM radial diagnostic fixture requires track and environmental datasets.
     source = join(readlines(fullfile(testCase.TestData.ProjectDirectory, "GAHM2026.m")), newline);
