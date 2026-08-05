@@ -1,6 +1,6 @@
 ---
 layout: default
-title: GAHM derivation
+title: GAHM Derivation
 nav_order: 3
 permalink: /gahm-derivation/
 ---
