@@ -16,8 +16,9 @@ function [VEnv_10_10,VHur_10_10,Masks,PscaleEnv] = readEnvAndHurrFields2 ...
 %             filename.Time(i); - datetime
 %             filename.Lo(i,:,:);
 %             filename.La(i,nEr:-1:1,:);
-%             filename.Vortex_mask(i,nEr:-1:1,:) 0,1=inside,outside outer
-%                                                    cut line
+%             filename.Vortex_mask_outer(i,nEr:-1:1,:) 0,1=inside,outside
+%                 outer cut line (preferred); Vortex_mask is accepted as a
+%                 legacy fallback
 %             filename.Vortex_mask_inner(i,nEr:-1:1,:) 0,1=inside,outside inner
 %                                                    cut line
 %             filename.env_u10(i,nEr:-1:1,:);   E-W velocity (m/s)

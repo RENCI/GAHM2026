@@ -315,7 +315,7 @@ function testZeroQuadrantRadiiAreNormalizedAtIngestion(testCase)
 end
 
 function testEitherOuterMaskSchemaProducesSameMask(testCase)
-    expectedMask = [1, NaN; 0, 1];
+    expectedMask = [1, NaN; 1, 0];
     legacyFile = createEnvironmentalFile("Vortex_mask", expectedMask);
     outerFile = createEnvironmentalFile("Vortex_mask_outer", expectedMask);
     cleanupFiles = onCleanup(@() deleteFiles([legacyFile, outerFile]));
@@ -327,7 +327,20 @@ function testEitherOuterMaskSchemaProducesSameMask(testCase)
         sampleTime, sampleTime);
 
     verifyEqual(testCase, outerMasks.mask2, legacyMasks.mask2);
-    verifyEqual(testCase, outerMasks.mask2, [1, 0; 0, 1]);
+    verifyEqual(testCase, outerMasks.mask2, [1, 0; 1, 0]);
+end
+
+function testPreferredOuterMaskWinsWhenBothSchemasArePresent(testCase)
+    preferredMask = [1, 0; 1, 0];
+    legacyMask = [0, 1; 0, 1];
+    fileName = createEnvironmentalFile("Vortex_mask_outer", preferredMask, legacyMask);
+    cleanupFile = onCleanup(@() deleteIfPresent(fileName));
+    sampleTime = datetime(2026, 8, 5);
+
+    [~, ~, masks] = readEnvAndHurrFields2(struct("file_name", fileName), ...
+        sampleTime, sampleTime);
+
+    verifyEqual(testCase, masks.mask2, preferredMask);
 end
 
 function testMissingOuterMaskIdentifiesAcceptedNames(testCase)
@@ -341,8 +354,8 @@ function testMissingOuterMaskIdentifiesAcceptedNames(testCase)
     catch exception
         verifyEqual(testCase, exception.identifier, ...
             'readEnvAndHurrFields2:MissingOuterMaskField');
-        verifySubstring(testCase, exception.message, "Vortex_mask_outer");
-        verifySubstring(testCase, exception.message, "Vortex_mask");
+        verifySubstring(testCase, exception.message, ...
+            "contain Vortex_mask_outer or Vortex_mask.");
     end
 end
 
@@ -386,7 +399,7 @@ function deleteIfPresent(fileName)
     end
 end
 
-function fileName = createEnvironmentalFile(outerMaskName, outerMask)
+function fileName = createEnvironmentalFile(outerMaskName, outerMask, legacyMask)
     sampleTime = datetime(2026, 8, 5);
     env_vals = struct("Time", sampleTime, "Lo", reshape([-76, -75; -76, -75], 1, 2, 2), ...
         "La", reshape([29, 29; 30, 30], 1, 2, 2), ...
@@ -396,6 +409,9 @@ function fileName = createEnvironmentalFile(outerMaskName, outerMask)
         "Vortex_mask_inner", ones(1, 2, 2));
     if strlength(outerMaskName) > 0
         env_vals.(outerMaskName) = reshape(outerMask, 1, 2, 2);
+    end
+    if nargin == 3
+        env_vals.Vortex_mask = reshape(legacyMask, 1, 2, 2);
     end
     fileName = string(tempname) + ".mat";
     save(fileName, "env_vals");
