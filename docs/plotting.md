@@ -39,6 +39,8 @@ differenceFigure = plotter.differenceMap( ...
     R.Reggrid_TC_out, R.Reggrid_Env_out, "speed", 5, 5);
 
 % Paired-array objective diagnostics
+observed = [42, 50, 61, 70, 78];
+modeled = [44, 49, 63, 68, 81];
 metrics = plotter.computeMetrics(observed, modeled, "Wind Speed (kts)");
 
 % Animate all timesteps
