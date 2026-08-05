@@ -80,13 +80,21 @@ function directionCount = validateWafPoints(wafPoints)
 
     directionCount = numel(wafPoints(1).WAF);
     for wafIndex = 1:numel(wafPoints)
-        isScalarCoordinate = isscalar(wafPoints(wafIndex).lon) && isscalar(wafPoints(wafIndex).lat);
-        hasValidWaf = isnumeric(wafPoints(wafIndex).WAF) && isreal(wafPoints(wafIndex).WAF) && ...
-            all(isfinite(wafPoints(wafIndex).WAF), "all") && ...
+        longitude = wafPoints(wafIndex).lon;
+        latitude = wafPoints(wafIndex).lat;
+        wafVector = wafPoints(wafIndex).WAF;
+        hasValidCoordinates = isValidCoordinate(longitude) && isValidCoordinate(latitude);
+        hasValidWaf = isnumeric(wafVector) && isreal(wafVector) && ...
+            ~isempty(wafVector) && isvector(wafVector) && all(isfinite(wafVector), "all") && ...
             numel(wafPoints(wafIndex).WAF) == directionCount;
-        if ~isScalarCoordinate || directionCount == 0 || ~hasValidWaf
+        if ~hasValidCoordinates || ~hasValidWaf
             error("applyWAFfromPoints:InvalidWafPoint", ...
-                "Every WAF point must have scalar coordinates and the same nonempty number of finite WAF values.");
+                "Every WAF point must have numeric, real, finite scalar longitude and latitude values, " + ...
+                "and a nonempty numeric, real, finite WAF vector with the same length as every other point.");
         end
     end
+end
+
+function isValid = isValidCoordinate(coordinate)
+    isValid = isnumeric(coordinate) && isreal(coordinate) && isscalar(coordinate) && isfinite(coordinate);
 end
