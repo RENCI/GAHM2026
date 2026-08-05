@@ -121,7 +121,7 @@ function testUnequalDirectionCountsRaiseError(testCase)
 end
 
 function testMalformedWafValuesRaiseError(testCase)
-    malformedValues = {ones(2), "invalid", [1, Inf], [1, 2i]};
+    malformedValues = {[], ones(2), "invalid", [1, Inf], [1, 2i]};
     for valueIndex = 1:numel(malformedValues)
         wafPoints = createWafPoint(-75, 35, malformedValues{valueIndex});
         verifyError(testCase, @() callWithWaf(wafPoints), ...
