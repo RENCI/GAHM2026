@@ -43,7 +43,7 @@ it before continuing.
 ## Continue with the guides
 
 - [Getting Started]({{ '/getting-started/' | relative_url }}) — install requirements and run the first example.
-- [GAHM Derivation]({{ '/derivation/' | relative_url }}) — understand the model equations and assumptions.
+- [GAHM Derivation]({{ '/gahm-derivation/' | relative_url }}) — understand the model equations and assumptions.
 - [Configuration]({{ '/configuration/' | relative_url }}) — select a storm, environmental mode, and output settings.
 - [Outputs]({{ '/outputs/' | relative_url }}) — interpret returned structures and generated files.
 - [SeparateEnvHur]({{ '/separate-env-hur/' | relative_url }}) — prepare and blend gridded environmental fields.
