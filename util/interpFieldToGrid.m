@@ -13,12 +13,12 @@ warnState = warning('off', 'MATLAB:griddedInterpolant:MeshgridFormatDetect');
 cleanupWarn = onCleanup(@() warning(warnState));
 
 FU = griddedInterpolant(fieldStruct.lon', fieldStruct.lat', fieldStruct.VelU');
-out.VelU = FU(longrid', latgrid');
+out.VelU = FU(longrid, latgrid);
 
 FV = griddedInterpolant(fieldStruct.lon', fieldStruct.lat', fieldStruct.VelV');
-out.VelV = FV(longrid', latgrid');
+out.VelV = FV(longrid, latgrid);
 
 FP = griddedInterpolant(fieldStruct.lon', fieldStruct.lat', fieldStruct.Press');
-out.Press = FP(longrid', latgrid');
+out.Press = FP(longrid, latgrid);
 
 end
