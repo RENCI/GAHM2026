@@ -285,7 +285,7 @@ Dataset {
 
 A NetCDF file is written to `output/<storm>_<year>.nc` (for the default config, `output/FLORENCE_2018.nc`)
 containing:
-- Combined TC wind and pressure fields (`Reggrid_TC_out`)
+- Blended TC wind and pressure fields (`Reggrid_TC_out`)
 - Environmental fields (`Reggrid_Env_out`)
 - Grid coordinates and timestamps (`Reggrid_out`)
 
