@@ -76,7 +76,7 @@ if output_info.type == "grid"
     assert(~exist(f_out, 'file'), f_out + " already exists. Delete or rename it before running.")
 end
 
-%% Auto-run SeparateEnvHur if env_info.type==3 and the .mat file does not exist
+%% Run SeparateEnvHur if env_info.type==3 and the .mat file does not exist
 if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
     % TODO:  THE FOLLOWING DOES NOT LOOK RIGHT.  Just because the variable
     % sepenvhur (which contains the separateenvhur config parameters) exists

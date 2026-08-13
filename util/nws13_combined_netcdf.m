@@ -1,5 +1,5 @@
 function nws13_combined_netcdf(era5_file, gahm_file, output_file, varargin)
-% CREATE_COMBINED_NETCDF Creates a combined NetCDF file with ERA5 and GAHM2024 data in separate groups
+% CREATE_COMBINED_NETCDF Creates a combined NetCDF file with ERA5 and GAHM2026 data in separate groups
 %
 % Syntax:
 %   create_combined_netcdf(era5_file, gahm_file, output_file)
@@ -7,7 +7,7 @@ function nws13_combined_netcdf(era5_file, gahm_file, output_file, varargin)
 %
 % Inputs:
 %   era5_file   - String, path to ERA5 NetCDF file
-%   gahm_file   - String, path to GAHM2024 .mat file
+%   gahm_file   - String, path to GAHM2026 .mat file
 %   output_file - String, path for output NetCDF file
 %
 % Optional Name-Value Pairs:
@@ -35,7 +35,7 @@ function nws13_combined_netcdf(era5_file, gahm_file, output_file, varargin)
     addParameter(p, 'Title', '', @ischar);
     addParameter(p, 'Institution', 'RENCI', @ischar);
     addParameter(p, 'MainGroupName', 'Main', @ischar);
-    addParameter(p, 'GAHMGroupName', 'Florence2018', @ischar);
+    addParameter(p, 'GAHMGroupName', 'GAHMGroup', @ischar);
     addParameter(p, 'ERA5VarNames', struct(), @isstruct);
     addParameter(p, 'GAHMVarNames', struct(), @isstruct);
     
@@ -51,8 +51,10 @@ function nws13_combined_netcdf(era5_file, gahm_file, output_file, varargin)
     
     % Set default variable names if not provided
     if isempty(fieldnames(era5_vars))
-        era5_vars = struct('lon', 'longitude', 'lat', 'latitude', 'time', 'valid_time', ...
-                          'u10', 'u10', 'v10', 'v10', 'msl', 'msl');
+        era5_vars = struct('lon', 'longitude', 'lat', 'latitude', ...
+                           'time', 'valid_time', ...
+                           'u10', 'u10', 'v10', 'v10', ...
+                           'msl', 'msl');
     end
     
     if isempty(fieldnames(gahm_vars))
@@ -91,7 +93,7 @@ function nws13_combined_netcdf(era5_file, gahm_file, output_file, varargin)
         grid_var_name = '';
         
         for i = 1:length(field_names)
-            if contains(field_names{i}, 'fields') || contains(field_names{i}, 'field')
+            if contains(field_names{i}, '') || contains(field_names{i}, 'field')
                 fields_var_name = field_names{i};
             elseif contains(field_names{i}, 'grid')
                 grid_var_name = field_names{i};

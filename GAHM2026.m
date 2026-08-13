@@ -615,10 +615,10 @@ for i = 1:itot
 % Inner and outer masks
         FM1 = griddedInterpolant(BlendingMasks(i).lon', BlendingMasks(i).lat', ...
                                                  BlendingMasks(i).mask1');
-        Reggrid_out(i).Mask1 = FM1(longrid, latgrid);
+        Reggrid_out(i).Mask1 = FM1(longrid', latgrid');
         FM2 = griddedInterpolant(BlendingMasks(i).lon', BlendingMasks(i).lat', ...
                                                  BlendingMasks(i).mask2');
-        Reggrid_out(i).Mask2 = FM2(longrid, latgrid);
+        Reggrid_out(i).Mask2 = FM2(longrid', latgrid');
 
     end
 end
