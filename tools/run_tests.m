@@ -18,7 +18,9 @@ function success = run_tests()
     addpath(fullfile(projdir, 'util'))
     addpath(fullfile(projdir, 'SeparateEnvHur'))
 
-    focusedResults = runtests(fullfile(toolsdir, "testMergeFeatures.m"));
+    focusedResults = [ ...
+        runtests(fullfile(toolsdir, "testMergeFeatures.m")), ...
+        runtests(fullfile(toolsdir, "testNws13CombineRanks.m"))];
     assertSuccess(focusedResults);
 
     compare_to_baseline
