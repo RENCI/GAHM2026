@@ -12,3 +12,5 @@ output/
 /docs/.sass-cache/
 /docs/.bundle/
 /docs/vendor/bundle/
+
+/.worktrees/
