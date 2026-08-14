@@ -3,7 +3,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from update_docs import SourceDocument, read_source_checksum, select_documents, sha256_file
+from update_docs import (
+    SourceDocument,
+    build_page,
+    clean_markdown,
+    publish_staged_documents,
+    read_source_checksum,
+    select_documents,
+    sha256_file,
+)
 
 
 class UpdateDocsSelectionTests(unittest.TestCase):
@@ -73,6 +81,127 @@ class UpdateDocsSelectionTests(unittest.TestCase):
             select_documents(
                 [self.document], self.root, False, (Path("documentation/other.docx"),)
             )
+
+    def test_clean_markdown_promotes_source_title_and_section(self):
+        source = "**Document Title**\n\n**1. Derivation** (source note)\n"
+        expected = "# Document Title\n\n## 1. Derivation (source note)\n"
+        self.assertEqual(clean_markdown(source), expected)
+
+    def test_clean_markdown_preserves_equation_content_and_numbers(self):
+        source = "$$x^{2} + y^{2} = z^{2}\\#(12)$$\n"
+        expected = "$$x^{2} + y^{2} = z^{2}\\tag{12}$$\n"
+        self.assertEqual(clean_markdown(source), expected)
+
+    def test_clean_markdown_makes_extracted_media_base_url_safe(self):
+        source = (
+            "![Figure](assets/source-documents/example/media/image1.png)"
+            '{width="3in"}\n'
+        )
+        expected = (
+            "![Figure]({{ '/assets/source-documents/example/media/image1.png' "
+            "| relative_url }}){width=\"3in\"}\n"
+        )
+        self.assertEqual(clean_markdown(source), expected)
+
+    def test_build_page_records_source_identity_and_navigation(self):
+        page = build_page(self.document, "a" * 64, "# Example\n")
+        self.assertIn('source_sha256: "' + "a" * 64 + '"', page)
+        self.assertIn("parent: Source Documents", page)
+        self.assertIn("nav_order: 1", page)
+        self.assertIn("permalink: /source-documents/example/", page)
+        self.assertIn("documentation/example.docx", page)
+        self.assertTrue(page.endswith("# Example\n"))
+
+    def test_build_page_marks_draft_source(self):
+        document = SourceDocument(
+            source=self.document.source,
+            output=self.document.output,
+            slug=self.document.slug,
+            title=self.document.title,
+            nav_order=self.document.nav_order,
+            is_draft=True,
+        )
+        page = build_page(document, "a" * 64, "# Example\n")
+        self.assertIn(
+            "> **Draft source:** This document contains incomplete or provisional material.",
+            page,
+        )
+
+    def test_build_page_protects_tex_braces_without_disabling_media_liquid(self):
+        body = (
+            "$$\\frac{{dV}_{g}}{dr}$$\n\n"
+            "![Figure]({{ '/assets/source-documents/example/media/image1.png' "
+            "| relative_url }})\n"
+        )
+        page = build_page(self.document, "a" * 64, body)
+        self.assertIn("{% raw %}\n$$\\frac{{dV}_{g}}{dr}$$", page)
+        self.assertIn(
+            "![Figure]({{ '/assets/source-documents/example/media/image1.png' "
+            "| relative_url }})\n",
+            page,
+        )
+
+    def test_publish_replaces_page_and_removes_stale_media(self):
+        staging = self.root / "staging"
+        staged_page = staging / self.document.output
+        staged_page.parent.mkdir(parents=True)
+        staged_page.write_text("new page\n", encoding="utf-8")
+        staged_asset = (
+            staging
+            / "docs/assets/source-documents"
+            / self.document.slug
+            / "media/new.png"
+        )
+        staged_asset.parent.mkdir(parents=True)
+        staged_asset.write_bytes(b"new image")
+
+        self.output.write_text("old page\n", encoding="utf-8")
+        old_asset = (
+            self.root
+            / "docs/assets/source-documents"
+            / self.document.slug
+            / "media/old.png"
+        )
+        old_asset.parent.mkdir(parents=True)
+        old_asset.write_bytes(b"old image")
+
+        publish_staged_documents([self.document], self.root, staging)
+
+        self.assertEqual(self.output.read_text(encoding="utf-8"), "new page\n")
+        self.assertFalse(old_asset.exists())
+        self.assertEqual(
+            (
+                self.root
+                / "docs/assets/source-documents"
+                / self.document.slug
+                / "media/new.png"
+            ).read_bytes(),
+            b"new image",
+        )
+
+    def test_publish_copies_pandoc_asset_layout_into_docs(self):
+        staging = self.root / "staging"
+        staged_page = staging / self.document.output
+        staged_page.parent.mkdir(parents=True)
+        staged_page.write_text("new page\n", encoding="utf-8")
+        staged_asset = (
+            staging
+            / "assets/source-documents"
+            / self.document.slug
+            / "media/new.png"
+        )
+        staged_asset.parent.mkdir(parents=True)
+        staged_asset.write_bytes(b"new image")
+
+        publish_staged_documents([self.document], self.root, staging)
+
+        destination = (
+            self.root
+            / "docs/assets/source-documents"
+            / self.document.slug
+            / "media/new.png"
+        )
+        self.assertEqual(destination.read_bytes(), b"new image")
 
 
 if __name__ == "__main__":
