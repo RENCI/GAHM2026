@@ -1,5 +1,27 @@
 title: GAHM2026
 description: Generalized Asymmetric Holland Model for tropical cyclone wind and pressure fields
-remote_theme: pages-themes/minimal@v0.2.0
-plugins:
-  - jekyll-remote-theme
+url: ""
+baseurl: ""
+repository: RENCI/GAHM2026
+
+theme: just-the-docs
+
+search_enabled: true
+heading_anchors: true
+
+aux_links:
+  "GAHM2026 on GitHub":
+    - "https://github.com/RENCI/GAHM2026"
+aux_links_new_tab: true
+
+markdown: kramdown
+kramdown:
+  math_engine: mathjax
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - LOCAL_DEVELOPMENT.md
+  - vendor
+  - .bundle
+  - superpowers
