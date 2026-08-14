@@ -92,6 +92,27 @@ class UpdateDocsSelectionTests(unittest.TestCase):
         expected = "$$x^{2} + y^{2} = z^{2}\\tag{12}$$\n"
         self.assertEqual(clean_markdown(source), expected)
 
+    def test_clean_markdown_safely_displays_pandoc_multiline_inline_tex(self):
+        source = (
+            "Setting $V_{g}(r) = 1.5*V_{\\max}$ preserves TeX.\n\n"
+            "$\\begin{array}{r}\n"
+            "P(r) - P_{n} = e^{-A/r^{B_{g}}}\\#(17)\n"
+            "\\end{array}$\n\n"
+            "$\\begin{array}{r}\n"
+            "\\frac{{dV}_{g}(r)}{dr} = 0\\#\n"
+            "\\end{array}$\n"
+        )
+        expected = (
+            "Setting $V\\_{g}(r) = 1.5\\*V\\_{\\max}$ preserves TeX.\n\n"
+            "$$\\begin{array}{r}\n"
+            "P(r) - P_{n} = e^{-A/r^{B_{g}}}\\tag{17}\n"
+            "\\end{array}$$\n\n"
+            "$$\\begin{array}{r}\n"
+            "\\frac{{dV}_{g}(r)}{dr} = 0\n"
+            "\\end{array}$$\n"
+        )
+        self.assertEqual(clean_markdown(source), expected)
+
     def test_clean_markdown_makes_extracted_media_base_url_safe(self):
         source = (
             "![Figure](assets/source-documents/example/media/image1.png)"

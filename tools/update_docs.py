@@ -115,7 +115,21 @@ def clean_markdown(markdown: str) -> str:
     markdown = re.sub(
         r"^\*\*([^*\n]+)\*\*$", r"## \1", markdown, flags=re.MULTILINE
     )
+    markdown = re.sub(
+        r"^\$(\\begin\{array\}.*?\\end\{array\})\$$",
+        r"$$\1$$",
+        markdown,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+
+    def protect_inline_tex(match):
+        tex = re.sub(r"(?<!\\)_", r"\\_", match.group(1))
+        tex = re.sub(r"(?<!\\)\*", r"\\*", tex)
+        return f"${tex}$"
+
+    markdown = re.sub(r"(?<!\$)\$(?!\$)([^\n$]+)\$(?!\$)", protect_inline_tex, markdown)
     markdown = re.sub(r"\\#\((\d+)\)", r"\\tag{\1}", markdown)
+    markdown = re.sub(r"\\#(?=\n\\end\{array\}\$\$)", "", markdown)
 
     def replace_media(match):
         path = "/" + match.group("path")
