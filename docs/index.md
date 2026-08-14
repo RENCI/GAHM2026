@@ -48,12 +48,13 @@ it before continuing.
 - [Outputs]({{ '/outputs/' | relative_url }}) — interpret returned structures and generated files.
 - [SeparateEnvHur]({{ '/separate-env-hur/' | relative_url }}) — prepare and blend gridded environmental fields.
 - [Plotting and Diagnostics]({{ '/plotting/' | relative_url }}) — inspect maps, profiles, comparisons, and animations.
+- [Source Documents]({{ '/source-documents/' | relative_url }}) — search and review the published source references.
 
 ## Repository references
 
 - [Project README](https://github.com/RENCI/GAHM2026/blob/main/README.md)
-- [Complete configuration reference](https://github.com/RENCI/GAHM2026/blob/main/documentation/README_config.md)
-- [Execution call tree](https://github.com/RENCI/GAHM2026/blob/main/documentation/CALL_TREE.md)
-- [GAHM data structure](https://github.com/RENCI/GAHM2026/blob/main/documentation/GAHM_struct.md)
+- [Configuration Reference]({{ '/source-documents/configuration-reference/' | relative_url }})
+- [Project Workflow]({{ '/source-documents/workflow/' | relative_url }})
+- [Data Structures]({{ '/source-documents/data-structures/' | relative_url }})
 - [SeparateEnvHur reference](https://github.com/RENCI/GAHM2026/blob/main/SeparateEnvHur/README.md)
 - [Plotting class reference](https://github.com/RENCI/GAHM2026/blob/main/PlotEvalScripts/README.md)

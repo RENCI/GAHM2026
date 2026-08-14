@@ -8,8 +8,9 @@ permalink: /gahm-derivation/
 # GAHM derivation
 
 This concise derivation follows Rick Luettich's August 4, 2026 revision, adapted from Gao (2018). The [complete
-derivation and implementation PDF]({{ '/assets/GAHM2026_derivation_implementation.pdf' | relative_url }}) provides
-the detailed implementation, default assumptions, blending discussion, restrictions, figures, and appendices.
+derivation and implementation]({{ '/source-documents/derivation-and-implementation/' | relative_url }}) provides the
+detailed implementation, default assumptions, blending discussion, restrictions, figures, and appendices. The
+[PDF is also available as an optional download]({{ '/assets/GAHM2026_derivation_implementation.pdf' | relative_url }}).
 
 Let `r` be radial distance from the cyclone center, `P(r)` atmospheric pressure, `P_c` minimum central pressure,
 and `P_n` ambient far-field pressure. The Holland pressure profile is

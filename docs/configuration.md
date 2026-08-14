@@ -58,5 +58,5 @@ R = run_GAHM2026("config_<StormName>");
 ```
 
 For every parameter and output field, see the
-[complete configuration reference](https://github.com/RENCI/GAHM2026/blob/main/documentation/README_config.md).
+[complete configuration reference]({{ '/source-documents/configuration-reference/' | relative_url }}).
 Continue to [Outputs]({{ '/outputs/' | relative_url }}) for the returned data structures.

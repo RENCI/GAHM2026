@@ -79,7 +79,7 @@ GAHM2026/
 ├── output/                    — NetCDF output, warning logs
 ├── PlotEvalScripts/           — GAHM2026Plotter class and legacy plotting scripts
 ├── tools/                     — regression testing harness
-├── documentation/             — derivation, call tree, data structures, config reference
+├── documentation/             — derivation, workflow, data structures, config reference
 ├── docs/                      — GitHub Pages site
 │
 └── SeparateEnvHur/
@@ -137,7 +137,7 @@ These values are defined as plain workspace variables and automatically populate
 
 #### 3. GAHM2026 parameters
 
-See [`documentation/README_config.md`](documentation/README_config.md) for full parameter documentation.
+See [`documentation/Config_Files.md`](documentation/Config_Files.md) for full parameter documentation.
 
 | Struct | Key parameters |
 |--------|---------------|
@@ -354,8 +354,8 @@ GAHM2026 and SeparateEnvHur share the following utilities in `util/`:
 
 ## References
 
-- See [`documentation/CALL_TREE.md`](documentation/CALL_TREE.md) for the full GAHM2026 execution trace.
-- See [`documentation/GAHM_struct.md`](documentation/GAHM_struct.md) for the GAHM data structure definition.
-- See [`documentation/README_config.md`](documentation/README_config.md) for the complete configuration parameter reference.
+- See [`documentation/Workflow.md`](documentation/Workflow.md) for the project workflow.
+- See [`documentation/Data_Structures.md`](documentation/Data_Structures.md) for the GAHM data structure definition.
+- See [`documentation/Config_Files.md`](documentation/Config_Files.md) for the complete configuration parameter reference.
 - See [`PlotEvalScripts/README.md`](PlotEvalScripts/README.md) for the GAHM2026Plotter class guide.
 - See [`SeparateEnvHur/README.md`](SeparateEnvHur/README.md) for details on the vortex scrubbing algorithm.

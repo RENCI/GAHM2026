@@ -46,5 +46,5 @@ accept the compatible outer-mask name `Vortex_mask_outer` and prefer it when bot
 
 - [Configuration]({{ '/configuration/' | relative_url }})
 - [Plotting and Diagnostics]({{ '/plotting/' | relative_url }})
-- [Complete configuration and output reference](https://github.com/RENCI/GAHM2026/blob/main/documentation/README_config.md)
+- [Complete configuration and output reference]({{ '/source-documents/configuration-reference/' | relative_url }})
 - [Project output overview](https://github.com/RENCI/GAHM2026/blob/main/README.md#output)
