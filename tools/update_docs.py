@@ -71,9 +71,18 @@ def sha256_file(path: Path) -> str:
 def read_source_checksum(path: Path) -> Optional[str]:
     if not path.exists():
         return None
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
+        return None
+    try:
+        closing_index = lines.index("---", 1)
+    except ValueError:
+        return None
+    front_matter = "\n".join(lines[1:closing_index])
     match = re.search(
         r'^source_sha256:\s*["\']?([0-9a-f]{64})["\']?\s*$',
-        path.read_text(encoding="utf-8"),
+        front_matter,
         flags=re.MULTILINE,
     )
     return match.group(1) if match else None
@@ -123,9 +132,7 @@ def clean_markdown(markdown: str) -> str:
     )
 
     def protect_inline_tex(match):
-        tex = re.sub(r"(?<!\\)_", r"\\_", match.group(1))
-        tex = re.sub(r"(?<!\\)\*", r"\\*", tex)
-        return f"${tex}$"
+        return f'<span class="math" markdown="0">\\({match.group(1)}\\)</span>'
 
     markdown = re.sub(r"(?<!\$)\$(?!\$)([^\n$]+)\$(?!\$)", protect_inline_tex, markdown)
     markdown = re.sub(r"\\#\((\d+)\)", r"\\tag{\1}", markdown)
@@ -193,25 +200,61 @@ def stage_document(
     )
 
 
+def replace_published_document(
+    document: SourceDocument, repository_root: Path, staging_root: Path
+) -> None:
+    destination_page = repository_root / document.output
+    destination_page.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(staging_root / document.output, destination_page)
+
+    asset_path = Path("docs/assets/source-documents") / document.slug
+    staged_assets = staging_root / asset_path
+    if not staged_assets.exists():
+        staged_assets = staging_root / "assets/source-documents" / document.slug
+    destination_assets = repository_root / asset_path
+    if destination_assets.exists():
+        shutil.rmtree(destination_assets)
+    if staged_assets.exists():
+        shutil.copytree(staged_assets, destination_assets)
+
+
 def publish_staged_documents(
     documents: Sequence[SourceDocument], repository_root: Path, staging_root: Path
 ) -> None:
-    for document in documents:
-        destination_page = repository_root / document.output
-        destination_page.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(staging_root / document.output, destination_page)
+    with tempfile.TemporaryDirectory() as backup_directory:
+        backup_root = Path(backup_directory)
+        for document in documents:
+            page = repository_root / document.output
+            if page.exists():
+                backup_page = backup_root / document.output
+                backup_page.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(page, backup_page)
+            asset_path = Path("docs/assets/source-documents") / document.slug
+            assets = repository_root / asset_path
+            if assets.exists():
+                shutil.copytree(assets, backup_root / asset_path)
 
-        asset_path = Path("docs/assets/source-documents") / document.slug
-        staged_assets = staging_root / asset_path
-        if not staged_assets.exists():
-            staged_assets = (
-                staging_root / "assets/source-documents" / document.slug
-            )
-        destination_assets = repository_root / asset_path
-        if destination_assets.exists():
-            shutil.rmtree(destination_assets)
-        if staged_assets.exists():
-            shutil.copytree(staged_assets, destination_assets)
+        try:
+            for document in documents:
+                replace_published_document(document, repository_root, staging_root)
+        except OSError:
+            for document in documents:
+                page = repository_root / document.output
+                backup_page = backup_root / document.output
+                if page.exists():
+                    page.unlink()
+                if backup_page.exists():
+                    page.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(backup_page, page)
+
+                asset_path = Path("docs/assets/source-documents") / document.slug
+                assets = repository_root / asset_path
+                backup_assets = backup_root / asset_path
+                if assets.exists():
+                    shutil.rmtree(assets)
+                if backup_assets.exists():
+                    shutil.copytree(backup_assets, assets)
+            raise
 
 
 def validate_sources(repository_root: Path) -> None:

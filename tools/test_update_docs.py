@@ -2,6 +2,7 @@ import hashlib
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from update_docs import (
     SourceDocument,
@@ -76,6 +77,22 @@ class UpdateDocsSelectionTests(unittest.TestCase):
         self.output.write_text("---\ntitle: Example\n---\n", encoding="utf-8")
         self.assertIsNone(read_source_checksum(self.output))
 
+    def test_checksum_reader_ignores_checksum_in_page_body(self):
+        checksum = "a" * 64
+        self.output.write_text(
+            f"---\ntitle: Example\n---\nsource_sha256: \"{checksum}\"\n",
+            encoding="utf-8",
+        )
+        self.assertIsNone(read_source_checksum(self.output))
+
+    def test_checksum_reader_rejects_malformed_front_matter(self):
+        checksum = "a" * 64
+        self.output.write_text(
+            f"title: Example\nsource_sha256: \"{checksum}\"\n---\n",
+            encoding="utf-8",
+        )
+        self.assertIsNone(read_source_checksum(self.output))
+
     def test_unknown_explicit_source_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "Unknown source document"):
             select_documents(
@@ -103,13 +120,21 @@ class UpdateDocsSelectionTests(unittest.TestCase):
             "\\end{array}$\n"
         )
         expected = (
-            "Setting $V\\_{g}(r) = 1.5\\*V\\_{\\max}$ preserves TeX.\n\n"
+            'Setting <span class="math" markdown="0">\\(V_{g}(r) = 1.5*V_{\\max}\\)</span> preserves TeX.\n\n'
             "$$\\begin{array}{r}\n"
             "P(r) - P_{n} = e^{-A/r^{B_{g}}}\\tag{17}\n"
             "\\end{array}$$\n\n"
             "$$\\begin{array}{r}\n"
             "\\frac{{dV}_{g}(r)}{dr} = 0\n"
             "\\end{array}$$\n"
+        )
+        self.assertEqual(clean_markdown(source), expected)
+
+    def test_clean_markdown_preserves_inline_tex_subscripts_and_multiplication(self):
+        source = "Pressure $P_{c}$ and product $1.5*V_{\\max}$.\n"
+        expected = (
+            'Pressure <span class="math" markdown="0">\\(P_{c}\\)</span> and product '
+            '<span class="math" markdown="0">\\(1.5*V_{\\max}\\)</span>.\n'
         )
         self.assertEqual(clean_markdown(source), expected)
 
@@ -223,6 +248,48 @@ class UpdateDocsSelectionTests(unittest.TestCase):
             / "media/new.png"
         )
         self.assertEqual(destination.read_bytes(), b"new image")
+
+    def test_publish_failure_restores_all_pages_and_media(self):
+        second = SourceDocument(
+            source=Path("documentation/second.docx"),
+            output=Path("docs/source-documents/second.md"),
+            slug="second",
+            title="Second",
+            nav_order=2,
+            is_draft=False,
+        )
+        staging = self.root / "staging"
+        for document in (self.document, second):
+            staged_page = staging / document.output
+            staged_page.parent.mkdir(parents=True, exist_ok=True)
+            staged_page.write_bytes(f"new {document.slug}".encode())
+            staged_asset = staging / "docs/assets/source-documents" / document.slug / "media/new.png"
+            staged_asset.parent.mkdir(parents=True)
+            staged_asset.write_bytes(f"new image {document.slug}".encode())
+
+        self.output.write_bytes(b"old example page")
+        old_asset = self.root / "docs/assets/source-documents/example/media/old.png"
+        old_asset.parent.mkdir(parents=True)
+        old_asset.write_bytes(b"old example image")
+
+        from update_docs import replace_published_document
+        calls = 0
+
+        def fail_second(*args):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError("injected publication failure")
+            return replace_published_document(*args)
+
+        with patch("update_docs.replace_published_document", side_effect=fail_second):
+            with self.assertRaisesRegex(OSError, "injected publication failure"):
+                publish_staged_documents([self.document, second], self.root, staging)
+
+        self.assertEqual(self.output.read_bytes(), b"old example page")
+        self.assertEqual(old_asset.read_bytes(), b"old example image")
+        self.assertFalse((self.root / second.output).exists())
+        self.assertFalse((self.root / "docs/assets/source-documents/second").exists())
 
 
 if __name__ == "__main__":
