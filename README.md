@@ -10,6 +10,18 @@ V1.4, August 2026
 
 ---
 
+## Documentation
+
+Refresh checked-in pages from changed source documents with:
+
+```bash
+./tools/update-docs
+```
+
+See [local documentation development](docs/LOCAL_DEVELOPMENT.md) for prerequisites, update options, and site checks.
+
+---
+
 ### Quick Start
 
 ```matlab
