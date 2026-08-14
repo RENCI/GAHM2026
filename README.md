@@ -164,7 +164,7 @@ coordination.
 
 ---
 
-## End-to-End: How It Works
+## General Workflow
 
 When `run_GAHM2026` is called and `env_info.type == 3`:
 
@@ -215,17 +215,22 @@ run_GAHM2026
 
 ### IBTrACS track file
 
-Download from: https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/
+Download from: `https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/`
 
-Place in `GAHM2026/input/`. If not found, `run_GAHM2026` will attempt to download it automatically.
+Put it into `GAHM2026/input/`. If not found, `run_GAHM2026` will attempt to download it automatically.
 
-### ERA5 reanalysis data
+### Large-scale meteorology
 
-The configurations in the config directory point to ERA5 output downloaded and hosted on a THREDDS data server at RENCI.  These ERA5 NetCDF files contain variables `msl`, `u10`, `v10`, and `time` (or `valid_time`) with spatial extends that cover a typical ADCIRC grid for the northwest Atlantic Ocean, including the Gulf of Mexico. The URL to this data is 
+Technically, any large-scale meteorological product with the right variables can be used with GAHM2026. [NCML could be used to map variable names in a netCDF file to the variable names above.] The ECMWF ERA5 reanalysis data is a good choice. The configuration files in the config directory point to ERA5 output downloaded and hosted on a THREDDS data server at RENCI.  These ERA5 netCDF files contain variables `msl`, `u10`, `v10`, and `time` (or `valid_time`) with spatial extends that cover a typical ADCIRC grid for the northwest Atlantic Ocean, including the Gulf of Mexico. The lon,lat range in these files is [-100.0, -50.0] and [0.0, 50.0], respectively.  [If different extents are needed, the user should download ERA5 file chunks from the [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=download).] 
+
+
+The URL to the RENCI-hosted data is 
 ```
-'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/regional/wna/uvp/<year>/<year>.wna.nc';
-```
-The file path is specified in `sepenvhur.background_file`. Use the `<year>` placeholder in the path to have it automatically replaced with `storm_year` at runtime.  Any model dataset can be used as long as the files contain at least the above-specified variables.  
+https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/regional/wna/uvp/<year>/<year>.wna.nc;
+``` 
+where `wna` stands for "western North Atlantic with `lon`,`lat` ranges of [-100.0, -50.0] and [0.0, 50.0], respectively.  Currently, years 1979-2025 are hosted on this TDS.
+
+The file path is specified in `sepenvhur.background_file`. Use the `<year>` placeholder in the path to have it automatically replaced with `storm_year` at runtime.  
 
 The DDS for these files looks like this: 
 ```
@@ -339,7 +344,6 @@ GAHM2026 and SeparateEnvHur share the following utilities in `util/`:
 | File | Purpose |
 |------|---------|
 | `readIBTrACS.m` | IBTrACS CSV parser (used by both projects) |
-| `logMsg.m` | Standardized logging (`DEBUG`/`INFO`/`WARNING`/`ERROR`) |
 | `computeRmaxTot.m` | Total Rmax from quadrant values |
 | `quadrantUnitVectors.m` | Vortex/environmental unit vectors per quadrant |
 | `thetaToQuadrantPair.m` | Map azimuth to bounding quadrant pair |

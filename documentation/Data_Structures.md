@@ -1,4 +1,4 @@
-# GAHM Data Structure Definition
+# GAHM2026 Data Structure Definition
 
 **Canonical reference** — all files should reference this document rather than
 duplicating the definition inline.
@@ -26,7 +26,7 @@ duplicating the definition inline.
 
 ---
 
-## GAHM Struct Fields
+## GAHM2026 Struct Fields
 
 ### Identification & Location
 
