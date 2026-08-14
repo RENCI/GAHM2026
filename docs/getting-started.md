@@ -9,7 +9,10 @@ permalink: /getting-started/
 
 ## Requirements
 
-- MATLAB with Signal Processing Toolbox (used by SeparateEnvHur for filtering).
+- MATLAB with:
+  - Mapping Toolbox
+  - Optimization Toolbox
+  - Signal Processing Toolbox
 - A Git checkout of GAHM2026 and network access for the default IBTrACS and ERA5 inputs.
 
 Clone the repository, then start MATLAB with the repository root as the working directory:
