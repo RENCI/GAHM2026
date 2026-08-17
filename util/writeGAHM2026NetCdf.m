@@ -39,15 +39,19 @@ lat_mat = zeros(nt, yi, xi);
 PSFC_mat = zeros(nt, yi, xi);
 U10_mat = zeros(nt, yi, xi);
 V10_mat = zeros(nt, yi, xi);
+
+timetemp=[Reggrid_out.datetime];
+timetemp.Format="yyyy-MM-dd HH:mm:ss";
+
 for i = 1:nt
-    time_data(i) = minutes(Reggrid_out(i).datetime - Reggrid_out(1).datetime);
+    time_data(i) = minutes(timetemp(i) - timetemp(1));
     lon_mat(i,:,:) = Reggrid_out(i).Lon(:,:);
     lat_mat(i,:,:) = Reggrid_out(i).Lat(:,:);
     PSFC_mat(i,:,:) = pres_scale*Reggrid_TC_out(i).Press(:,:);
     U10_mat(i,:,:) = Reggrid_TC_out(i).VelU(:,:);
     V10_mat(i,:,:) = Reggrid_TC_out(i).VelV(:,:);
 end
-time_units = ['minutes since ',char(Reggrid_out(1).datetime)];
+time_units = ['minutes since ',char(timetemp(1))];
 
 % Create NETCDF4 file
 ncid = netcdf.create(f_out, 'NETCDF4');
