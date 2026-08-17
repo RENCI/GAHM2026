@@ -20,6 +20,8 @@ function nws13_combine_ranks(output_file, main_file, main_group, main_source, va
 %     'institution'     - institution global attribute (default: 'RENCI')
 %     'pressure_units'  - output PSFC units: 'mb' (default, converts Pa to
 %                         millibars) or 'Pa' (no conversion)
+%     'deflate_level'   - zlib deflate compression level (0-9) applied to
+%                         all variables (default: 5; 0 disables compression)
 %
 %   All text arguments above (including file/group/source/time_filter
 %   entries inside 'nests') accept either a char vector ('...') or a
@@ -43,6 +45,10 @@ function nws13_combine_ranks(output_file, main_file, main_group, main_source, va
 %     % Keep PSFC in Pa instead of converting to mb:
 %     nws13_combine_ranks('output.nc', 'era5.nc', 'Main', 'ERA5', ...
 %         'pressure_units', 'Pa')
+%
+%     % Disable deflate compression:
+%     nws13_combine_ranks('output.nc', 'era5.nc', 'Main', 'ERA5', ...
+%         'deflate_level', 0)
 
     % --- Parse inputs ---
     p = inputParser;
@@ -54,6 +60,7 @@ function nws13_combine_ranks(output_file, main_file, main_group, main_source, va
     addParameter(p, 'epoch', '1970-01-01', @isTextScalar);
     addParameter(p, 'institution', 'RENCI', @isTextScalar);
     addParameter(p, 'pressure_units', 'mb', @(x) isTextScalar(x) && any(strcmp(x, {'mb', 'Pa'})));
+    addParameter(p, 'deflate_level', 5, @(x) isnumeric(x) && isscalar(x) && x >= 0 && x <= 9 && x == round(x));
     parse(p, output_file, main_file, main_group, main_source, varargin{:});
 
     opts = p.Results;
@@ -142,6 +149,11 @@ function nws13_combine_ranks(output_file, main_file, main_group, main_source, va
 
             vid = netcdf.defVar(gid, vn, vs.nc_type, dim_ids);
             vids(vn) = vid;
+
+            % Deflate compression (skip scalar variables, which have no dims)
+            if ~isempty(dim_ids)
+                netcdf.defVarDeflate(gid, vid, false, opts.deflate_level > 0, opts.deflate_level);
+            end
 
             % Set fill value
             if isempty(vs.fill_value)
