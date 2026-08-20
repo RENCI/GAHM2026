@@ -18,9 +18,13 @@ end
 addpath('util')
 addpath('static')
 addpath('PlotEvalScripts')
+addpath('SeparateEnvHur')
 
 if ~exist('input', 'dir'),  mkdir('input');  end
 if ~exist('output', 'dir'), mkdir('output'); end
+
+datetime.setDefaultFormats('default','yyyy-MM-dd hh:mm:ss')
+datetime.setDefaultFormats('defaultdate','yyyy-MM-dd hh:mm:ss')
 
 %% Load configuration parameters
 config_file = fullfile('config', config_name);
