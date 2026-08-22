@@ -1,6 +1,6 @@
 # GAHM2026 Call Tree
 
-**Date**: February 7, 2026  
+**Date**: August 21, 2026 (updated for the v1.5 merge)  
 **Entry point**: `run_GAHM2026.m`
 
 ---
@@ -12,11 +12,12 @@
 | Driver | `run_GAHM2026.m` |
 | Orchestrator | `GAHM2026.m` |
 | I/O | `readATCFfort22.m`, `readIBTrACS.m`, `readEnvAndHurrFields2.m`, `writeGAHM2026NetCdf.m` |
+| Grid helpers | `interpFieldToGrid.m`, `thetaToAzimuth.m` |
 | GAHM pipeline | `gahm2026Prep.m`, `gahm2026Consistency.m`, `gahm2026Solve.m` |
 | Legacy solvers | `GAHM2026v3e.m`, `GAHM2026v4a.m` (removed, logic unified in `gahm2026Solve.m`) |
 | Profile computation | `gahmVPradial.m`, `gahmVP.m` |
 | Grid operations | `VEnvreg2radial2.m`, `radial2regular.m`, `radialTaper2.m` |
-| Post-processing | `applyWAFfromRaster.m` |
+| Post-processing | `applyWAFfromRaster.m` (grid output), `applyWAFfromPoints.m` (point output) |
 | Extracted utilities | `computeRmaxTot.m`, `quadrantUnitVectors.m`, `thetaToQuadrantPair.m`, `turnAngleDeg.m`, `logMsg.m`, `gahmPhysicalConstants.m` |
 
 ---
@@ -61,10 +62,15 @@ Decomposed into a main function + 7 local helper functions (Phase 3).
 
 | Function | Condition | Calls | Description |
 |----------|-----------|-------|-------------|
-| `buildRegularGridOutputs` | always | `radial2regular.m` | Interpolate vortex fields to regular grid |
-| `buildRegularGridOutputs` | `WAF_flag == true` | `applyWAFfromRaster.m` | Apply Wind Adjustment Factor |
-| `buildRegularGridOutputs` | `env_type == 1/2` | `radial2regular.m` | Interpolate env fields to regular grid |
-| `buildRegularGridOutputs` | `env_type == 3` | `griddedInterpolant` (builtin) | Interpolate env/hurricane to output grid |
+| `buildRegularGridandPointsOutputs` | always | `radial2regular.m` | Interpolate vortex fields to the output locations |
+| `buildRegularGridandPointsOutputs` | `WAF_flag && type=="grid"` | `applyWAFfromRaster.m` | Apply raster Wind Adjustment Factor |
+| `buildRegularGridandPointsOutputs` | `WAF_flag && type=="points"` | `applyWAFfromPoints.m` | Apply point Wind Adjustment Factor |
+| `buildRegularGridandPointsOutputs` | `env_type == 1/2` | `radial2regular.m` | Interpolate env fields to the output locations |
+| `buildRegularGridandPointsOutputs` | `env_type == 3` | `interpFieldToGrid.m` | Interpolate env/hurricane to the output locations |
+
+`output_info.type` selects the target locations: `"grid"` builds a `meshgrid` (matching the
+environmental footprint when `env_type == 3`), `"points"` uses `output_info.lon`/`.lat`
+directly. Both paths share the same code below this point.
 
 ---
 
@@ -113,7 +119,7 @@ Writes `Reggrid_out` and `Reggrid_TC_out` to a NetCDF4 file.
 | `computeRadialProfiles` | Theta loop calling gahmVPradial |
 | `interpolateEnvOnRadialGrid` | Env_type branching for env fields on radial grid |
 | `applyTaperOnRadialGrid` | Taper computation and application |
-| `buildRegularGridOutputs` | Output grid construction, WAF, blending, masks |
+| `buildRegularGridandPointsOutputs` | Output location construction (grid or points), WAF, blending, masks |
 
 ### `gahm2026Prep.m`
 | Function | Called When | Description |
@@ -195,9 +201,11 @@ run_GAHM2026.m
 │   │   └── applyTaperOnRadialGrid [local]
 │   │       └── radialTaper2.m      [if taper_flag]
 │   │
-│   └── buildRegularGridOutputs [local]
+│   └── buildRegularGridandPointsOutputs [local]
 │       ├── radial2regular.m         [vortex, env, hurricane fields]
-│       └── applyWAFfromRaster.m  [if WAF_flag]
+│       ├── interpFieldToGrid.m      [if env_type==3]
+│       ├── applyWAFfromRaster.m     [if WAF_flag && output type=="grid"]
+│       └── applyWAFfromPoints.m     [if WAF_flag && output type=="points"]
 │
 └── writeGAHM2026NetCdf.m           [if output type=="grid"]
 ```

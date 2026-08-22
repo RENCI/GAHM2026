@@ -20,37 +20,44 @@ These variables are used by both SeparateEnvHur and GAHM2026:
 | `storm_year` | numeric | 4-digit year | `2018` |
 | `track_file` | char | IBTrACS CSV filename | `'ibtracs.NA.list.v04r01.csv'` |
 | `storm_designation` | char | Basin + storm number | `'AL06'` |
+| `track_type` | string | Track file format: `"IBTrACS"`, `"ATCF"` or `"fort22"` | `"IBTrACS"` |
 | `debug` | logical | Enable debug output | `true` |
-| `storm_start` | datetime | Start time for processing | `datetime(2018,9,10,0,0,0)` |
-| `storm_end` | datetime | End time for processing | `datetime(2018,9,18,0,0,0)` |
+| `GAHM2026_start` | datetime | Start time for processing | `datetime(2018,9,10,0,0,0)` |
+| `GAHM2026_end` | datetime | End time for processing | `datetime(2018,9,18,0,0,0)` |
 
-`storm_start` and `storm_end` define the processing time window for both SeparateEnvHur (ERA5 extraction) and GAHM2026 (track slicing). They are automatically propagated into `sepenvhur.storm_start`, `sepenvhur.storm_end`, `storm_info.starttime`, and `storm_info.endtime`.
+`GAHM2026_start` and `GAHM2026_end` define the processing time window for both SeparateEnvHur (ERA5 extraction) and GAHM2026 (track slicing). They are automatically propagated into `sepenvhur.storm_start`, `sepenvhur.storm_end`, `storm_info.starttime`, and `storm_info.endtime`.
 
 ---
 
 ### 2. SeparateEnvHur Parameters (`sepenvhur.*`)
 
-Controls ERA5 data extraction and vortex scrubbing. The fields `storm_name`, `storm_year`, `storm_designation`, `track_file`, `storm_start`, and `storm_end` are populated from the shared variables — do not set them separately.
+Controls gridded (ERA5) data extraction and vortex scrubbing. The fields `storm_name`, `storm_year`, `storm_designation`, `track_file`, `storm_start`, and `storm_end` are populated from the shared variables — do not set them separately.
+
+As of v1.5 these parameters are specified in **physical degrees**, not numbers of grid cells. The grid increment is detected from the input file at runtime (`CONFIG.dlonlat`, requires equal longitude and latitude spacing) and all cell counts are derived from it, so one config works across input resolutions.
 
 | Parameter | Type | Description | Default/Example |
 |-----------|------|-------------|-----------------|
-| `background_file` | char | Path to ERA5 NetCDF input file. Use `<year>` as a placeholder for the storm year (resolved at runtime by `getERA5Data`) | `'/path/to/<year>/<year>.global.nc'` |
-| `storm_start` | datetime | Start time (from shared) | `storm_start` |
-| `storm_end` | datetime | End time (from shared) | `storm_end` |
-| `grid_half_size` | numeric | Half-size of extraction grid (grid points) | `40` |
-| `output_half_size` | numeric | Half-size of output grid (grid points) | `40` |
-| `filter_domain_size` | numeric | Domain size for Butterworth filtering | `120` |
-| `num_radial_points` | numeric | Radial points for polar interpolation | `1000` |
-| `num_azimuth_points` | numeric | Azimuthal points for polar interpolation | `360` |
-| `max_radius_deg` | numeric | Maximum polar grid radius (degrees) | `10` |
-| `wind_threshold_outer` | numeric | Wind speed threshold for outer cutline (m/s) | `10` |
-| `wind_threshold_inner` | numeric | Wind speed threshold for inner cutline (m/s) | `34/1.944` (~17.5, i.e. 34 kt) |
+| `background_file` | char | Path to gridded NetCDF input (local or OPeNDAP URL). Use `<year>` as a placeholder for the storm year (resolved at runtime by `getERA5Data`) | `'.../<year>/<year>.nc'` |
+| `storm_start` | datetime | Start time (from shared `GAHM2026_start`) | `GAHM2026_start` |
+| `storm_end` | datetime | End time (from shared `GAHM2026_end`) | `GAHM2026_end` |
+| `filter_grid_length` | numeric | Side length (deg) of the square box the digital filter runs on | `30` |
+| `output_grid_length` | numeric | Side length (deg) of the cutline/output box. Must be <= `filter_grid_length`. Output grid is `output_grid_length/dlonlat + 1` per side | `20` |
+| `search_radius` | numeric | Max radius (deg) around the track eye searched for the gridded pressure minimum. Diagnostic only — the extraction is centered on the track eye | `1.5` |
+| `wind_threshold_outer` | numeric | Outer blending cutline isotach (m/s) | `10` |
+| `wind_threshold_inner` | numeric | Inner blending cutline isotach (m/s) | `17.5` |
+| `filter_isotach` | numeric | Isotach (m/s) whose mean radius sets the filter length scale | `17.5` |
+| `filter_hp_multiplier` | numeric | Filter half-power scale = mean radius to `filter_isotach` x this. Larger `filter_isotach` or smaller multiplier moves energy into the environmental field | `25` |
+| `num_points_smoother` | numeric | Moving-mean width used to smooth isotach cutlines | `3` |
+| `isotach_smooth_variance` | numeric | Convergence tolerance for cutline smoothing | `2000` |
+| `num_azimuthal_points` | numeric | Number of polar azimuths; set from `GAHM_compute_info.ntheta` | `24` |
+| `num_radial_points` | numeric | Number of polar radial points; set from `GAHM_compute_info.nr` | `800` |
+| `radial_inc` | numeric | `(output_grid_length/2)/num_radial_points` | derived |
+| `output_file_name` | char | Path (no extension) the `.mat` is written to; set to `env_info.file_name` | `env_info.file_name` |
+| `output_dir` | char | Directory created before saving. **Note:** not joined to `output_file_name` — see `DECISIONS.md` | `'output'` |
 | `debug` | logical | Print debug messages | `true` |
-| `output_dir` | char | Output directory for `.mat` file | `'output'` |
-| `storm_name` | char | Storm name (from shared) | `storm_name` |
-| `storm_year` | numeric | Storm year (from shared) | `storm_year` |
-| `storm_designation` | char | Basin + storm number (from shared) | `storm_designation` |
-| `track_file` | char | Track data file path | `fullfile('input', track_file)` |
+| `isotach_output_radials` | numeric | Carried for upstream compatibility; never read | `num_azimuthal_points` |
+
+**Removed in v1.5** (replaced by the physical fields above): `grid_half_size`, `output_half_size`, `filter_domain_size`, `max_radius_deg`, `num_azimuth_points`, `search_range`.
 
 ---
 
@@ -65,8 +72,8 @@ Identifies the storm and track file for GAHM2026. Most fields are derived from t
 | `name` | char | Storm name | `storm_name` |
 | `year` | char | Storm year (4-digit string) | `num2str(storm_year)` |
 | `designation` | char | Basin + storm number (e.g., `'AL06'`). Ignored for single-storm ATCF files | `storm_designation` |
-| `starttime` | datetime | Start time for processing (from shared `storm_start`). Set to `0` to use first track time | `storm_start` |
-| `endtime` | datetime | End time for processing (from shared `storm_end`). Set to `0` to use last track time | `storm_end` |
+| `starttime` | datetime | Start time for processing (from shared `GAHM2026_start`). Set to `0` to use first track time | `GAHM2026_start` |
+| `endtime` | datetime | End time for processing (from shared `GAHM2026_end`). Set to `0` to use last track time | `GAHM2026_end` |
 | `outputfilename` | char | Base output filename | `sprintf('%s_%s', name, year)` |
 
 ---
@@ -111,7 +118,19 @@ Controls land-roughness-based wind speed adjustment.
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `flag` | logical | Enable WAF correction | `false` |
-| `file_name` | char | Path to WAF raster (`.tif`). Ignored if `flag = false` | `'input/WAF_15deg_10km_6km_raster_test.tif'` |
+| `file_name` | char | WAF data file. Ignored if `flag = false`. For `output_info.type = "grid"` this is a GeoTIFF raster with one layer per wind direction, read by `applyWAFfromRaster`. For `output_info.type = "points"` this is a MAT-file containing `WAF_points`, read by `applyWAFfromPoints` | `'input/WAF_15deg_10km_6km_raster_test.tif'` |
+
+#### Point WAF MAT schema (`output_info.type = "points"`)
+
+The MAT-file must contain a variable named `WAF_points`, a struct array in which each element is one output location:
+
+| Field | Description |
+|-------|-------------|
+| `lon` | scalar longitude; must match an `output_info.lon` value exactly |
+| `lat` | scalar latitude; must match the corresponding `output_info.lat` value exactly |
+| `WAF` | vector of adjustment factors for evenly spaced wind directions, ordered clockwise from north starting at 0 deg |
+
+Wind direction is the direction the wind blows *from*. A 360 deg column equal to the 0 deg column is appended internally so interpolation wraps. Every output point must match exactly one WAF point; unmatched or ambiguous coordinates raise an error. The WAF is applied to vortex velocity only, before the environmental wind is added; pressure is not adjusted.
 
 ---
 
@@ -136,7 +155,7 @@ When `env_info.type = 3`, the `.mat` file (produced by SeparateEnvHur) must cont
 | `Time(i)` | (nt) | datetime array |
 | `Lo(i,:,:)` | (nt, nlat, nlon) | Longitude grid |
 | `La(i,:,:)` | (nt, nlat, nlon) | Latitude grid |
-| `Vortex_mask(i,:,:)` | (nt, nlat, nlon) | Outer cutline mask (0 = inside, 1 = outside) |
+| `Vortex_mask_outer(i,:,:)` | (nt, nlat, nlon) | Outer cutline mask (0 = inside, 1 = outside). Files written before v1.5 carry this as `Vortex_mask`; `readEnvAndHurrFields2` accepts either name |
 | `Vortex_mask_inner(i,:,:)` | (nt, nlat, nlon) | Inner cutline mask (0 = inside, 1 = outside) |
 | `env_msl(i,:,:)` | (nt, nlat, nlon) | Environmental mean sea level pressure (mb) |
 | `env_u10(i,:,:)` | (nt, nlat, nlon) | Environmental E-W wind velocity (m/s) |
@@ -160,7 +179,9 @@ Times must include all track file times; additional times (e.g., hourly) are per
 |-----------|------|-------------|---------|
 | `diagnostics` | char | File path for diagnostic messages | `fullfile('output', '<NAME>_<DESIG>_<YEAR>_GAHM2026_diagnostics.dat')` |
 | `NetCDFfilename` | char | Base output NetCDF path (`.nc` appended automatically) | `'output/<NAME>_<YEAR>'` |
-| `timeinc` | numeric | Output time interval (hours). Must be ≤ track file snapshot interval | `1` |
+| `warnings` | char | File path for warning messages. Carried for upstream compatibility; never read | `fullfile('output', '<NAME>_<DESIG>_GAHM2026_warnings.dat')` |
+| `timeinc` | numeric | Output time interval (hours). Must be ≤ track file snapshot interval. For `env_info.type = 3` must be an even multiple of the environmental file time increment | `1` |
+| `pres_units` | string | Pressure units in the NetCDF output: `"mb"` or `"Pa"` | `"mb"` |
 | `type` | string | Output type: `"grid"` or `"points"` | `"grid"` |
 
 #### Grid output (`output_info.type = "grid"`)
@@ -243,8 +264,8 @@ The number of longitude and latitude values must be equal and are fixed in time.
    storm_year        = 2018;
    track_file        = 'ibtracs.NA.list.v04r01.csv';
    storm_designation = 'AL14';
-   storm_start       = datetime(2018,10,7,0,0,0);
-   storm_end         = datetime(2018,10,12,0,0,0);
+   GAHM2026_start    = datetime(2018,10,7,0,0,0);
+   GAHM2026_end      = datetime(2018,10,12,0,0,0);
    ```
 3. Update `sepenvhur.background_file` with the path to the ERA5 data (use `<year>` as a placeholder for the storm year).
 4. Adjust GAHM model parameters as needed.

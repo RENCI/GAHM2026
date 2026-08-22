@@ -2,7 +2,7 @@ function OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
         basic, psl, u, v, ...
         isInsideOuter, isInsideInner, distance_outer, distance_inner)
 
-    half = CONFIG.output_half_size;
+    half = round((CONFIG.output_grid_length/2)/CONFIG.dlonlat);
     rows = track.lat_idx(i)-half : track.lat_idx(i)+half;
     cols = track.lon_idx(i)-half : track.lon_idx(i)+half;
     grid_size = length(rows);
@@ -17,7 +17,7 @@ function OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
     OUTPUT.dis_u(i,:,:) = u(rows, cols) - basic.u(rows, cols);
     OUTPUT.dis_v(i,:,:) = v(rows, cols) - basic.v(rows, cols);
 
-    OUTPUT.mask(i,:,:) = reshape(isInsideOuter, [grid_size, grid_size]);
+    OUTPUT.mask_outer(i,:,:) = reshape(isInsideOuter, [grid_size, grid_size]);
     OUTPUT.mask_inner(i,:,:) = reshape(isInsideInner, [grid_size, grid_size]);
     OUTPUT.distance_outer(i,:) = distance_outer;
     OUTPUT.distance_inner(i,:) = distance_inner;

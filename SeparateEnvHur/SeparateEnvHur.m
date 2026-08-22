@@ -1,4 +1,4 @@
-function env_vals = SeparateEnvHur(config_input, ATCF_data_in)
+function [env_vals, CONFIG] = SeparateEnvHur(config_input, ATCF_data_in)
 %SeparateEnvHur  Extract environmental fields from ERA5 data for a tropical cyclone.
 %   env_vals = SeparateEnvHur(config_file) runs the vortex removal using the
 %   configuration specified in config_file (a .m file that defines CONFIG).
@@ -6,15 +6,34 @@ function env_vals = SeparateEnvHur(config_input, ATCF_data_in)
 %   env_vals = SeparateEnvHur(config_input, ATCF_data_in) uses pre-loaded track
 %   data instead of reading the track file.
 %
+%   [env_vals, CONFIG] = SeparateEnvHur(...) also returns the configuration
+%   augmented with values derived from the gridded input file, notably the
+%   grid increment CONFIG.dlonlat and the derived CONFIG.grid_size.
+%
 %   config_input can be:
 %     - a string/char path to a .m file that defines a CONFIG struct
 %       (original SeparateEnvHur config) or a sepenvhur struct (unified config)
 %     - a struct with all required SeparateEnvHur fields (passed directly)
+%
+%                        J. Chen 2025-26
+%                        B. Blanton 1/2026 - 2/2026 initial integration into GAHM2026
+%                        R. Luettich 5/2/2026 - further integration into GAHM2026
+%                        R. Luettich 8/18/2026 - centered on track eye location,
+%                                                not ERA5 min pressure
 
     arguments
         config_input
         ATCF_data_in (1,:) struct = struct.empty
     end
+
+% Use a 24-hour, unambiguous default datetime format.  run_GAHM2026 sets this
+% too, but SeparateEnvHur can be run standalone, and under a lower-case "hh"
+% format (a 12-hour clock with no AM/PM designator) 18:00 is reported as
+% "06:00:00" and a date with no time component as "12:00:00", which makes the
+% ERA5 epoch and timestep messages confusing to read.
+datetimeFormat = 'yyyy-MMM-dd HH:mm:ss';
+datetime.setDefaultFormats('default',datetimeFormat);
+datetime.setDefaultFormats('defaultdate',datetimeFormat);
 
 %% Configuration
 if isstruct(config_input)
@@ -88,23 +107,43 @@ if era5.lon_convention == "0_360"
     track.lon(track.lon < 0) = track.lon(track.lon < 0) + 360;
 end
 
+% Compute the grid increment (deg) from the gridded input file.  All
+% downstream cell counts are derived from this rather than being configured
+% as fixed numbers of grid cells.
+dlon = abs(era5.lon(2)-era5.lon(1));
+dlat = abs(era5.lat(2)-era5.lat(1));
+logMsg(-1, "INFO", "gridded data lon,lat increments: %g, %g", dlon, dlat);
+if dlon == dlat
+    CONFIG.dlonlat = dlon;
+else
+    logMsg(-1, "ERROR", "gridded data longitude and latitude increments are not equal.");
+end
+CONFIG.grid_size = CONFIG.output_grid_length/CONFIG.dlonlat + 1;
+
 % Compute grid indices from the actual ERA5 coordinate vectors
 track.lon_idx = interp1(era5.lon, 1:length(era5.lon), track.lon, 'nearest', 'extrap');
 track.lat_idx = interp1(era5.lat, 1:length(era5.lat), track.lat, 'nearest', 'extrap');
-track.search_range = CONFIG.search_range;
+
+% Search box (grid cells) used by findPressureCenter.  The extraction is
+% centered on the track eye as of v1.5, so this only affects the diagnostic
+% report of where the gridded pressure minimum sits.
+track.search_range = round(CONFIG.search_radius/CONFIG.dlonlat);
 
 
 %% Initialize output arrays
 OUTPUT = initializeOutputArrays(length(track.time), CONFIG);
-era5.vortex.lon = zeros(1, length(track.time));
-era5.vortex.lat = zeros(1, length(track.time));
 if CONFIG.debug
-    grid_size = 2 * CONFIG.output_half_size + 1;
-    logMsg(-1, "DEBUG", "Output arrays initialized: %d times, %dx%d grid", length(track.time), grid_size, grid_size);
+    logMsg(-1, "DEBUG", "Output arrays initialized: %d times, %dx%d grid", ...
+           length(track.time), CONFIG.grid_size, CONFIG.grid_size);
 end
 
 %% Main processing loop
 if CONFIG.debug, logMsg(-1, "DEBUG", "Beginning main processing loop over %d time steps", length(track.time)); end
+
+% Center the extraction on the track eye location rather than on the
+% location of minimum pressure in the gridded input data.
+era5.vortex.lon = track.lon;
+era5.vortex.lat = track.lat;
 
 PA2MB = 0.01;
 for i = 1:length(track.time)
@@ -119,28 +158,37 @@ for i = 1:length(track.time)
     windSpeed = hypot(u10, v10);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Step %d/%d: field extraction done (SLP range=%.1f-%.1f mb, max wind=%.1f m/s)", i, length(track.time), min(slp(:)), max(slp(:)), max(windSpeed(:))); end
 
-    [era5.vortex.lon(i), era5.vortex.lat(i)] = findPressureCenter(era5, track, i);
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Pressure center found at (%.4f, %.4f), track position (%.4f, %.4f)", era5.vortex.lon(i), era5.vortex.lat(i), track.lon(i), track.lat(i)); end
+    % Not used in the calculation; retained as a diagnostic comparison
+    % against the track eye location that the extraction is centered on.
+    [era5_minpre_lon, era5_minpre_lat] = findPressureCenter(era5, track, i);
+    if CONFIG.debug, logMsg(-1, "DEBUG", "Pressure center found at (%.4f, %.4f), track position (%.4f, %.4f)", era5_minpre_lon, era5_minpre_lat, track.lon(i), track.lat(i)); end
+
+    % determine the cutline for setting the filter half-power length scale
 
     [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i);
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Polar coordinate interpolation done (grid size=%dx%d)", size(Xq,1), size(Xq,2)); end
+    if CONFIG.debug, logMsg(-1, "DEBUG", "Polar coordinate interpolation for filter isotach done (grid size=%dx%d)", size(Xq,1), size(Xq,2)); end
 
-    [cutlineIdx_inner, isInsideInner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
-                                                           era5, track, CONFIG, i, ...
-                                                           CONFIG.wind_threshold_inner);
+    [cutlineIdx_filter, ~, ~] = findCutline(hr_u, hr_v, Xq, Yq, ...
+                                     era5, track, CONFIG, i, CONFIG.filter_isotach);
+
+    max_radius_deg = CONFIG.output_grid_length/2;  % length of each radial line (deg)
+    meanFilterRadiusDeg = max_radius_deg * (mean(cutlineIdx_filter, "all") / CONFIG.num_radial_points);
+    if CONFIG.debug, logMsg(-1, "DEBUG", "Filter isotach found: mean isotach radius=%.4f deg", meanFilterRadiusDeg); end
+
+    % compute the filtered fields
+
+    basic = computeBasicField(slp, u10, v10, track, CONFIG, i, meanFilterRadiusDeg);
+    if CONFIG.debug, logMsg(-1, "DEBUG", "Basic field computed (filter half-power wavelength=%.2f deg)", CONFIG.filter_hp_multiplier*meanFilterRadiusDeg); end
+
+    % determine the cutlines for the inner and outer blending isotachs
+
+    [~, isInsideInner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
+                                     era5, track, CONFIG, i, CONFIG.wind_threshold_inner);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Inner cutline found: mean radius=%.1f km, points inside=%d", mean(distance_inner), sum(isInsideInner)); end
 
     [~, isInsideOuter, distance_outer] = findCutline(hr_u, hr_v, Xq, Yq, ...
-                                           era5, track, CONFIG, i, ...
-                                           CONFIG.wind_threshold_outer);
+                                     era5, track, CONFIG, i, CONFIG.wind_threshold_outer);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Outer cutline found: mean radius=%.1f km, points inside=%d", mean(distance_outer), sum(isInsideOuter)); end
-
-    meanInnerRadiusDeg = mean(cutlineIdx_inner, "all") * CONFIG.max_radius_deg / CONFIG.num_radial_points;
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Mean inner vortex radius=%.4f deg", meanInnerRadiusDeg); end
-
-    basic = computeBasicField(slp, u10, v10, ...
-                              track, CONFIG, i, meanInnerRadiusDeg);
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Basic field computed (mean inner radius=%.4f deg)", meanInnerRadiusDeg); end
 
     OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
                           basic, slp, u10, v10, ...
@@ -151,10 +199,13 @@ end
 
 %% Save output
 env_vals = createOutputStruct(OUTPUT, track, era5);
-outfile = string(CONFIG.storm_name)+"_"+string(CONFIG.storm_designation)+"_"+string(CONFIG.storm_year)+".mat";
+
+% NOTE (v1.5 behavior, ported verbatim): output_dir is created but is not
+% joined to output_file_name, so the created directory may not be the one
+% written to.  See "Known v1.5 defects" in DECISIONS.md.
+outfile = CONFIG.output_file_name;
 if isfield(CONFIG, 'output_dir')
     if ~exist(CONFIG.output_dir, 'dir'), mkdir(CONFIG.output_dir); end
-    outfile = fullfile(CONFIG.output_dir, outfile);
 end
 if CONFIG.debug, logMsg(-1, "DEBUG", "Saving output to %s", outfile); end
 save(outfile, "env_vals")

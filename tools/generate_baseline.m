@@ -47,17 +47,24 @@ storm_info.endtime    = datetime(2018,9,15,0,0,0);
 
 ATCF_data_in = readIBTrACS(storm_info);
 
-% SeparateEnvHur config for auto-generating env fields
-sepenvhur.background_file      = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global.1/uvp/<year>/<year>.nc';
+% SeparateEnvHur config for auto-generating env fields.
+% Prefer a local regional ERA5 file so the regression suite is hermetic; fall
+% back to the THREDDS server when it is not present.
+local_era5 = fullfile(projdir, 'input', '201809.wna.nc');
+if exist(local_era5, 'file')
+    sepenvhur.background_file = local_era5;
+else
+    sepenvhur.background_file = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/regional/wna/uvp/<year>/<year>.wna.nc';
+end
 sepenvhur.storm_start           = storm_info.starttime;
 sepenvhur.storm_end             = storm_info.endtime;
-sepenvhur.grid_half_size        = 40;
-sepenvhur.output_half_size      = 40;
-sepenvhur.filter_domain_size    = 120;
-sepenvhur.num_radial_points     = 1000;
-sepenvhur.num_azimuth_points    = 360;
-sepenvhur.max_radius_deg        = 10;
-sepenvhur.search_range          = 6;
+sepenvhur.filter_grid_length      = 30;   % deg, filter extraction box side length
+sepenvhur.output_grid_length      = 20;   % deg, output and isotach box side length
+sepenvhur.search_radius           = 1.5;  % deg (unused as of v1.5)
+sepenvhur.filter_isotach          = 17.5; % m/s
+sepenvhur.filter_hp_multiplier    = 25;
+sepenvhur.num_points_smoother     = 3;
+sepenvhur.isotach_smooth_variance = 2000;
 MS2KT = gahmPhysicalConstants().ms2kt;
 sepenvhur.wind_threshold_outer  = 20/MS2KT;
 sepenvhur.wind_threshold_inner  = 34/MS2KT;
@@ -88,8 +95,16 @@ GAHM_compute_info.ntheta = 24;
 GAHM_compute_info.nr     = 800;
 GAHM_compute_info.delr   = 1000;
 
+% Derived SeparateEnvHur fields (must follow GAHM_compute_info)
+sepenvhur.output_file_name       = env_file_base;
+sepenvhur.num_azimuthal_points   = GAHM_compute_info.ntheta;
+sepenvhur.num_radial_points      = GAHM_compute_info.nr;
+sepenvhur.radial_inc             = (sepenvhur.output_grid_length/2)/sepenvhur.num_radial_points;
+sepenvhur.isotach_output_radials = sepenvhur.num_azimuthal_points;  % unused
+
 output_info.diagnostics    = fullfile(toolsdir, 'baseline_diagnostics.dat');
 output_info.NetCDFfilename = fullfile(toolsdir, 'baseline_test');
+output_info.pres_units     = "mb";
 output_info.timeinc        = 1;
 output_info.type           = "grid";
 output_info.nlon           = 51;

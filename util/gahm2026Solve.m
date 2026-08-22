@@ -320,7 +320,11 @@ function [Rmax, Ro, Bg, phi, A_qi, Rmic, Bgicmax, flag_qi] = ...
     Rmic = 0;
     Rmax_tol = 100;
     Bg_in = Bg0M*B;
-    Rmax = Rmax_in;
+    if ~isnan(Rmax_in)
+        Rmax = Rmax_in;
+    else
+        Rmax = 40000;  % this might be abstracted into the config file
+    end
     while abs(Rmax_tol) > 1
         Rmic = Rmic+1;
         if Rmic > 200

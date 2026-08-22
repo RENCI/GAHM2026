@@ -23,8 +23,15 @@ addpath('SeparateEnvHur')
 if ~exist('input', 'dir'),  mkdir('input');  end
 if ~exist('output', 'dir'), mkdir('output'); end
 
-datetime.setDefaultFormats('default','yyyy-MM-dd hh:mm:ss')
-datetime.setDefaultFormats('defaultdate','yyyy-MM-dd hh:mm:ss')
+% Use a 24-hour, unambiguous default datetime format.  The lower-case "hh"
+% format is a 12-hour clock with no AM/PM designator, so 18:00 renders as
+% "06:00:00" and a date with no time component renders as "12:00:00".  Any
+% datetime converted to text under that format (e.g. the "minutes since ..."
+% units string written to the output NetCDF, or the epoch parsed from the
+% gridded input file in getERA5Data) is silently shifted by 12 hours.
+datetimeFormat = 'yyyy-MMM-dd HH:mm:ss';
+datetime.setDefaultFormats('default',datetimeFormat);
+datetime.setDefaultFormats('defaultdate',datetimeFormat);
 
 %% Load configuration parameters
 config_file = fullfile('config', config_name);
@@ -141,6 +148,14 @@ elseif output_info.type == "points"
         Points_Env_out(i).U10 = Reggrid_Env_out(i).VelU;
         Points_Env_out(i).V10 = Reggrid_Env_out(i).VelV;
         Points_Env_out(i).Press = Reggrid_Env_out(i).Press;
+        if env_info.type == 3
+            Points_VVor_invtapHur_out(i).datetime = Reggrid_out(i).datetime;
+            Points_VVor_invtapHur_out(i).Lon = Reggrid_out(i).Lon;
+            Points_VVor_invtapHur_out(i).Lat = Reggrid_out(i).Lat;
+            Points_VVor_invtapHur_out(i).U10 = Reggrid_VVor_invtapHur_out(i).VelU;
+            Points_VVor_invtapHur_out(i).V10 = Reggrid_VVor_invtapHur_out(i).VelV;
+            Points_VVor_invtapHur_out(i).Press = Reggrid_VVor_invtapHur_out(i).Press;
+        end
     end
 
     logMsg(fid, "INFO", "Done computing values at output points")
@@ -148,19 +163,25 @@ end
 
 %% Package results for return
 
-Result.Reggrid_out     = Reggrid_out;
-Result.Reggrid_TC_out  = Reggrid_TC_out;
-Result.Reggrid_Env_out = Reggrid_Env_out;
-Result.Reggrid_VVor_invtapHur_out = Reggrid_VVor_invtapHur_out;
 Result.Trackdata       = Trackdata;
 Result.GAHM_out        = GAHM_out;
 Result.VPrad           = VPrad;
 Result.storm_info      = storm_info;
 Result.env_info        = env_info;
 
-if output_info.type == "points"
+if output_info.type == "grid"
+    Result.Reggrid_out     = Reggrid_out;
+    Result.Reggrid_TC_out  = Reggrid_TC_out;   % full solution
+    Result.Reggrid_Env_out = Reggrid_Env_out;  % Env field only, for diagnostics
+    if env_info.type == 3
+        Result.Reggrid_VVor_invtapHur_out = Reggrid_VVor_invtapHur_out;
+    end
+elseif output_info.type == "points"
     Result.Points_TC_out  = Points_TC_out;
     Result.Points_Env_out = Points_Env_out;
+    if env_info.type == 3
+        Result.Points_VVor_invtapHur_out = Points_VVor_invtapHur_out;
+    end
 end
 
 logMsg(fid, "INFO", "Done.");

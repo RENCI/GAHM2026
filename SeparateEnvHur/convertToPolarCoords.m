@@ -1,6 +1,7 @@
 function [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i)
 
-    half = CONFIG.grid_half_size;
+    half = round((CONFIG.output_grid_length/2)/CONFIG.dlonlat);
+    max_radius_deg = CONFIG.output_grid_length/2;
     rows = track.lat_idx(i)-half : track.lat_idx(i)+half;
     cols = track.lon_idx(i)-half : track.lon_idx(i)+half;
 
@@ -11,9 +12,8 @@ function [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i)
     u_dc = squeeze(era5.u10(cols, rows, i))';
     v_dc = squeeze(era5.v10(cols, rows, i))';
 
-    r = linspace(0, CONFIG.max_radius_deg, CONFIG.num_radial_points);
-    th = linspace(0, 2*pi, CONFIG.num_azimuth_points + 1);
-    th = th(1:end-1);
+    r = linspace(0, max_radius_deg, CONFIG.num_radial_points);
+    th = linspace(0, 2*pi, CONFIG.num_azimuthal_points);
     [rho, theta] = meshgrid(r, th);
     [Xq, Yq] = pol2cart(theta, rho);
 

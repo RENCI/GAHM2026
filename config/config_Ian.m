@@ -29,13 +29,13 @@ storm_end         = datetime(2022,9,23,3,0,0);
 sepenvhur.background_file      = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/regional/wna/uvp/2022/2022.wna.nc';
 sepenvhur.storm_start          = storm_start;
 sepenvhur.storm_end            = storm_end;
-sepenvhur.grid_half_size       = 40;
-sepenvhur.output_half_size     = 40;
-sepenvhur.filter_domain_size   = 120;
-sepenvhur.num_radial_points    = 100;
-sepenvhur.num_azimuth_points   = 360;
-sepenvhur.max_radius_deg       = 10;
-sepenvhur.search_range         = 6;
+sepenvhur.filter_grid_length = 30; % Degrees; filter extraction box side length
+sepenvhur.output_grid_length = 20; % Degrees; output and isotach box side length
+sepenvhur.search_radius      = 1.5; % Degrees from track location (unused as of v1.5)
+sepenvhur.filter_isotach          = 17.5; % m/s
+sepenvhur.filter_hp_multiplier    = 25;
+sepenvhur.num_points_smoother     = 3;
+sepenvhur.isotach_smooth_variance = 2000;
 MS2KT = gahmPhysicalConstants().ms2kt;
 sepenvhur.wind_threshold_outer = 20/MS2KT; % 20 kts -> m/s
 sepenvhur.wind_threshold_inner = 34/MS2KT; % 34 kts -> m/s
@@ -93,6 +93,7 @@ env_info.taper_a          = 2;   % adjusts steepness of hyperbolic tangent taper
 %% ===== Output information =====
 output_info.diagnostics    = fullfile('output', sprintf('%s_%s_%s_GAHM2026_diagnostics.dat', storm_info.name, storm_info.designation, storm_info.year));
 output_info.NetCDFfilename = ['output/' storm_info.outputfilename];
+output_info.pres_units     = "mb";  % pressure units in NetCDF output: "mb" or "Pa"
 output_info.timeinc        = 1;
 output_info.type           = "grid";
 if output_info.type == "grid"
@@ -105,4 +106,13 @@ elseif output_info.type == "points"
     output_info.lat = y;
 else
     disp('output_info.type must be either the string "grid" or "points" ')
+end
+
+%% ===== Derived SeparateEnvHur fields (must follow GAHM_compute_info and env_info) =====
+if env_info.type == 3
+    sepenvhur.output_file_name       = env_info.file_name;
+    sepenvhur.num_azimuthal_points   = GAHM_compute_info.ntheta;
+    sepenvhur.num_radial_points      = GAHM_compute_info.nr;
+    sepenvhur.radial_inc             = (sepenvhur.output_grid_length/2)/sepenvhur.num_radial_points;
+    sepenvhur.isotach_output_radials = sepenvhur.num_azimuthal_points;  % unused
 end

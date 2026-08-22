@@ -1,0 +1,185 @@
+================================================================================
+GAHM2026 v1.5 MERGE — NUMERICAL DELTA REPORT
+================================================================================
+
+Purpose
+-------
+Record of which quantities changed when the external v1.5 tree
+(GAHM2026-main_v1p5) was merged into branch newMerge_to_1.5, measured against
+the pre-merge regression baselines.
+
+Provenance
+----------
+Pre-merge baselines were generated 03-Apr-2026 and re-validated against
+pre-merge HEAD 8c4d6beb82523b1048cf968e18ddc76f27a8f4fc on 2026-08-21:
+51 of 51 checks passed, confirming they were a clean reference.
+Frozen copies: tools/premerge/ (gitignored).
+
+Scope of this measurement
+-------------------------
+The environmental .mat consumed by tests 3 and 4 (tools/FLORENCE_AL06_2018.mat)
+was HELD CONSTANT for this comparison. It was produced by the pre-merge
+SeparateEnvHur. This isolates the GAHM solver-chain and output-path changes
+from the SeparateEnvHur changes.
+
+The SeparateEnvHur rewrite (physical-units configuration, track-eye centering,
+separate filter isotach) also changes the environmental fields. Those effects
+are NOT quantified here; the regenerated baselines that follow this report do
+include them.
+
+Summary of result
+-----------------
+  PASS: 40
+  FAIL: 11
+  All 11 failures are NaN-pattern changes in TC and Env velocity/pressure.
+  Every GAHM parameter (B, Bg, phi, Rmax, RmaxQ, Rmax_tot, SVorMax, flag),
+  every track coordinate, and all Env pressure values are BIT-IDENTICAL.
+
+Root cause of the 11 failures
+-----------------------------
+Isolated by reverting each merged change individually and re-running.
+Sole cause: util/gahm2026Prep.m now normalizes zero quadrant radii to NaN
+
+    RQuad(RQuad(1:4,:) == 0) = NaN;
+
+Effect, verified directly at the affected timesteps:
+
+    baseline TC_VelU NaN count at t=30 : 494 of 2601 cells
+    merged   TC_VelU NaN count at t=30 :   0 of 2601 cells
+
+The merge REMOVES NaN holes; it does not introduce any. Late in the Florence
+track, Vmax falls below 64 kt so the R64 isotach radii are reported as 0.
+Previously those zeros propagated into the radial profile machinery and left
+an undefined annulus in the output field. Treating them as missing data takes
+the existing "absent isotach" path and produces defined values throughout.
+
+Affected output times: t=30..35 in test 1 (env_type=1), t=29.. in tests 3 and 4.
+These correspond to track times 2018-09-14 21:00 and 2018-09-15 00:00, where
+Vmax = 63 and 60 kt respectively.
+
+Changes verified to have NO effect on this configuration
+--------------------------------------------------------
+  - util/gahm2026Consistency.m check-4 loop restructure. The completion test
+    moved out of the isotach loop into its own quadrant loop and now sums
+    flag(q,1:3) rather than flag(q,:). GAHM.flag compares bit-identical for
+    Florence, so the previous behavior happened to be harmless here. It was
+    still wrong: q leaked from the closed quadrant loop and was always 4.
+  - util/gahm2026Solve.m Rmax_in = NaN fallback (Rmax = 40000 m). Not reached
+    for Florence, whose RMW is present at every track time.
+
+================================================================================
+RAW COMPARISON OUTPUT
+================================================================================
+
+=== GAHM26 Regression Comparison ===
+--- Test 1: env_type=1 (ADCIRC/ASWIP) ---
+  Baseline generated: 03-Apr-2026 15:52:33
+  Run completed in 13.5 seconds
+  Timesteps: 38 (match)
+  Gridded TC output:
+    FAIL: TC_VelU NaN pattern mismatch at t=30
+    FAIL: TC_VelV NaN pattern mismatch at t=30
+    FAIL: TC_Press NaN pattern mismatch at t=30
+  Gridded Env output:
+    FAIL: Env_VelU NaN pattern mismatch at t=30
+    FAIL: Env_VelV NaN pattern mismatch at t=30
+    PASS: Env_Press            max_abs=0.00e+00  max_rel=0.00e+00
+  GAHM parameters (14 track times):
+    PASS: GAHM.B               max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Rmax_in         max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Rmax_tot        max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.SVorMax         max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Rmax            max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Bg              max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.phi             max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.RmaxQ           max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.flag            max_abs=0.00e+00  max_rel=0.00e+00
+  Track data (38 output times):
+    PASS: Track.Lat            max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: Track.Lon            max_abs=0.00e+00  max_rel=0.00e+00
+--- Test 2: SKIPPED (baseline_env2.mat not found) ---
+--- Test 3: env_type=3 (gridded env + taper + WAF) ---
+  Baseline generated: 03-Apr-2026 15:52:54
+  Run completed in 21.0 seconds
+  Timesteps: 37 (match)
+  Gridded TC output:
+    FAIL: TC_VelU NaN pattern mismatch at t=29
+    FAIL: TC_VelV NaN pattern mismatch at t=29
+    FAIL: TC_Press NaN pattern mismatch at t=29
+  Gridded Env output:
+    PASS: Env_VelU             max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: Env_VelV             max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: Env_Press            max_abs=0.00e+00  max_rel=0.00e+00
+  GAHM parameters (13 track times):
+    PASS: GAHM.B               max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Rmax_in         max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Rmax_tot        max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.SVorMax         max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Rmax            max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Bg              max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.phi             max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.RmaxQ           max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.flag            max_abs=0.00e+00  max_rel=0.00e+00
+  Track data (37 output times):
+    PASS: Track.Lat            max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: Track.Lon            max_abs=0.00e+00  max_rel=0.00e+00
+--- Test 4: Full Florence (351x351 grid, WAF, env_type=3) ---
+  Baseline generated: 03-Apr-2026 15:53:38
+  Run completed in 42.1 seconds
+  Timesteps: 37 (match)
+  Gridded TC output:
+    FAIL: TC_VelU NaN pattern mismatch at t=29
+    FAIL: TC_VelV NaN pattern mismatch at t=29
+    FAIL: TC_Press NaN pattern mismatch at t=29
+  Gridded Env output:
+    PASS: Env_VelU             max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: Env_VelV             max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: Env_Press            max_abs=0.00e+00  max_rel=0.00e+00
+  GAHM parameters (13 track times):
+    PASS: GAHM.B               max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Rmax_in         max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Rmax_tot        max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.SVorMax         max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Rmax            max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.Bg              max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.phi             max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.RmaxQ           max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: GAHM.flag            max_abs=0.00e+00  max_rel=0.00e+00
+  Track data (37 output times):
+    PASS: Track.Lat            max_abs=0.00e+00  max_rel=0.00e+00
+    PASS: Track.Lon            max_abs=0.00e+00  max_rel=0.00e+00
+=== SUMMARY ===
+  PASS: 40
+  FAIL: 11
+  Result: REGRESSION DETECTED
+
+================================================================================
+POST-MERGE BASELINE STATE
+================================================================================
+
+Baselines were regenerated on 2026-08-21 after the merge completed.
+
+The environmental .mat (tools/FLORENCE_AL06_2018.mat) was deleted first and
+regenerated by the MERGED SeparateEnvHur, so the new baselines exercise the
+full merged pipeline including the physical-units configuration, track-eye
+centering, and the separate filter isotach.
+
+tools/generate_baseline.m now prefers a local regional ERA5 file
+(input/201809.wna.nc) when present, falling back to THREDDS otherwise, so the
+regression suite no longer requires network access.
+
+Verification against the regenerated baselines:
+
+    matlab -batch "addpath('tools'); run_tests"
+
+    Test 1: env_type=1 (ADCIRC/ASWIP)                 38 timesteps
+    Test 2: env_type=2 (Lin & Chavez 2012)            38 timesteps
+    Test 3: env_type=3 (gridded env + taper + WAF)    37 timesteps
+    Test 4: Full Florence (351x351, WAF, env_type=3)  37 timesteps
+
+    PASS: 68
+    FAIL: 0
+    Result: ALL CHECKS PASSED
+
+Test 2 (env_type=2) had no baseline before this merge and was being skipped;
+it is now covered, which is why the check count rose from 51 to 68.

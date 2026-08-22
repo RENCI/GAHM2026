@@ -47,7 +47,14 @@ for i = 1:nt
     U10_mat(i,:,:) = Reggrid_TC_out(i).VelU(:,:);
     V10_mat(i,:,:) = Reggrid_TC_out(i).VelV(:,:);
 end
-time_units = ['minutes since ',char(Reggrid_out(1).datetime)];
+% Format the reference time explicitly as ISO 8601 rather than letting it
+% inherit the session's default datetime display format.  CF time units must
+% be "<unit> since yyyy-MM-dd HH:mm:ss"; a month-name or 12-hour format here
+% is either unparseable or silently 12 hours wrong to standard readers
+% (cftime, netCDF4, xarray, udunits).
+epoch_dt = Reggrid_out(1).datetime;
+epoch_dt.Format = 'yyyy-MM-dd HH:mm:ss';
+time_units = ['minutes since ',char(epoch_dt)];
 
 % Create NETCDF4 file
 ncid = netcdf.create(f_out, 'NETCDF4');

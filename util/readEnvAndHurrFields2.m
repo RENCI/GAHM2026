@@ -16,7 +16,7 @@ function [VEnv_10_10,VHur_10_10,Masks,PscaleEnv] = readEnvAndHurrFields2 ...
 %             filename.Time(i); - datetime
 %             filename.Lo(i,:,:);
 %             filename.La(i,nEr:-1:1,:);
-%             filename.Vortex_mask(i,nEr:-1:1,:) 0,1=inside,outside outer
+%             filename.Vortex_mask_outer(i,nEr:-1:1,:) 0,1=inside,outside outer
 %                                                    cut line
 %             filename.Vortex_mask_inner(i,nEr:-1:1,:) 0,1=inside,outside inner
 %                                                    cut line
@@ -46,6 +46,17 @@ function [VEnv_10_10,VHur_10_10,Masks,PscaleEnv] = readEnvAndHurrFields2 ...
 
     S = load(env.file_name); % assumed to be a Matlab '.mat' file
     env_vals = S.env_vals;
+
+    % The outer vortex mask is named Vortex_mask_outer as of v1.5.  Files
+    % produced by earlier versions carry it as Vortex_mask; accept both.
+    if isfield(env_vals, 'Vortex_mask_outer')
+        outer_mask = env_vals.Vortex_mask_outer;
+    elseif isfield(env_vals, 'Vortex_mask')
+        outer_mask = env_vals.Vortex_mask;
+    else
+        logMsg(-1, "ERROR", "Environmental file %s has neither Vortex_mask_outer nor Vortex_mask.", env.file_name);
+    end
+
     [~, nEr, nEc] = size(env_vals.Lo);
     startline = find(starttime_dt == [env_vals.Time]);
     if isempty(startline) % didn't find the specified time in the background Enviromental Velocity file
@@ -107,7 +118,7 @@ function [VEnv_10_10,VHur_10_10,Masks,PscaleEnv] = readEnvAndHurrFields2 ...
         Masks(i).lat = squeeze(env_vals.La(nl,lat1:dlat:latn,:));
         Masks(i).mask1 = squeeze(env_vals.Vortex_mask_inner(nl,lat1:dlat:latn,lon1:dlon:lonn)); %inner mask
         Masks(i).mask1(isnan(Masks(i).mask1)) = 0; %convert NaNs in mask to 0
-        Masks(i).mask2 = squeeze(env_vals.Vortex_mask(nl,lat1:dlat:latn,lon1:dlon:lonn)); %outer mask
+        Masks(i).mask2 = squeeze(outer_mask(nl,lat1:dlat:latn,lon1:dlon:lonn)); %outer mask
         Masks(i).mask2(isnan(Masks(i).mask2)) = 0; %convert NaNs in mask to 0
         numones = sum(sum(Masks(i).mask2));
         PnEnvAvg = sum(sum(Masks(i).mask2.*VEnv_10_10(i).Press))/numones; % average pressure outside the cutline

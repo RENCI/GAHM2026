@@ -1,7 +1,7 @@
 function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, ...
           Reggrid_VVor_invtapHur_out, Trackdata, GAHM_out, VPrad] = ...
           GAHM2026(storm, ATCF_data_in, GAHM_param_info, GAHM_compute_info, WAF_info, ...
-          env_info, output, debug)
+          env_info, output_info, debug)
 %.........................................................................
 %
 %  Function to compute GAHM2026 wind and pressure fields on a lon,lat grid
@@ -63,7 +63,7 @@ function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, ...
         GAHM_compute_info (1,1) struct
         WAF_info (1,1) struct
         env_info (1,1) struct
-        output (1,1) struct
+        output_info (1,1) struct
         debug (1,1) logical = false
     end
 
@@ -91,7 +91,7 @@ if taper_flag
     taper_constants.taper_a = env_info.taper_a;
 end
 
-fid = fopen(output.diagnostics, 'at');
+fid = fopen(output_info.diagnostics, 'at');
 cleanupFid = onCleanup(@() fclose(fid));
 
 if debug, logMsg(fid, "DEBUG", "GAHM version=%d, env_type=%d, taper=%d, WAF=%d", GAHM_version, env_type, taper_flag, WAF_flag); end
@@ -115,8 +115,19 @@ if debug, logMsg(fid, "DEBUG", "Environmental fields loaded."); end
 WAF_data = [];
 WAF_metadata = [];
 if WAF_flag
-    if debug, logMsg(fid, "DEBUG", "Loading WAF raster from %s", WAF_info.file_name); end
-    [WAF_data, WAF_metadata] = readgeoraster(WAF_info.file_name);
+    if output_info.type == "grid"
+        if debug, logMsg(fid, "DEBUG", "Loading WAF raster from %s", WAF_info.file_name); end
+        [WAF_data, WAF_metadata] = readgeoraster(WAF_info.file_name);
+    elseif output_info.type == "points"
+        if debug, logMsg(fid, "DEBUG", "Loading WAF points from %s", WAF_info.file_name); end
+        S_WAF = load(WAF_info.file_name, "WAF_points");
+        if ~isfield(S_WAF, 'WAF_points')
+            logMsg(fid, "ERROR", "WAF file %s does not contain the variable WAF_points required for point output.", WAF_info.file_name);
+        end
+        WAF_data = S_WAF.WAF_points;
+    else
+        logMsg(fid, "ERROR", "output_info.type must be either ""grid"" or ""points"", got ""%s"".", output_info.type);
+    end
 end
 
 %% Main time loop
@@ -136,7 +147,7 @@ maxBTinterval = max(hours(diff([ATCF_data_in(ATCF_startline:ATCF_endline).dateti
 if isempty(maxBTinterval) || isnan(maxBTinterval)
     maxBTinterval = 6;
 end
-nOutMax = nBTtime * ceil(maxBTinterval / output.timeinc);
+nOutMax = nBTtime * ceil(maxBTinterval / output_info.timeinc);
 VVel_VPrad_10_10 = zeros(nOutMax, ntheta, nr+1, 2);
 VSpeed_VPrad_10_10 = zeros(nOutMax, ntheta, nr+1);
 VPress_VPrad = zeros(nOutMax, ntheta, nr+1);
@@ -201,7 +212,7 @@ for itime = 1:nBTtime
     LatNS_t2 = GAHM_t2.Eye(2);
     VEnvAvg_10_10_t2 = GAHM_t2.VEnvStar_10_10;
     Pback_t2 = GAHM_t2.Pback;
-    while (int-1)*output.timeinc < BTinterval
+    while (int-1)*output_info.timeinc < BTinterval
         i = i + 1;
         if itime == 1
             int = 1000;
@@ -210,7 +221,7 @@ for itime = 1:nBTtime
             datetimeint(1,:) = datetime_t2;
         else
             int = int + 1;
-            tfac2 = (int-1)*output.timeinc/BTinterval;
+            tfac2 = (int-1)*output_info.timeinc/BTinterval;
             tfac1 = 1 - tfac2;
             datetimeint(i,:) = datetime_t1 + tfac2*duration(datetime_t2 - datetime_t1);
         end
@@ -298,61 +309,40 @@ if debug, logMsg(fid, "DEBUG", "Master time loop complete: %d output time steps 
 
 itot = i;
 
-%% Interpolate from radial grid to regular output grid
+%% Interpolate from radial grid to output locations, including applying the
+%% Wind Adjustment Factor if specified
 
-logMsg(-1, "INFO", "Interpolating from radial grid to regular output grid (%s) ...", output.type);
+logMsg(-1, "INFO", "Interpolating from radial grid to output locations (%s) ...", output_info.type);
 [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out] = ...
-    buildRegularGridOutputs(itot, env_type, ntheta, nr, r, theta, ...
-        output, WAF_flag, ...
+    buildRegularGridandPointsOutputs(itot, env_type, ntheta, nr, r, theta, ...
+        output_info, WAF_flag, ...
         VVel_VPrad_10_10, VPress_VPrad, VEnvrad_10_10, PEnvrad, ...
         VHurrad_10_10, PHurrad, ...
         VEnv_10_10, VHur_10_10, BlendingMasks, ...
         LonEW, LatNS, datetimeint, ...
-        WAF_data, WAF_metadata);
-logMsg(-1, "INFO", "Regular grid interpolation complete.");
+        WAF_data, WAF_metadata, fid);
+logMsg(-1, "INFO", "Interpolation complete.");
 
-%% Package radial grid data for plotting
+%% Package radial grid data for diagnostic output
 
 VPrad.r = r;
 VPrad.theta = theta;
-NM2M = gahmPhysicalConstants().nm2m;
-r_arc = nm2deg(r/NM2M);  %convert r to nautical miles and then arclength (deg)
 for ii = 1:itot
 
-    % this is the previous VVor variable.  We need it for the moment so that the radialProfile code still works.
-    VPrad.VVor(ii).VelU  = squeeze(VVel_VPrad_10_10(ii,:,:,1));
-    VPrad.VVor(ii).VelV  = squeeze(VVel_VPrad_10_10(ii,:,:,2));
-    VPrad.VVor(ii).Speed = squeeze(VSpeed_VPrad_10_10(ii,:,:));
-    VPrad.VVor(ii).Press = squeeze(VPress_VPrad(ii,:,:));
-
+    % Vortex field from GAHM2026 on the radial grid after applying the taper
     VPrad.VVor_at(ii).VelU  = squeeze(VVel_VPrad_10_10(ii,:,:,1));
     VPrad.VVor_at(ii).VelV  = squeeze(VVel_VPrad_10_10(ii,:,:,2));
     VPrad.VVor_at(ii).Speed = squeeze(VSpeed_VPrad_10_10(ii,:,:));
     VPrad.VVor_at(ii).Press = squeeze(VPress_VPrad(ii,:,:));
 
-    % Interpolate final (blended) output back onto radial grid for diagnostic output
-    FU = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).VelU');
-    FV = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).VelV');
-    FP = griddedInterpolant(Reggrid_out(ii).Lon',Reggrid_out(ii).Lat',Reggrid_TC_out(ii).Press');
-    for it = 1:length(theta)
-        az = thetaToAzimuth(theta(it));
-        [rad_lat, rad_lon] = reckon("rh", LatNS(ii), LonEW(ii), r_arc, az);
-        VPrad.EnvHur_final(ii).VelU(it,:) = FU(rad_lon', rad_lat');
-        VPrad.EnvHur_final(ii).VelV(it,:) = FV(rad_lon', rad_lat');
-        VPrad.EnvHur_final(ii).Speed(it,:) = hypot(VPrad.EnvHur_final(ii).VelU(it,:), VPrad.EnvHur_final(ii).VelV(it,:));
-        VPrad.EnvHur_final(ii).Press(it,:) = FP(rad_lon', rad_lat');
-    end
+    % Environmental field on the radial grid
     if ~isempty(VEnvrad_10_10)
         VPrad.Env(ii).VelU  = squeeze(VEnvrad_10_10(ii,:,:,1));
         VPrad.Env(ii).VelV  = squeeze(VEnvrad_10_10(ii,:,:,2));
         VPrad.Env(ii).Speed = hypot(VPrad.Env(ii).VelU, VPrad.Env(ii).VelV);
         VPrad.Env(ii).Press = squeeze(PEnvrad(ii,:,:));
-        % this is the previous EnvVor variable.  We need it for the moment so that the radialProfile code still works.
-        VPrad.EnvVor(ii).VelU  = VPrad.VVor(ii).VelU + VPrad.Env(ii).VelU;
-        VPrad.EnvVor(ii).VelV  = VPrad.VVor(ii).VelV + VPrad.Env(ii).VelV;
-        VPrad.EnvVor(ii).Speed = hypot(VPrad.EnvVor(ii).VelU, VPrad.EnvVor(ii).VelV);
-        VPrad.EnvVor(ii).Press = VPrad.VVor(ii).Press + VPrad.Env(ii).Press;
 
+        % Environmental field + vortex before taper, on the radial grid
         VPrad.EnvVor_bt(ii).VelU  = VPrad.VVor_bt(ii).VelU + VPrad.Env(ii).VelU;
         VPrad.EnvVor_bt(ii).VelV  = VPrad.VVor_bt(ii).VelV + VPrad.Env(ii).VelV;
         VPrad.EnvVor_bt(ii).Speed = hypot(VPrad.EnvVor_bt(ii).VelU, VPrad.EnvVor_bt(ii).VelV);
@@ -514,16 +504,16 @@ end
 
 
 function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_out] = ...
-    buildRegularGridOutputs(itot, env_type, ntheta, nr, r, theta, ...
-        output, WAF_flag, ...
+    buildRegularGridandPointsOutputs(itot, env_type, ntheta, nr, r, theta, ...
+        output_info, WAF_flag, ...
         VVel_VPrad_10_10, VPress_VPrad, VEnvrad_10_10, PEnvrad, ...
         VHurrad_10_10, PHurrad, ...
         VEnv_10_10, VHur_10_10, BlendingMasks, ...
         LonEW, LatNS, datetimeint, ...
-        WAF_data, WAF_metadata)
+        WAF_data, WAF_metadata, fid)
 
 for i = 1:itot
-    if output.type == "grid"
+    if output_info.type == "grid"
         logMsg(-1, "INFO", "Interpolating to regular grid %s", datetimeint(i))
         if env_type == 3
             env_nlon = length(VEnv_10_10(i).lon(1,:));
@@ -533,16 +523,16 @@ for i = 1:itot
             latgrid1 = VEnv_10_10(i).lat(1,1);
             latgridn = VEnv_10_10(i).lat(env_nlat,1);
         else
-            longrid1 = LonEW(i) - output.dellon*(output.nlon-1)/2;
-            latgrid1 = LatNS(i) - output.dellat*(output.nlat-1)/2;
-            longridn = longrid1 + (output.nlon-1)*output.dellon;
-            latgridn = latgrid1 + (output.nlat-1)*output.dellat;
+            longrid1 = LonEW(i) - output_info.dellon*(output_info.nlon-1)/2;
+            latgrid1 = LatNS(i) - output_info.dellat*(output_info.nlat-1)/2;
+            longridn = longrid1 + (output_info.nlon-1)*output_info.dellon;
+            latgridn = latgrid1 + (output_info.nlat-1)*output_info.dellat;
         end
-        [longrid, latgrid] = meshgrid(longrid1:output.dellon:longridn, latgrid1:output.dellat:latgridn);
-    elseif output.type == "points"
+        [longrid, latgrid] = meshgrid(longrid1:output_info.dellon:longridn, latgrid1:output_info.dellat:latgridn);
+    elseif output_info.type == "points"
         logMsg(-1, "INFO", "Interpolating to output points %s", datetimeint(i))
-        longrid = output.lon;
-        latgrid = output.lat;
+        longrid = output_info.lon;
+        latgrid = output_info.lat;
     end
 
     Reggrid_out(i).datetime = datetimeint(i);
@@ -560,8 +550,13 @@ for i = 1:itot
     Reggrid_VVor_WAF_out(i) = Reggrid_VVor_out(i);
 
     if WAF_flag
-        Reggrid_VVor_WAF = applyWAFfromRaster(WAF_data, WAF_metadata, ...
-                                      Reggrid_VVor_out(i), longrid, latgrid);
+        if output_info.type == "grid"
+            Reggrid_VVor_WAF = applyWAFfromRaster(WAF_data, WAF_metadata, ...
+                                          Reggrid_VVor_out(i), longrid, latgrid);
+        elseif output_info.type == "points"
+            Reggrid_VVor_WAF = applyWAFfromPoints(WAF_data, ...
+                                          Reggrid_VVor_out(i), longrid, latgrid, fid);
+        end
         Reggrid_VVor_WAF_out(i).VelU = Reggrid_VVor_WAF.VelU;
         Reggrid_VVor_WAF_out(i).VelV = Reggrid_VVor_WAF.VelV;
     end

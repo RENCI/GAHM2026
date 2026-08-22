@@ -76,6 +76,7 @@ GAHM_compute_info.delr   = 1000;
 
 output_info.diagnostics    = fullfile(toolsdir, 'compare_diagnostics.dat');
 output_info.NetCDFfilename = fullfile(toolsdir, 'compare_test');
+output_info.pres_units     = "mb";
 output_info.timeinc        = 1;
 output_info.type           = "grid";
 output_info.nlon           = 51;

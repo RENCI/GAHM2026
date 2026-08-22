@@ -58,16 +58,23 @@ You can also pass a struct directly:
 >>              'storm_year',2018, 'track_file','input/ibtracs.NA.list.v04r01.csv', ...
 >>              'storm_start',datetime(2018,9,10,0,0,0), ...
 >>              'storm_end',datetime(2018,9,18,0,0,0), ...
->>              'grid_half_size',40, 'output_half_size',40, ...
->>              'filter_domain_size',120, 'search_range',5, ...
->>              'num_radial_points',1000, ...
->>              'num_azimuth_points',360, 'max_radius_deg',10, ...
->>              'wind_threshold_outer',10, 'wind_threshold_inner',34/1.944, ... % 34 kt ≈ 17.5 m/s (1 kt = 1/1.944 m/s)
+>>              'filter_grid_length',30, 'output_grid_length',20, ...
+>>              'search_radius',1.5, ...
+>>              'wind_threshold_outer',10, 'wind_threshold_inner',17.5, ... % 34 kt
+>>              'filter_isotach',17.5, 'filter_hp_multiplier',25, ...
+>>              'num_points_smoother',3, 'isotach_smooth_variance',2000, ...
+>>              'num_azimuthal_points',24, 'num_radial_points',800, ...
+>>              'radial_inc',(20/2)/800, ...
+>>              'output_file_name','output/FLORENCE_AL06_2018_env', ...
 >>              'debug',true);
->> env_vals = SeparateEnvHur(CONFIG);
+>> [env_vals, CONFIG] = SeparateEnvHur(CONFIG);
 ```
 
-Output is saved as `<STORM_NAME>_<DESIGNATION>_<YEAR>.mat` (e.g., `FLORENCE_AL062018_2018.mat`).  If `output_dir` is set in the config, the file is saved there (e.g., `output/FLORENCE_AL062018_2018.mat`).
+The second output returns the configuration augmented with values derived from the input file,
+notably `CONFIG.dlonlat` (detected grid increment) and `CONFIG.grid_size`.
+
+Output is saved to `output_file_name` with a `.mat` extension. Note that `output_dir`, if set,
+is created but is **not** joined to `output_file_name` — see `DECISIONS.md`.
 
 ## Configuration Parameters
 
@@ -79,22 +86,51 @@ Output is saved as `<STORM_NAME>_<DESIGNATION>_<YEAR>.mat` (e.g., `FLORENCE_AL06
 | `storm_year` | `2018` | Year of storm |
 | `storm_start` | `datetime(2018,9,6,0,0,0)` | Start time for processing |
 | `storm_end` | `datetime(2018,9,18,0,0,0)` | End time for processing |
-| `search_range` | `5` | Search radius for pressure-center detection (grid points) |
-| `grid_half_size` | `40` | Half-size of extraction grid (grid points) |
-| `output_half_size` | `40` | Half-size of output grid (grid points) |
-| `filter_domain_size` | `120` | Half-size of the filtering domain (grid points) |
-| `num_radial_points` | `1000` | Number of radial points for polar interpolation |
-| `num_azimuth_points` | `360` | Number of azimuthal points |
-| `max_radius_deg` | `10` | Maximum radius in degrees for polar grid |
-| `wind_threshold_outer` | `10` | Wind threshold for outer cutline (m/s) |
-| `wind_threshold_inner` | `34/1.944` (~17.5) | Wind threshold for inner cutline (34 kt in m/s) |
+| `filter_grid_length` | `30` | Side length (deg) of the box the digital filter runs on |
+| `output_grid_length` | `20` | Side length (deg) of the cutline/output box. Must be <= `filter_grid_length` |
+| `search_radius` | `1.5` | Radius (deg) searched for the gridded pressure minimum (diagnostic only) |
+| `wind_threshold_outer` | `10` | Outer blending cutline isotach (m/s) |
+| `wind_threshold_inner` | `17.5` | Inner blending cutline isotach (m/s, 34 kt) |
+| `filter_isotach` | `17.5` | Isotach (m/s) whose mean radius sets the filter length scale |
+| `filter_hp_multiplier` | `25` | Filter half-power scale = mean radius to `filter_isotach` x this |
+| `num_points_smoother` | `3` | Moving-mean width for cutline smoothing |
+| `isotach_smooth_variance` | `2000` | Convergence tolerance for cutline smoothing |
+| `num_azimuthal_points` | `24` | Number of polar azimuths (from `GAHM_compute_info.ntheta`) |
+| `num_radial_points` | `800` | Number of polar radial points (from `GAHM_compute_info.nr`) |
+| `radial_inc` | derived | `(output_grid_length/2)/num_radial_points` |
+| `output_file_name` | `env_info.file_name` | Path (no extension) the `.mat` is written to |
+
+### Physical-grid model
+
+As of v1.5, SeparateEnvHur is configured in **degrees**, not numbers of grid cells. The grid
+increment is detected from the input file at runtime (`CONFIG.dlonlat`; longitude and latitude
+spacing must be equal) and every cell count is derived from it. The output grid is
+`output_grid_length/dlonlat + 1` points per side. The same config therefore works unchanged
+against input data of any resolution.
+
+The fields `grid_half_size`, `output_half_size`, `filter_domain_size`, `max_radius_deg`,
+`num_azimuth_points`, and `search_range` were removed in this change.
+
+### Storm centering
+
+The extraction, polar transform, and cutline searches are centered on the **interpolated track
+eye position**, not on the location of minimum sea-level pressure in the gridded input.
+`findPressureCenter` still runs each timestep, but only to report the offset between the two as
+a debug diagnostic.
+
+### Filter isotach vs. blending isotachs
+
+Three cutlines are computed per timestep. `filter_isotach` sets the half-power length scale of
+the Butterworth filter that splits environmental from vortex flow. `wind_threshold_inner` and
+`wind_threshold_outer` define the masks used later to blend GAHM with the vortex field. These
+are independent — the inner blending isotach no longer doubles as the filter scale.
 
 ## Module Structure
 
 | Function | Description |
 |----------|-------------|
 | `getERA5Data` | Retrieves ERA5 fields from NetCDF |
-| `findPressureCenter` | Locates storm center via minimum SLP |
+| `findPressureCenter` | Locates the gridded pressure minimum (diagnostic only) |
 | `convertToPolarCoords` | Transforms fields to polar coordinates |
 | `findCutline` | Detects wind threshold contours |
 | `computeBasicField` | Computes environmental background field |
@@ -108,10 +144,12 @@ The output `.mat` file contains a struct named `env_vals` with:
 - Hurricane (residual) fields: `hur_msl`, `hur_u10`, `hur_v10`
 - Grid coordinates: `Lo`, `La`
 - Time vector: `Time`
-- Vortex masks: `Vortex_mask`, `Vortex_mask_inner`
+- Vortex masks: `Vortex_mask_outer`, `Vortex_mask_inner` (files written before v1.5 name the
+  outer mask `Vortex_mask`; `readEnvAndHurrFields2` accepts either)
 - Best-track positions: `BestTrack_lon`, `BestTrack_lat`
 - Cutline distances: `distance_outer`, `distance_inner`
-- Pressure center: `min_pressure_center_lon`, `min_pressure_center_lat`
+- Storm center: `min_pressure_center_lon`, `min_pressure_center_lat` — despite the names these
+  now carry the **track eye** position, since that is what the extraction is centered on
 - Metadata: `units`
 
 

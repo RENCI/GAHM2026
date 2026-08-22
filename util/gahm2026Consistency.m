@@ -266,13 +266,16 @@ function GAHM_out = gahm2026Consistency(GAHM_constants,GAHM_in,fid)
 
             GAHM_out.flag(q,i) = 1;
         end % end of quadrant loop
+    end % end of isotach loop
 
-        % complete check 4, for quadrant q.
+    % complete check 4: if no isotach in quadrant q produced a usable flag,
+    % mark the default slot.  This must run after the isotach loop has
+    % populated all three isotach columns.
 
-        if sum(GAHM_out.flag(q,:)) == 0
+    for q = 1:4
+        if sum(GAHM_out.flag(q,1:3)) == 0
             GAHM_out.flag(q,4) = 0;
         end
-
-    end % end of isotach loop
+    end
 
 end

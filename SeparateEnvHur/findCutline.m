@@ -1,37 +1,42 @@
 function [cutlineIdx, isInsideOuter, distance] = findCutline( ...
         hr_u, hr_v, Xq, Yq, era5, track, CONFIG, i, wind_threshold)
 
-    half = CONFIG.grid_half_size;
+    half = round((CONFIG.output_grid_length/2)/CONFIG.dlonlat);
     num_radial = CONFIG.num_radial_points;
-    max_search = round(num_radial / CONFIG.max_radius_deg * 6);
+    max_search = CONFIG.output_grid_length/2;
+    radial_inc = CONFIG.radial_inc;
+    n_angle = CONFIG.num_azimuthal_points;
+    angle_inc = 360/n_angle;
 
     centerLon = era5.vortex.lon(i);
     centerLat = era5.vortex.lat(i);
+
+    % Attempt to jump past the rising limb of the wind field (i.e., the RMW)
+    % and only search the falling limb.  If start_idx = 100 and
+    % radial_inc = 0.01 deg, this skips at least the inner 1 deg (~100 km).
     start_dist = 2 * hypot(centerLon - track.lon(i), centerLat - track.lat(i));
-    MIN_START_DEG = 1;
-    min_start_idx = round(MIN_START_DEG / CONFIG.max_radius_deg * num_radial);
-    start_idx = max(min_start_idx, round(start_dist / CONFIG.max_radius_deg * num_radial));
+    min_idx = 1/radial_inc;  % skip at least the inner 1 deg
+    start_idx = max(min_idx, round(start_dist/max_search * num_radial));
 
-    cutlineIdx = zeros(24, 1);
-    for j = 1:24
-        angle_idx = j * 15;
+    cutlineIdx = zeros(n_angle, 1);
+    for j = 1:n_angle
         cutlineIdx(j) = start_idx;
+        angle = j*angle_inc;
 
-        while cutlineIdx(j) < max_search
+        while cutlineIdx(j) < num_radial
             cutlineIdx(j) = cutlineIdx(j) + 1;
-            tan_wind = -hr_u(angle_idx, cutlineIdx(j)) * sin(angle_idx * pi/180) + ...
-                        hr_v(angle_idx, cutlineIdx(j)) * cos(angle_idx * pi/180);
-            if isnan(tan_wind) || tan_wind < wind_threshold
+            tan_wind = -hr_u(j, cutlineIdx(j)) * sind(angle) + ...
+                        hr_v(j, cutlineIdx(j)) * cosd(angle);
+            if tan_wind < wind_threshold
                 break
             end
         end
     end
-    cutlineIdx = min(cutlineIdx, num_radial);
 
-    cutlineIdx = smoothCutline(cutlineIdx);
-    cutlineIdx = ensureConvexCutline(cutlineIdx, Xq, Yq);
+    cutlineIdx = smoothCutline(cutlineIdx, CONFIG);
+    cutlineIdx = ensureConvexCutline(cutlineIdx, Xq, Yq, CONFIG);
 
-    [lon_newv, lat_newv] = extractCutlineCoords(cutlineIdx, Xq, Yq);
+    [lon_newv, lat_newv] = extractCutlineCoords(cutlineIdx, Xq, Yq, CONFIG);
     % move back to vortex center
     lon_newv = lon_newv + centerLon;
     lat_newv = lat_newv + centerLat;
@@ -45,6 +50,6 @@ function [cutlineIdx, isInsideOuter, distance] = findCutline( ...
 
     isInsideOuter = inpolygon(domain_lon(:), domain_lat(:), lon_newv', lat_newv');
 
-    count_deg = cutlineIdx * CONFIG.max_radius_deg / CONFIG.num_radial_points;
-    distance = computeDistanceKm(count_deg, track.lat(i));
+    count_deg = max_search * (cutlineIdx / CONFIG.num_radial_points);
+    distance = computeDistanceKm(count_deg, track.lat(i), CONFIG);
 end

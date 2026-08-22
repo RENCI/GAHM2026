@@ -255,19 +255,32 @@ Dataset {
 
 ### Result struct (returned by `run_GAHM2026`)
 
+Always present:
+
+| Field | Contents |
+|-------|----------|
+| `Result.Trackdata` | Storm track with `.Rmax_t1`, `.Vmax_t1`, `.RQuad_t1`, quadrant info |
+| `Result.GAHM_out` | Per-timestep GAHM solver output |
+| `Result.VPrad` | Radial grid data: `.r`, `.theta`, `.VVor_bt(i)`, `.VVor_at(i)`, `.Env(i)`, `.EnvVor_bt(i)` |
+| `Result.storm_info` | Storm identity (name, year, designation) |
+| `Result.env_info` | Environmental field configuration |
+
+When `output_info.type = "grid"`:
+
 | Field | Contents |
 |-------|----------|
 | `Result.Reggrid_out` | Grid coordinates (`.Lon`, `.Lat`), `.datetime`, `.Mask1`, `.Mask2` |
 | `Result.Reggrid_TC_out` | Final blended TC fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
 | `Result.Reggrid_Env_out` | Environmental fields: `.VelU`, `.VelV` (m/s), `.Press` (mb) |
-| `Result.Reggrid_VVor_invtapHur_out` | GAHM vortex + inverse-tapered hurricane (env_type=3 only; 0 for env_type 1,2) |
-| `Result.Trackdata` | Storm track with `.Rmax_t1`, `.Vmax_t1`, `.RQuad_t1`, quadrant info |
-| `Result.GAHM_out` | Per-timestep GAHM solver output |
-| `Result.VPrad` | Radial grid data: `.r`, `.theta`, `.VVor(i)`, `.Env(i)`, `.EnvVor(i)` |
-| `Result.storm_info` | Storm identity (name, year, designation) |
-| `Result.env_info` | Environmental field configuration |
-| `Result.Points_TC_out` | (if `output_type="points"`) Point TC output |
-| `Result.Points_Env_out` | (if `output_type="points"`) Point environmental output |
+| `Result.Reggrid_VVor_invtapHur_out` | GAHM vortex + inverse-tapered hurricane (`env_info.type = 3` only) |
+
+When `output_info.type = "points"`:
+
+| Field | Contents |
+|-------|----------|
+| `Result.Points_TC_out` | Point TC output: `.datetime`, `.Lon`, `.Lat`, `.U10`, `.V10`, `.Press` |
+| `Result.Points_Env_out` | Point environmental output, same fields |
+| `Result.Points_VVor_invtapHur_out` | GAHM vortex + inverse-tapered hurricane at points (`env_info.type = 3` only) |
 
 ### Gridded NetCDF output (`output_info.type = "grid"`)
 
@@ -278,7 +291,18 @@ A NetCDF file is written to `output/<storm>_<year>_<designation>.nc` (e.g.,  `FL
 
 ### Point output (`output_info.type = "points"`)
 
-MATLAB structs are returned in the `Result` struct with wind velocity (U10, V10) and pressure at specified lon/lat locations.
+MATLAB structs are returned in the `Result` struct with wind velocity (U10, V10) and pressure at specified lon/lat locations. Set `output_info.lon` and `output_info.lat` to equal-length vectors; output is computed at the corresponding pairs. No NetCDF file is written.
+
+### Wind Adjustment Factor
+
+`WAF_info.flag = true` applies a land-roughness wind adjustment to the vortex velocity before the environmental wind is added. Pressure is not adjusted. The file format depends on the output type:
+
+| `output_info.type` | `WAF_info.file_name` | Read by |
+|---|---|---|
+| `"grid"` | GeoTIFF raster, one layer per wind direction | `util/applyWAFfromRaster.m` |
+| `"points"` | MAT-file containing `WAF_points` | `util/applyWAFfromPoints.m` |
+
+`WAF_points` is a struct array with scalar `.lon`, scalar `.lat`, and a `.WAF` vector of factors for evenly spaced wind directions, ordered clockwise from north starting at 0°. Wind direction is the direction the wind blows *from*. The point coordinates must match `output_info.lon`/`.lat` exactly; unmatched points raise an error.
 
 ### SeparateEnvHur intermediate output
 

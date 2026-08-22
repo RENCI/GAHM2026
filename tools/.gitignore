@@ -1,10 +1,14 @@
 # Generated baseline files (large, machine-specific)
 baseline_env1.mat
+baseline_env2.mat
 baseline_env3.mat
 baseline_florence.mat
 
 # Auto-generated env fields
 FLORENCE_AL06_2018.mat
+
+# Frozen pre-merge reference baselines (see merge_v1p5_delta_report.txt)
+premerge/
 
 # Temporary files from comparison runs
 *_diagnostics.dat
