@@ -8,8 +8,8 @@ function Result = run_GAHM2026(config_name)
 %
 %% See documentation/README.md for full configuration reference.
 %
-%                        2/3/2026  Rick Luettich
-%                        2/16/2026 Brian Blanton
+%                        8/22/2026  Rick Luettich
+%                        8/22/2026 Brian Blanton
 
 arguments
     config_name (1,1) string = "config_GAHM2026_default"
