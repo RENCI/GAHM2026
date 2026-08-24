@@ -30,7 +30,7 @@ storm_year        = 2018;
 track_file        = 'ibtracs.NA.list.v04r01.csv';
 track_type        = "IBTrACS";        % "IBTrACS", "ATCF" or "fort22"
 storm_designation = 'AL06';
-debug             = false;
+DEBUG             = false;   % lowercase debug is a matlab command.
 GAHM2026_start    = datetime(2018,9,12,0,0,0);  % >= first time in track_file
 GAHM2026_end      = datetime(2018,9,17,0,0,0);  % <= last time in track_file
 
@@ -111,13 +111,13 @@ WAF_info.file_name = fullfile('input', 'WAF_15deg_10km_6km_raster_test.tif');
 if env_info.type == 3
 
 % verbose output option
-    sepenvhur.debug = debug;
+    sepenvhur.debug = DEBUG;
 
 % Specify the file containing the large scale gridded input data. Can be
 % local or on a remote server. Must contain the full time window between
 % GAHM2026_start and GAHM2026_end. Use <year> as a placeholder for the
 % storm year; it is resolved at runtime by getERA5Data.
-    sepenvhur.background_file = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/global.1/uvp/<year>/<year>.nc';
+    sepenvhur.background_file = 'https://tdsres.apps.renci.org/thredds/dodsC/Datalayers/ERA5/regional/na/uvp/<year>/<year>.na.nc';
 
 % Note: the grid increment size is determined from the input grid file. It
 % is assumed that the time step = 1 hr.
