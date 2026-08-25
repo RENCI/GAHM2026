@@ -6,7 +6,7 @@ function Result = run_GAHM2026(config_name)
 %     run_GAHM2026              — uses default config/config_GAHM2026_default.m
 %     run_GAHM2026('myconfig')  — uses config/myconfig.m
 %
-%% See documentation/README.md for full configuration reference.
+%% See https://renci.github.io/GAHM2026/configuration/ for the full configuration reference.
 %
 %                        8/22/2026  Rick Luettich
 %                        8/22/2026 Brian Blanton

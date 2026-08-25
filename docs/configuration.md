@@ -1,8 +1,29 @@
-# GAHM2026 Configuration Reference
+---
+layout: default
+title: Configuration
+nav_order: 4
+permalink: /configuration/
+---
+
+# Configuration reference
+{: .no_toc }
 
 Complete reference for all configuration parameters used by GAHM2026 and SeparateEnvHur.
 
-Configuration files are located in `config/` and follow the naming convention `config_<StormName>.m`. The default config is `config/config_GAHM2026.m`. See the top-level [README](../README.md) for usage examples and auto-chaining behavior.
+1. TOC
+{:toc}
+
+---
+
+Configuration files live in `config/` and follow the naming convention `config_<StormName>.m`. The default is `config/config_GAHM2026_default.m`. See [Getting Started]({{ site.baseurl }}/getting-started/) for usage and auto-chaining behavior, and [Examples]({{ site.baseurl }}/examples/) for what each shipped configuration demonstrates.
+
+{: .note }
+> **Config files are scripts, not functions.** They are `run()` into the driver's workspace, so
+> every variable they define is visible to `run_GAHM2026`.
+>
+> **Config field names are snake_case** — the one place in the repository that is not
+> lowerCamelCase. That follows the v1.5 upstream schema deliberately; see `DECISIONS.md`. Do not
+> "fix" it.
 
 ---
 
@@ -27,6 +48,17 @@ These variables are used by both SeparateEnvHur and GAHM2026:
 
 `GAHM2026_start` and `GAHM2026_end` define the processing time window for both SeparateEnvHur (ERA5 extraction) and GAHM2026 (track slicing). They are automatically propagated into `sepenvhur.storm_start`, `sepenvhur.storm_end`, `storm_info.starttime`, and `storm_info.endtime`.
 
+{: .warning }
+> **Two names are in circulation for the window variables.** `config_GAHM2026_default.m` and the
+> `config_Florence_envtype*` set use `GAHM2026_start` / `GAHM2026_end`; `config_Florence.m` and
+> `config_Michael.m` use `storm_start` / `storm_end`. The names are local to the config script —
+> only the struct fields they feed (`sepenvhur.storm_start`, `storm_info.starttime`, …) matter
+> downstream. When copying a config, keep whichever pair that file already uses and change it
+> consistently throughout.
+
+The driver validates `storm_year` against the window at startup: a year mismatch with the start
+time is fatal, a mismatch with the end time is a warning (a storm may cross a year boundary).
+
 ---
 
 ### 2. SeparateEnvHur Parameters (`sepenvhur.*`)
@@ -37,14 +69,14 @@ As of v1.5 these parameters are specified in **physical degrees**, not numbers o
 
 | Parameter | Type | Description | Default/Example |
 |-----------|------|-------------|-----------------|
-| `background_file` | char | Path to gridded NetCDF input (local or OPeNDAP URL). Use `<year>` as a placeholder for the storm year (resolved at runtime by `getERA5Data`) | `'.../<year>/<year>.nc'` |
-| `storm_start` | datetime | Start time (from shared `GAHM2026_start`) | `GAHM2026_start` |
-| `storm_end` | datetime | End time (from shared `GAHM2026_end`) | `GAHM2026_end` |
+| `background_file` | char | Path to gridded NetCDF input (local or OPeNDAP URL). Use `<year>` as a placeholder for the storm year (resolved at runtime by `getERA5Data`). See [ERA5 Data]({{ site.baseurl }}/era5/) | `'.../<year>/<year>.wna.nc'` |
+| `storm_start` | datetime | Start time (from the shared window variable) | `GAHM2026_start` |
+| `storm_end` | datetime | End time (from the shared window variable) | `GAHM2026_end` |
 | `filter_grid_length` | numeric | Side length (deg) of the square box the digital filter runs on | `30` |
 | `output_grid_length` | numeric | Side length (deg) of the cutline/output box. Must be <= `filter_grid_length`. Output grid is `output_grid_length/dlonlat + 1` per side | `20` |
 | `search_radius` | numeric | Max radius (deg) around the track eye searched for the gridded pressure minimum. Diagnostic only — the extraction is centered on the track eye | `1.5` |
-| `wind_threshold_outer` | numeric | Outer blending cutline isotach (m/s) | `10` |
-| `wind_threshold_inner` | numeric | Inner blending cutline isotach (m/s) | `17.5` |
+| `wind_threshold_outer` | numeric | Outer blending cutline isotach (m/s). Written in the configs as knots converted with `gahmPhysicalConstants().ms2kt` | `20/MS2KT` (20 kt) |
+| `wind_threshold_inner` | numeric | Inner blending cutline isotach (m/s), likewise | `34/MS2KT` (34 kt) |
 | `filter_isotach` | numeric | Isotach (m/s) whose mean radius sets the filter length scale | `17.5` |
 | `filter_hp_multiplier` | numeric | Filter half-power scale = mean radius to `filter_isotach` x this. Larger `filter_isotach` or smaller multiplier moves energy into the environmental field | `25` |
 | `num_points_smoother` | numeric | Moving-mean width used to smooth isotach cutlines | `3` |
@@ -257,7 +289,7 @@ The number of longitude and latitude values must be equal and are fixed in time.
 
 ## Creating a Config for a New Storm
 
-1. Copy `config/config_GAHM2026.m` (or any existing storm config) to `config/config_<StormName>.m`.
+1. Copy `config/config_GAHM2026_default.m` (or any existing storm config) to `config/config_<StormName>.m`.
 2. Update the shared storm identity section:
    ```matlab
    storm_name        = 'MICHAEL';
@@ -267,9 +299,15 @@ The number of longitude and latitude values must be equal and are fixed in time.
    GAHM2026_start    = datetime(2018,10,7,0,0,0);
    GAHM2026_end      = datetime(2018,10,12,0,0,0);
    ```
-3. Update `sepenvhur.background_file` with the path to the ERA5 data (use `<year>` as a placeholder for the storm year).
+3. Update `sepenvhur.background_file` with the path to the ERA5 data (use `<year>` as a placeholder for the storm year). See [ERA5 Data]({{ site.baseurl }}/era5/) for the available collections.
 4. Adjust GAHM model parameters as needed.
 5. Run:
    ```matlab
    >> run_GAHM2026('config_Michael')
    ```
+
+{: .warning }
+> `sepenvhur.output_file_name` is set to `env_info.file_name` so the auto-chain finds what
+> SeparateEnvHur writes. Changing one without the other silently breaks it. Likewise, the shared
+> identity variables are copied into both `sepenvhur.*` and `storm_info.*` — never set the
+> duplicated fields independently.

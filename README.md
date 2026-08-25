@@ -114,24 +114,20 @@ These values are defined as plain workspace variables and automatically populate
 
 #### 2. SeparateEnvHur parameters (`sepenvhur.*`)
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `background_file` | ERA5 NetCDF input file path; use `<year>` as a placeholder for `storm_year` (resolved by `getERA5Data` at runtime) | `'/path/to/<year>/<year>.global.nc'` |
-| `grid_half_size` | Half-size of extraction grid (grid points) | `40` |
-| `output_half_size` | Half-size of output grid (grid points) | `40` |
-| `filter_domain_size` | Domain size for Butterworth filter | `120` |
-| `num_radial_points` | Radial points for polar interpolation | `1000` |
-| `num_azimuth_points` | Azimuthal points | `360` |
-| `max_radius_deg` | Maximum polar grid radius (degrees) | `10` |
-| `wind_threshold_outer` | Outer cutline threshold (m/s) | `10` |
-| `wind_threshold_inner` | Inner cutline threshold (m/s, 34 kt) | `34/1.944` |
-| `debug` | Print debug messages | `true` |
+`background_file` names the gridded NetCDF input (local path or OPeNDAP URL); use `<year>` as a
+placeholder for `storm_year`, resolved by `getERA5Data` at runtime. Everything else is specified
+in **physical degrees**, not grid cells — the grid increment is detected from the input file at
+runtime and all cell counts are derived from it.
+
+See the [configuration reference](https://renci.github.io/GAHM2026/configuration/) for the full
+parameter list, and the [ERA5 page](https://renci.github.io/GAHM2026/era5/) for the available
+input datasets.
 
 > **Note:** `sepenvhur.storm_name`, `sepenvhur.storm_year`, `sepenvhur.storm_designation`, `sepenvhur.track_file`, `sepenvhur.storm_start`, and `sepenvhur.storm_end` are automatically populated from the shared variables — do not set them separately. Likewise, `storm_info.starttime` and `storm_info.endtime` are derived from `storm_start` and `storm_end`.
 
 #### 3. GAHM2026 parameters
 
-See [`documentation/README_config.md`](documentation/README_config.md) for full parameter documentation.
+See the [configuration reference](https://renci.github.io/GAHM2026/configuration/) for full parameter documentation.
 
 | Struct | Key parameters |
 |--------|---------------|
@@ -355,10 +351,41 @@ GAHM2026 and SeparateEnvHur share the following utilities in `util/`:
 
 ---
 
-## References
+## Documentation
 
-- See [`documentation/CALL_TREE.md`](documentation/CALL_TREE.md) for the full GAHM2026 execution trace.
-- See [`documentation/GAHM_struct.md`](documentation/GAHM_struct.md) for the GAHM data structure definition.
-- See [`documentation/README_config.md`](documentation/README_config.md) for the complete configuration parameter reference.
-- See [`PlotEvalScripts/README.md`](PlotEvalScripts/README.md) for the GAHM2026Plotter class guide.
-- See [`SeparateEnvHur/README.md`](SeparateEnvHur/README.md) for details on the vortex scrubbing algorithm.
+Full documentation is published at **<https://renci.github.io/GAHM2026/>**:
+
+| Page | Contents |
+|---|---|
+| [Getting Started](https://renci.github.io/GAHM2026/getting-started/) | Requirements, first run, regression tests, gotchas |
+| [Derivation of GAHM2026](https://renci.github.io/GAHM2026/derivation/) | Derivation, implementation, default conditions, blending, WAF |
+| [Configuration](https://renci.github.io/GAHM2026/configuration/) | Every parameter and output data structure |
+| [ERA5 Data](https://renci.github.io/GAHM2026/era5/) | The reanalysis data used, and how to substitute your own |
+| [Examples](https://renci.github.io/GAHM2026/examples/) | The shipped configurations |
+| [Input Track Files](https://renci.github.io/GAHM2026/track-files/) | fort.22 formats |
+| [SeparateEnvHur](https://renci.github.io/GAHM2026/separate-env-hur/) | The vortex separation algorithm |
+| [Plotting](https://renci.github.io/GAHM2026/plotting/) | The `GAHM2026Plotter` class |
+
+The site is built from two sources by `.github/workflows/pages.yml`:
+
+- **`documentation/*.docx`** — the authoritative narrative documents. Edit them in Word, commit,
+  and push; the workflow renders them to markdown with pandoc and publishes them. The set that is
+  published is listed in [`docs/_data/docx_pages.yml`](docs/_data/docx_pages.yml). Superseded
+  documents live in [`documentation/archive/`](documentation/archive/) and are not published.
+- **`docs/*.md`** — hand-written pages, edited directly.
+
+To preview locally:
+
+```bash
+python tools/docs/build_docs.py --clean     # needs pandoc and pyyaml
+cd docs && bundle install
+bundle exec jekyll serve --source ../_docs_build
+```
+
+Also in the repository:
+
+- [`documentation/GAHM2026_workflow.md`](documentation/GAHM2026_workflow.md) — Mermaid workflow diagram.
+- [`PlotEvalScripts/README.md`](PlotEvalScripts/README.md) — exhaustive `GAHM2026Plotter` file listing.
+- [`SeparateEnvHur/README.md`](SeparateEnvHur/README.md) — vortex scrubbing algorithm notes.
+- [`tools/README.md`](tools/README.md) — regression testing harness.
+- [`DECISIONS.md`](DECISIONS.md) — recorded design decisions and known defects carried forward.
