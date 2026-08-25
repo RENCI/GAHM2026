@@ -14,12 +14,22 @@ on:
       - 'documentation/**'
       - 'docs/**'
       - 'tools/docs/**'
+      # Markdown anywhere in the repository, because docs/_data/markdown_pages.yml
+      # can publish a README that sits next to the code it documents (util/, for
+      # one). Matching all of it means adding a manifest entry never silently
+      # stops triggering a deploy.
+      - '**/*.md'
       - '.github/workflows/pages.yml'
   pull_request:
     paths:
       - 'documentation/**'
       - 'docs/**'
       - 'tools/docs/**'
+      # Markdown anywhere in the repository, because docs/_data/markdown_pages.yml
+      # can publish a README that sits next to the code it documents (util/, for
+      # one). Matching all of it means adding a manifest entry never silently
+      # stops triggering a deploy.
+      - '**/*.md'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
