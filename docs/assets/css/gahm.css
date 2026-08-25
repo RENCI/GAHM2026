@@ -1,0 +1,22 @@
+/* Figures pulled out of the .docx files carry inch-based inline sizing from Word.
+   build_docs.py strips that and tags them .doc-figure so they scale with the page. */
+img.doc-figure {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+}
+
+/* Display equations from pandoc can be wider than the content column. */
+mjx-container[jax="CHTML"][display="true"] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+}
+
+/* Wide parameter tables (configuration reference) should scroll rather than clip. */
+.main-content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}

@@ -186,7 +186,31 @@ logMsg(-1,  "DEBUG", "grid=%dx%d", nx, ny);      % fid = -1 → stdout only
 
 ## Reference docs
 
-`documentation/README_config.md` (every config parameter), `documentation/GAHM_struct.md`
-(GAHM data structure), `documentation/CALL_TREE.md` (execution trace),
+`docs/configuration.md` (every config parameter — moved here from `documentation/README_config.md`),
+`documentation/GAHM_struct.md` (GAHM data structure), `documentation/CALL_TREE.md` (execution trace),
 `PlotEvalScripts/README.md` (plotter class), `SeparateEnvHur/README.md` (scrubbing algorithm),
 `tools/README.md` (regression harness).
+
+## Documentation site
+
+Published at <https://renci.github.io/GAHM2026/>, built by `.github/workflows/pages.yml` from two
+sources. **Do not hand-edit generated markdown.**
+
+- `documentation/*.docx` are authoritative for the narrative documents. `tools/docs/build_docs.py`
+  renders each one listed in `docs/_data/docx_pages.yml` with pandoc, post-processes it
+  (`\#(n)` equation numbers → `\tag{n}`, bold section paragraphs → headings, pandoc image/span
+  syntax → HTML), and writes it into the `_docs_build/` staging directory. Generated markdown is
+  **never committed**.
+- `docs/*.md` are hand-written pages, edited directly: `index.md`, `getting-started.md`,
+  `configuration.md`, `era5.md`, `examples.md`, `track-files.md`, `separate-env-hur.md`,
+  `plotting.md`.
+
+Superseded GAHM2024-era documents were moved to `documentation/archive/` and are excluded from the
+site; see `documentation/archive/README.md` for what replaced each.
+
+Local preview: `python tools/docs/build_docs.py --clean`, then
+`cd docs && bundle exec jekyll serve --source ../_docs_build`.
+
+Theme is just-the-docs via `remote_theme`; MathJax is wired in `docs/_includes/head_custom.html`.
+If the .docx sources are ever restyled to use Word Heading 1/2/3 styles, pandoc emits real headings
+and the `BOLD_NUMBERED_HEADING` fallback in `build_docs.py` becomes unnecessary.

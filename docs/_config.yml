@@ -1,5 +1,44 @@
 title: GAHM2026
 description: Generalized Asymmetric Holland Model for tropical cyclone wind and pressure fields
-remote_theme: pages-themes/minimal@v0.2.0
+remote_theme: just-the-docs/just-the-docs@v0.10.0
+
 plugins:
   - jekyll-remote-theme
+  - jekyll-seo-tag
+
+# Pages are built from a staging directory assembled by tools/docs/build_docs.py,
+# which copies this folder and adds the markdown rendered from documentation/*.docx.
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+
+search_enabled: true
+search:
+  heading_level: 3
+  previews: 2
+  rel_url: true
+
+mermaid:
+  version: "10.9.1"
+
+heading_anchors: true
+
+aux_links:
+  GAHM2026 on GitHub:
+    - https://github.com/RENCI/GAHM2026
+aux_links_new_tab: true
+
+nav_external_links:
+  - title: IBTrACS (NCEI)
+    url: https://www.ncei.noaa.gov/products/international-best-track-archive
+
+back_to_top: true
+back_to_top_text: Back to top
+
+footer_content: >-
+  Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
+
+last_edit_timestamp: false
+
+color_scheme: light

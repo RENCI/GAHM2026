@@ -1,0 +1,36 @@
+# Manifest of documentation/*.docx files published to the site.
+#
+# tools/docs/build_docs.py reads this file, runs pandoc on each docx, post-processes
+# the markdown, and writes it into the staging directory with the front matter below.
+# The generated markdown is never committed.
+#
+#   docx       path relative to the repository root
+#   output     path of the generated page relative to the site root (no leading slash)
+#   slug       subdirectory under assets/images/ for figures extracted from this docx
+#   title      nav and page title
+#   nav_order  position in the sidebar (siblings only)
+#   parent     title of the parent page, omit for top-level pages
+#   permalink  optional explicit URL
+
+- docx: documentation/GAHM2026_derivation_implementation.docx
+  output: derivation.md
+  slug: derivation
+  title: Derivation of GAHM2026
+  nav_order: 3
+  permalink: /derivation/
+
+- docx: documentation/GAHM2026_fort22_v2.docx
+  output: track-files/gahm2026-fort22.md
+  slug: gahm2026-fort22
+  title: GAHM2026 fort.22
+  nav_order: 1
+  parent: Input Track Files
+  permalink: /track-files/gahm2026-fort22/
+
+- docx: documentation/ASWIP_fort22_doc.docx
+  output: track-files/aswip-fort22.md
+  slug: aswip-fort22
+  title: ASWIP fort.22
+  nav_order: 2
+  parent: Input Track Files
+  permalink: /track-files/aswip-fort22/
