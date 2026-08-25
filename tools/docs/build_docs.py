@@ -170,6 +170,18 @@ def promote_headings(text: str) -> str:
     return "\n".join(out)
 
 
+def asset_prefix(entry: dict) -> str:
+    """Relative path from a generated page back to the site root.
+
+    Generated pages must contain no Liquid at all (see ``protect_from_liquid``),
+    so ``{{ site.baseurl }}`` cannot be used for image sources.  A path relative
+    to the page resolves correctly under any baseurl instead.
+    """
+    permalink = entry.get("permalink") or "/" + entry["output"].rsplit(".", 1)[0] + "/"
+    depth = len([part for part in permalink.split("/") if part])
+    return "/".join([".."] * depth) if depth else "."
+
+
 def rewrite_images(text: str, slug: str, site_prefix: str) -> str:
     def replace(match: re.Match) -> str:
         alt = match.group("alt").strip()
@@ -179,6 +191,16 @@ def rewrite_images(text: str, slug: str, site_prefix: str) -> str:
         return f'<img class="doc-figure" src="{src}" alt="{alt}">'
 
     return MD_IMAGE.sub(replace, text)
+
+
+def protect_from_liquid(text: str) -> str:
+    """Wrap the page body so Jekyll does not try to parse LaTeX as Liquid.
+
+    Expressions such as ``\\frac{{dV}_{g}(r)}{dr}`` contain ``{{``, which Liquid
+    reads as the start of a variable and then fails on.  Nothing in a generated
+    page is meant to be templated, so the whole body is marked raw.
+    """
+    return "{% raw %}\n" + text.strip("\n") + "\n{% endraw %}\n"
 
 
 def strip_doc_title(text: str) -> str:
@@ -230,7 +252,8 @@ def convert(entry: dict, pandoc: str) -> Path:
     )
     text = strip_doc_title(text)
     text = promote_headings(text)
-    text = rewrite_images(text, entry["slug"], "{{ site.baseurl }}")
+    text = rewrite_images(text, entry["slug"], asset_prefix(entry))
+    text = protect_from_liquid(text)
 
     output.write_text(front_matter(entry) + text, encoding="utf-8")
 
