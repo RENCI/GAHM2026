@@ -1,0 +1,99 @@
+name: Build and deploy documentation site
+
+# The .docx files in documentation/ are the authoritative sources.  This workflow
+# renders them to markdown with pandoc, combines them with the hand-written pages
+# in docs/, builds the Jekyll site, and deploys it to GitHub Pages.  Nothing
+# generated here is committed back to the repository.
+#
+# Requires Settings -> Pages -> Source to be set to "GitHub Actions".
+
+on:
+  push:
+    # TEMPORARY: docs/github-pages-site is listed so the deploy can be exercised
+    # before this lands. Remove it when merging to main.
+    branches: [main, docs/github-pages-site]
+    paths:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'tools/docs/**'
+      - '.github/workflows/pages.yml'
+  pull_request:
+    paths:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'tools/docs/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; do not cancel a run that is mid-deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Install pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+          pandoc --version | head -1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install pyyaml
+
+      - name: Render documentation/*.docx and stage the site
+        run: python tools/docs/build_docs.py --clean
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: docs
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build with Jekyll
+        working-directory: docs
+        env:
+          JEKYLL_ENV: production
+        run: |
+          bundle exec jekyll build \
+            --source ../_docs_build \
+            --destination ../_site \
+            --baseurl "${{ steps.pages.outputs.base_path }}"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+  deploy:
+    # Pull requests build but do not deploy.
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

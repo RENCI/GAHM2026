@@ -6,3 +6,14 @@
 
 input/
 output/
+
+# Documentation site build artifacts.  _docs_build/ is assembled by
+# tools/docs/build_docs.py from docs/ plus the markdown rendered from
+# documentation/*.docx; none of it is tracked.
+_docs_build/
+_site/
+docs/_site/
+docs/.jekyll-cache/
+docs/Gemfile.lock
+docs/vendor/
+docs/.bundle/

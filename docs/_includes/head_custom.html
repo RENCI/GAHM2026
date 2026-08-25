@@ -1,0 +1,21 @@
+<script>
+  // MathJax v3. The derivation page is generated from a .docx by pandoc, which emits
+  // $...$ for inline math and $$...$$ for display math with \tag{n} equation numbers.
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true,
+      tags: 'none'
+    },
+    options: {
+      // Do not typeset code blocks or the search index.
+      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+      ignoreHtmlClass: 'highlight|search-results'
+    }
+  };
+</script>
+<script id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<link rel="stylesheet" href="{{ '/assets/css/gahm.css' | relative_url }}">
