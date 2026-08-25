@@ -9,9 +9,7 @@ name: Build and deploy documentation site
 
 on:
   push:
-    # TEMPORARY: docs/github-pages-site is listed so the deploy can be exercised
-    # before this lands. Remove it when merging to main.
-    branches: [main, docs/github-pages-site]
+    branches: [main]
     paths:
       - 'documentation/**'
       - 'docs/**'
