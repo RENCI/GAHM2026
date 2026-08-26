@@ -100,7 +100,7 @@ env_vals = SeparateEnvHur('config/config_Florence');
 
 *Separated environmental and TC vortex fields from gridded ERA5 for Hurricane Florence.*
 
-## How blending works, visually
+## Blending process
 
 The gridded field is split into an environmental part and a vortex part; the GAHM parametric vortex
 replaces the ERA5 vortex inside the blending radius; the result is added back to the environmental
@@ -135,7 +135,7 @@ S-shaped. `env_info.taper_a = 2` is the shipped value.
 See [Derivation §4]({{ site.baseurl }}/derivation/#4-blending-with-gridded-large-scale-fields) for
 the formulation.
 
-## Wind adjustment factor
+## Wind adjustment factor (WAF)
 
 Set `WAF_info.flag = true` and point `WAF_info.file_name` at a GeoTIFF raster (gridded output) or a
 MAT-file of precomputed points (point output). The factor is applied to the vortex velocity before
@@ -157,7 +157,7 @@ over-water shadow zones downwind of land.*
 See [Derivation §5]({{ site.baseurl }}/derivation/#5-wind-adjustment-factor-waf) for the roughness
 formulation.
 
-## Plotting a result
+## Plotting results
 
 ```matlab
 addpath('PlotEvalScripts')
