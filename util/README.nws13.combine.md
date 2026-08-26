@@ -12,8 +12,7 @@ workflow:
 | Python | `nws13_combine_ranks.py` | CLI args or YAML config |
 | MATLAB | `nws13_combine_ranks.m` | function with name-value arguments |
 
-To plot the result, use the `nws13` MATLAB class. Its documentation is not
-published yet.
+To plot the result, see [README.nws13.class.md](README.nws13.class.md).
 
 ---
 
@@ -45,9 +44,8 @@ Each group carries `rank` and `source` attributes. The root file carries a
 `group_order` attribute — a space-separated list of group names, in rank
 order — which is how downstream readers discover the groups.
 
-`CARLA_AL03_1961.nc`, used below as an example nest, is output from the
-GAHM2026 parametric storm model for Hurricane Carla, 1961. Files this large do
-not live in the repository; they will be posted on an external data server.
+`CARLA_AL03_1961.nc`, included here as an example nest, is output from the
+GAHM2026 parametric storm model for Hurricane Carla, 1961.
 
 ---
 
@@ -303,7 +301,8 @@ Conventions:
 ncdump -h ERA5_CARLA_AL03_1961.nc
 ```
 
-Then load it in MATLAB and plot with the `nws13` class:
+Then load it in MATLAB and plot — see
+[README.nws13.class.md](README.nws13.class.md):
 
 ```matlab
 obj = nws13('ERA5_CARLA_AL03_1961.nc');
