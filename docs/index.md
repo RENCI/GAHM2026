@@ -5,6 +5,10 @@ nav_order: 1
 permalink: /
 ---
 
+<img src="{{ site.baseurl }}/assets/images/gahm2026-logo.png"
+     alt="GAHM2026 wind speed field with velocity vectors and storm track"
+     class="gahm-logo">
+
 # GAHM2026
 
 **Generalized Asymmetric Holland Model for tropical cyclone wind and pressure fields**

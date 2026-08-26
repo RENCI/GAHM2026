@@ -365,6 +365,7 @@ Full documentation is published at **<https://renci.github.io/GAHM2026/>**:
 | [Input Track Files](https://renci.github.io/GAHM2026/track-files/) | fort.22 formats |
 | [SeparateEnvHur](https://renci.github.io/GAHM2026/separate-env-hur/) | The vortex separation algorithm |
 | [Plotting](https://renci.github.io/GAHM2026/plotting/) | The `GAHM2026Plotter` class |
+| [NWS13 / NWS30 Output](https://renci.github.io/GAHM2026/nws13/) | Combining storm and background NetCDF into ADCIRC NWS13/NWS30 forcing |
 
 The site is built from two sources by `.github/workflows/pages.yml`:
 

@@ -1,3 +1,23 @@
+/* Logo on the landing page: a GAHM wind field, floated beside the title so the
+   heading sits alongside it on wide screens and stacks on narrow ones. */
+img.gahm-logo {
+  float: right;
+  width: 160px;
+  max-width: 35%;
+  height: auto;
+  margin: 0 0 1rem 1.5rem;
+  border-radius: 6px;
+}
+
+@media (max-width: 50rem) {
+  img.gahm-logo {
+    float: none;
+    display: block;
+    width: 120px;
+    margin: 0 0 1rem 0;
+  }
+}
+
 /* Figures pulled out of the .docx files carry inch-based inline sizing from Word.
    build_docs.py strips that and tags them .doc-figure so they scale with the page. */
 img.doc-figure {

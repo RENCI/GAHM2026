@@ -1,4 +1,11 @@
-# Combining netCDF files into NWS13/NWS30 format
+---
+layout: default
+title: NWS13 / NWS30 Output
+nav_order: 10
+permalink: /nws13/
+---
+
+{% raw %}
 
 Merges a large-scale background field (e.g. ERA5) and one or more nested
 storm-scale fields (e.g. a parametric hurricane model) into a single
@@ -12,7 +19,8 @@ workflow:
 | Python | `nws13_combine_ranks.py` | CLI args or YAML config |
 | MATLAB | `nws13_combine_ranks.m` | function with name-value arguments |
 
-To plot the result, see [README.nws13.class.md](README.nws13.class.md).
+To plot the result, use the `nws13` MATLAB class. Its documentation is not
+published yet.
 
 ---
 
@@ -44,8 +52,9 @@ Each group carries `rank` and `source` attributes. The root file carries a
 `group_order` attribute — a space-separated list of group names, in rank
 order — which is how downstream readers discover the groups.
 
-`CARLA_AL03_1961.nc`, included here as an example nest, is output from the
-GAHM2026 parametric storm model for Hurricane Carla, 1961.
+`CARLA_AL03_1961.nc`, used below as an example nest, is output from the
+GAHM2026 parametric storm model for Hurricane Carla, 1961. Files this large do
+not live in the repository; they will be posted on an external data server.
 
 ---
 
@@ -301,8 +310,7 @@ Conventions:
 ncdump -h ERA5_CARLA_AL03_1961.nc
 ```
 
-Then load it in MATLAB and plot — see
-[README.nws13.class.md](README.nws13.class.md):
+Then load it in MATLAB and plot with the `nws13` class:
 
 ```matlab
 obj = nws13('ERA5_CARLA_AL03_1961.nc');
@@ -324,3 +332,5 @@ obj.drawSnap(1);
 - **The output file is overwritten**, not appended to.
 - **`time_filter` compares against the input's own epoch**, not the output
   epoch.
+
+{% endraw %}

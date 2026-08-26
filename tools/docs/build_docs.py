@@ -30,7 +30,6 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS_DIR = REPO_ROOT / "docs"
 MANIFEST = DOCS_DIR / "_data" / "docx_pages.yml"
-MARKDOWN_MANIFEST = DOCS_DIR / "_data" / "markdown_pages.yml"
 STAGING_DIR = REPO_ROOT / "_docs_build"
 
 # Pandoc writer options.
@@ -99,47 +98,27 @@ ALT_NOISE = re.compile(r"AI-generated content may be incorrect", re.IGNORECASE)
 SPAN_CLASSES = {"underline": "u", "mark": "mark"}
 BRACKETED_SPAN = re.compile(r"\[([^\]]*)\]\{\.(" + "|".join(SPAN_CLASSES) + r")\}")
 
-# Leading "# Title" of a standalone markdown file; the theme renders its own h1
-# from the front matter, so keeping this one would double it up.
-LEADING_H1 = re.compile(r"\A\s*#\s+[^\n]*\n+")
-
 
 def fail(message: str) -> None:
     print(f"build_docs: error: {message}", file=sys.stderr)
     raise SystemExit(1)
 
 
-def load_manifest(
-    path: Path, required: tuple[str, ...], source_key: str
-) -> list[dict]:
-    if not path.is_file():
-        return []
-    with path.open("r", encoding="utf-8") as fh:
+def load_manifest() -> list[dict]:
+    if not MANIFEST.is_file():
+        fail(f"manifest not found: {MANIFEST.relative_to(REPO_ROOT)}")
+    with MANIFEST.open("r", encoding="utf-8") as fh:
         entries = yaml.safe_load(fh)
     if not entries:
         return []
     for entry in entries:
-        for key in required:
+        for key in ("docx", "output", "slug", "title", "nav_order"):
             if key not in entry:
-                fail(f"{path.name} entry missing required key '{key}': {entry}")
-        source = REPO_ROOT / entry[source_key]
-        if not source.is_file():
-            fail(f"file listed in {path.name} does not exist: {entry[source_key]}")
+                fail(f"manifest entry missing required key '{key}': {entry}")
+        docx = REPO_ROOT / entry["docx"]
+        if not docx.is_file():
+            fail(f"docx listed in the manifest does not exist: {entry['docx']}")
     return entries
-
-
-def load_docx_manifest() -> list[dict]:
-    if not MANIFEST.is_file():
-        fail(f"manifest not found: {MANIFEST.relative_to(REPO_ROOT)}")
-    return load_manifest(
-        MANIFEST, ("docx", "output", "slug", "title", "nav_order"), "docx"
-    )
-
-
-def load_markdown_manifest() -> list[dict]:
-    return load_manifest(
-        MARKDOWN_MANIFEST, ("source", "output", "title", "nav_order"), "source"
-    )
 
 
 def require_pandoc() -> str:
@@ -288,24 +267,6 @@ def convert(entry: dict, pandoc: str) -> Path:
     return output
 
 
-def copy_markdown(entry: dict) -> Path:
-    """Publish a markdown file that lives next to the code it documents."""
-    source = REPO_ROOT / entry["source"]
-    output = STAGING_DIR / entry["output"]
-    output.parent.mkdir(parents=True, exist_ok=True)
-
-    text = source.read_text(encoding="utf-8")
-    if entry.get("strip_h1", True):
-        text = LEADING_H1.sub("", text, count=1)
-    # Code samples can contain Liquid-looking text -- a MATLAB nested cell array
-    # {{'a','b'}} for instance -- and Liquid runs before markdown, so a fenced
-    # block is no protection.
-    text = protect_from_liquid(text)
-
-    output.write_text(front_matter(entry) + text, encoding="utf-8")
-    return output
-
-
 def stage_docs() -> None:
     shutil.copytree(
         DOCS_DIR,
@@ -329,17 +290,12 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    entries = load_docx_manifest()
-    markdown_entries = load_markdown_manifest()
+    entries = load_manifest()
     version = require_pandoc()
 
     if args.check:
         print(f"build_docs: {version}")
         print(f"build_docs: {len(entries)} docx page(s) in the manifest, all present")
-        print(
-            f"build_docs: {len(markdown_entries)} markdown page(s) in the manifest, "
-            "all present"
-        )
         return 0
 
     if args.clean and STAGING_DIR.exists():
@@ -349,10 +305,6 @@ def main() -> int:
     for entry in entries:
         output = convert(entry, shutil.which("pandoc"))
         print(f"build_docs: {entry['docx']} -> {output.relative_to(REPO_ROOT)}")
-
-    for entry in markdown_entries:
-        output = copy_markdown(entry)
-        print(f"build_docs: {entry['source']} -> {output.relative_to(REPO_ROOT)}")
 
     print(f"build_docs: staged {STAGING_DIR.relative_to(REPO_ROOT)}")
     return 0

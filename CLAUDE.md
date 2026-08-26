@@ -203,7 +203,12 @@ sources. **Do not hand-edit generated markdown.**
   **never committed**.
 - `docs/*.md` are hand-written pages, edited directly: `index.md`, `getting-started.md`,
   `configuration.md`, `era5.md`, `examples.md`, `track-files.md`, `separate-env-hur.md`,
-  `plotting.md`.
+  `plotting.md`, `nws13.combine.md`.
+
+`docs/nws13.combine.md` is wrapped in `{% raw %}` by hand: its MATLAB examples contain nested
+cell arrays such as `{{'a','b'}}`, which Liquid parses as a variable opening. Liquid runs before
+markdown, so a fenced code block is no protection. Any hand-written page carrying `{{` or `{%`
+in a code sample needs the same treatment.
 
 Superseded GAHM2024-era documents were moved to `documentation/archive/` and are excluded from the
 site; see `documentation/archive/README.md` for what replaced each.
