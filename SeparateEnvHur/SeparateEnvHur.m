@@ -168,12 +168,16 @@ for i = 1:length(track.time)
     [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i);
     if CONFIG.debug, logMsg(-1, "DEBUG", "Polar coordinate interpolation for filter isotach done (grid size=%dx%d)", size(Xq,1), size(Xq,2)); end
 
-    [cutlineIdx_filter, ~, ~] = findCutline(hr_u, hr_v, Xq, Yq, ...
-                                     era5, track, CONFIG, i, CONFIG.filter_isotach);
+    Meanonly=true;
+    [cutlineFilt,~,~] = findCutline(hr_u, hr_v, Xq, Yq, ...
+                  era5, track, CONFIG, i, CONFIG.filter_isotach, Meanonly);
 
     max_radius_deg = CONFIG.output_grid_length/2;  % length of each radial line (deg)
-    meanFilterRadiusDeg = max_radius_deg * (mean(cutlineIdx_filter, "all") / CONFIG.num_radial_points);
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Filter isotach found: mean isotach radius=%.4f deg", meanFilterRadiusDeg); end
+    meanFilterRadiusDeg = max_radius_deg * (cutlineFilt.IdxMean / CONFIG.num_radial_points);
+    if CONFIG.debug
+        logMsg(-1, "DEBUG", "Filter isotach found on %i radials: Mean filter isotach radius=%.4f deg", ...
+                cutlineFilt.found, meanFilterRadiusDeg);
+    end
 
     % compute the filtered fields
 
@@ -182,13 +186,21 @@ for i = 1:length(track.time)
 
     % determine the cutlines for the inner and outer blending isotachs
 
-    [~, isInsideInner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
-                                     era5, track, CONFIG, i, CONFIG.wind_threshold_inner);
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Inner cutline found: mean radius=%.1f km, points inside=%d", mean(distance_inner), sum(isInsideInner)); end
+    Meanonly=false;
+    [cutlineIn, isInsideInner, distance_inner] = findCutline(hr_u, hr_v, Xq, Yq, ...
+            era5, track, CONFIG, i, CONFIG.wind_threshold_inner, Meanonly);
+    if CONFIG.debug
+        logMsg(-1, "DEBUG", "Inner cutline isotach found on %i radials, mean radius=%.1f km, points inside=%d", ...
+                cutlineIn.found, mean(distance_inner), sum(isInsideInner));
+    end
 
-    [~, isInsideOuter, distance_outer] = findCutline(hr_u, hr_v, Xq, Yq, ...
-                                     era5, track, CONFIG, i, CONFIG.wind_threshold_outer);
-    if CONFIG.debug, logMsg(-1, "DEBUG", "Outer cutline found: mean radius=%.1f km, points inside=%d", mean(distance_outer), sum(isInsideOuter)); end
+    Meanonly=false;
+    [cutlineOut, isInsideOuter, distance_outer] = findCutline(hr_u, hr_v, Xq, Yq, ...
+            era5, track, CONFIG, i, CONFIG.wind_threshold_outer, Meanonly);
+    if CONFIG.debug
+        logMsg(-1, "DEBUG", "Outer cutline isotach found on %i radials, mean radius=%.1f km, points inside=%d", ...
+                cutlineOut.found, mean(distance_outer), sum(isInsideOuter));
+    end
 
     OUTPUT = storeResults(OUTPUT, i, era5, track, CONFIG, ...
                           basic, slp, u10, v10, ...

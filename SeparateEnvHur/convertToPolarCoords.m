@@ -12,8 +12,14 @@ function [Xq, Yq, hr_u, hr_v] = convertToPolarCoords(era5, track, CONFIG, i)
     u_dc = squeeze(era5.u10(cols, rows, i))';
     v_dc = squeeze(era5.v10(cols, rows, i))';
 
-    r = linspace(0, max_radius_deg, CONFIG.num_radial_points);
-    th = linspace(0, 2*pi, CONFIG.num_azimuthal_points);
+    radial_inc = CONFIG.radial_inc;
+    num_radial = CONFIG.num_radial_points;
+    n_angle = CONFIG.num_azimuthal_points;
+    angle_inc = 360/n_angle;
+    r=0:radial_inc:num_radial*radial_inc;
+    th=angle_inc:angle_inc:360;
+    th=th*2*pi/360;
+
     [rho, theta] = meshgrid(r, th);
     [Xq, Yq] = pol2cart(theta, rho);
 
