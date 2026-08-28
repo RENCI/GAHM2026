@@ -15,10 +15,10 @@ arguments
     config_name (1,1) string = "config_GAHM2026_default"
 end
 
-addpath('util')
-addpath('static')
-addpath('PlotEvalScripts')
-addpath('SeparateEnvHur')
+%addpath('util')
+%addpath('static')
+%addpath('PlotEvalScripts')
+%addpath('SeparateEnvHur')
 
 if ~exist('input', 'dir'),  mkdir('input');  end
 if ~exist('output', 'dir'), mkdir('output'); end
@@ -100,10 +100,10 @@ if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
     logMsg(fid, "INFO", "Running SeparateEnvHur to generate it ...");
 
     % Locate SeparateEnvHur — subdirectory of GAHM2026
-    sep_dir = fullfile(pwd, 'SeparateEnvHur');
-    assert(exist(fullfile(sep_dir, 'SeparateEnvHur.m'), 'file') ~= 0, ...
-        "Cannot find SeparateEnvHur.m in %s.", sep_dir);
-    addpath(sep_dir);
+%    sep_dir = fullfile(pwd, 'SeparateEnvHur');
+%    assert(exist(fullfile(sep_dir, 'SeparateEnvHur.m'), 'file') ~= 0, ...
+%        "Cannot find SeparateEnvHur.m in %s.", sep_dir);
+%    addpath(sep_dir);
 
     % Run SeparateEnvHur with the sepenvhur struct and pre-loaded track data
     SeparateEnvHur(sepenvhur, ATCF_data_in);

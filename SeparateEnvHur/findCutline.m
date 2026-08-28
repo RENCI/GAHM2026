@@ -1,5 +1,5 @@
-function [cutlineIdx, isInsideOuter, distance] = findCutline( ...
-        hr_u, hr_v, Xq, Yq, era5, track, CONFIG, i, wind_threshold)
+function [cutline, isInsideOuter, distance] = findCutline( hr_u, hr_v, ...
+                  Xq, Yq, era5, track, CONFIG, i, wind_threshold, Meanonly)
 
     half = round((CONFIG.output_grid_length/2)/CONFIG.dlonlat);
     num_radial = CONFIG.num_radial_points;
@@ -7,49 +7,58 @@ function [cutlineIdx, isInsideOuter, distance] = findCutline( ...
     radial_inc = CONFIG.radial_inc;
     n_angle = CONFIG.num_azimuthal_points;
     angle_inc = 360/n_angle;
+    isInsideOuter = 0;
+    distance = zeros(n_angle,1);
 
     centerLon = era5.vortex.lon(i);
     centerLat = era5.vortex.lat(i);
 
-    % Attempt to jump past the rising limb of the wind field (i.e., the RMW)
-    % and only search the falling limb.  If start_idx = 100 and
-    % radial_inc = 0.01 deg, this skips at least the inner 1 deg (~100 km).
-    start_dist = 2 * hypot(centerLon - track.lon(i), centerLat - track.lat(i));
-    min_idx = 1/radial_inc;  % skip at least the inner 1 deg
-    start_idx = max(min_idx, round(start_dist/max_search * num_radial));
-
-    cutlineIdx = zeros(n_angle, 1);
+    cutlineIdx1 = zeros(n_angle, 1);
+    cutline.Idx = zeros(n_angle, 1);
+    tan_wind_max_Idx = zeros(n_angle,1);
+    cutline.found = 0;
     for j = 1:n_angle
-        cutlineIdx(j) = start_idx;
         angle = j*angle_inc;
-
-        while cutlineIdx(j) < num_radial
-            cutlineIdx(j) = cutlineIdx(j) + 1;
-            tan_wind = -hr_u(j, cutlineIdx(j)) * sind(angle) + ...
-                        hr_v(j, cutlineIdx(j)) * cosd(angle);
-            if tan_wind < wind_threshold
-                break
+        tan_wind = -hr_u(j,:) * sind(angle) + hr_v(j,:) * cosd(angle);
+        [tan_wind_max, tan_wind_max_Idx(j)]=max(tan_wind);
+        cutlineIdx1(j) = 0;
+        if tan_wind_max > wind_threshold
+            if any(tan_wind(tan_wind_max_Idx(j):num_radial) < wind_threshold)                
+                cutline.found = cutline.found + 1;
+                cutlineIdx1(j) = tan_wind_max_Idx(j) - 1 + ...
+                    find(tan_wind(tan_wind_max_Idx(j):num_radial) ...
+                        < wind_threshold, 1, 'first');
             end
         end
     end
 
-    cutlineIdx = smoothCutline(cutlineIdx, CONFIG);
-    cutlineIdx = ensureConvexCutline(cutlineIdx, Xq, Yq, CONFIG);
+    if cutline.found == 0
+        cutline.IdxMean = 1.5*mean(tan_wind_max_Idx);
+    else
+        cutline.IdxMean = mean(cutlineIdx1(cutlineIdx1~=0));
+    end
 
-    [lon_newv, lat_newv] = extractCutlineCoords(cutlineIdx, Xq, Yq, CONFIG);
-    % move back to vortex center
-    lon_newv = lon_newv + centerLon;
-    lat_newv = lat_newv + centerLat;
-    % close polygon
-    lon_newv = [lon_newv, lon_newv(1)];
-    lat_newv = [lat_newv, lat_newv(1)];
+    if ~Meanonly
+        cutlineIdx1(cutlineIdx1==0) = cutline.IdxMean;
+        cutlineIdx2 = smoothCutline(cutlineIdx1, CONFIG);
+        cutline.Idx = ensureConvexCutline(cutlineIdx2, Xq, Yq, CONFIG);
 
-    [domain_lon, domain_lat] = meshgrid( ...
-        era5.lon(track.lon_idx(i)-half : track.lon_idx(i)+half), ...
-        era5.lat(track.lat_idx(i)-half : track.lat_idx(i)+half));
+        [lon_newv, lat_newv] = extractCutlineCoords(cutline.Idx, Xq, Yq, CONFIG);
+        % move back to vortex center
+        lon_newv = lon_newv + centerLon;
+        lat_newv = lat_newv + centerLat;
+        % close polygon
+        lon_newv = [lon_newv, lon_newv(1)];
+        lat_newv = [lat_newv, lat_newv(1)];
 
-    isInsideOuter = inpolygon(domain_lon(:), domain_lat(:), lon_newv', lat_newv');
+        [domain_lon, domain_lat] = meshgrid( ...
+            era5.lon(track.lon_idx(i)-half : track.lon_idx(i)+half), ...
+            era5.lat(track.lat_idx(i)-half : track.lat_idx(i)+half));
 
-    count_deg = max_search * (cutlineIdx / CONFIG.num_radial_points);
-    distance = computeDistanceKm(count_deg, track.lat(i), CONFIG);
+        isInsideOuter = inpolygon(domain_lon(:), domain_lat(:), ...
+            lon_newv', lat_newv');
+
+        count_deg = max_search * (cutline.Idx / num_radial);
+        distance = computeDistanceKm(count_deg, track.lat(i), CONFIG);
+    end
 end
