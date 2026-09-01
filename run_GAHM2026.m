@@ -15,23 +15,24 @@ arguments
     config_name (1,1) string = "config_GAHM2026_default"
 end
 
-%addpath('util')
-%addpath('static')
-%addpath('PlotEvalScripts')
-%addpath('SeparateEnvHur')
+[repopath,~,~]=fileparts(which('run_GAHM2026'));
+if string(repopath) == string(pwd)
+    errorStruct.message = sprintf("It is best to NOT run GAHM2026 from the cloned location of GAHM2026 (%s).\nCreate a working directory and run from there.",repopath);
+    errorStruct.identifier = 'GAHM2026:LocationError';
+    error(errorStruct.identifier,errorStruct.message)
+end
 
-if ~exist('input', 'dir'),  mkdir('input');  end
-if ~exist('output', 'dir'), mkdir('output'); end
+p=string(pwd);
+if ~exist(p + "/input", 'dir'),  mkdir(p + "/input");  end
+if ~exist(p + "/output", 'dir'), mkdir(p + "/output"); end
+if ~exist(p + "/config", 'dir'), mkdir(p + "/config"); end
 
-% Use a 24-hour, unambiguous default datetime format.  The lower-case "hh"
-% format is a 12-hour clock with no AM/PM designator, so 18:00 renders as
-% "06:00:00" and a date with no time component renders as "12:00:00".  Any
-% datetime converted to text under that format (e.g. the "minutes since ..."
-% units string written to the output NetCDF, or the epoch parsed from the
-% gridded input file in getERA5Data) is silently shifted by 12 hours.
-datetimeFormat = 'yyyy-MMM-dd HH:mm:ss';
-datetime.setDefaultFormats('default',datetimeFormat);
-datetime.setDefaultFormats('defaultdate',datetimeFormat);
+%% check to see if the user config dir is empty.
+if length(dir("config"))<3
+    errorStruct.message = sprintf("config directory %s is empty. Get one from the repo config directory and put into %s",p,p);
+    errorStruct.identifier = 'GAHM2026:ConfigDirEmpty';
+    error(errorStruct.identifier,errorStruct.message)
+end
 
 %% Load configuration parameters
 config_file = fullfile('config', config_name);
@@ -83,14 +84,14 @@ end
 
 %% Check for existing output file before running
 if output_info.type == "grid"
-    f_out = [output_info.NetCDFfilename '.nc'];
+    f_out = string(output_info.NetCDFfilename)+".nc";
     assert(~exist(f_out, 'file'), f_out + " already exists. Delete or rename it before running.")
 end
 
 %% Auto-run SeparateEnvHur if env_info.type==3 and the .mat file does not exist
 if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
     % TODO:  THE FOLLOWING DOES NOT LOOK RIGHT.  Just because the variable
-    % sepenvhur (which contains the separateenvhur config parameters) exists
+    % sepenvhur (which contains the separateenvhur *config* parameters) exists
     % does NOT mean that the EnvFields.mat file does.
     assert(exist('sepenvhur', 'var') ~= 0, ...
         "EnvFields file not found: %s.mat\n" + ...
@@ -98,12 +99,6 @@ if env_info.type == 3 && ~exist([env_info.file_name '.mat'], 'file')
         "or run SeparateEnvHur separately first.", env_info.file_name);
     logMsg(fid, "INFO", "EnvFields file not found: %s.mat", env_info.file_name);
     logMsg(fid, "INFO", "Running SeparateEnvHur to generate it ...");
-
-    % Locate SeparateEnvHur — subdirectory of GAHM2026
-%    sep_dir = fullfile(pwd, 'SeparateEnvHur');
-%    assert(exist(fullfile(sep_dir, 'SeparateEnvHur.m'), 'file') ~= 0, ...
-%        "Cannot find SeparateEnvHur.m in %s.", sep_dir);
-%    addpath(sep_dir);
 
     % Run SeparateEnvHur with the sepenvhur struct and pre-loaded track data
     SeparateEnvHur(sepenvhur, ATCF_data_in);
@@ -136,7 +131,7 @@ if output_info.type == "grid"
 elseif output_info.type == "points"
     nt = length(Reggrid_out);
     for i = 1:nt
-        Points_TC_out(i).datetime = Reggrid_out(i).datetime;
+        Points_TC_out(i).datetime = Reggrid_out(i).datetime; %#ok<*AGROW>
         Points_TC_out(i).Lon = Reggrid_out(i).Lon;
         Points_TC_out(i).Lat = Reggrid_out(i).Lat;
         Points_TC_out(i).U10 = Reggrid_TC_out(i).VelU;
