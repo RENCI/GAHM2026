@@ -32,16 +32,21 @@ every shipped configuration.
 
 ```bash
 git clone git@github.com:RENCI/GAHM2026.git
-cd GAHM2026
 ```
 
-{: .warning }
-> **The MATLAB working directory must be the repository root.** `run_GAHM2026` uses relative paths
-> (`config/`, `input/`, `output/`, `addpath('util')`) and will not work from anywhere else. It
-> creates `input/` and `output/` on first run if they are missing.
+Nothing is compiled and there is no install step. Add the repository to the MATLAB path and run
+`initGAHM` once per session — it puts `util`, `static`, `PlotEvalScripts`, and `SeparateEnvHur` on
+the path and sets the session datetime format:
 
-Nothing is compiled and there is no install step. `run_GAHM2026` adds `util`, `static`,
-`PlotEvalScripts`, and `SeparateEnvHur` to the path itself.
+```matlab
+addpath('/path/to/GAHM2026')
+initGAHM
+```
+
+`run_GAHM2026` can then be called from any working directory that has (or should have) its own
+`config/`, `input/`, and `output/` folders — `config/` and `input/` are resolved relative to the
+current MATLAB working directory, and `input/`/`output/` are created there on first run if
+missing.
 
 ## First run
 

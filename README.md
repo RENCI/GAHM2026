@@ -13,7 +13,8 @@ V1.5, Aug 2026
 ### Quick Start
 
 ```matlab
-cd GAHM2026
+addpath('/path/to/GAHM2026')
+initGAHM                                   % sets up GAHM2026 paths, once per session
 R = run_GAHM2026;                          % uses default config/config_GAHM2026_default.m
 R = run_GAHM2026('config_Florence');       % uses config/config_Florence.m
 ```
