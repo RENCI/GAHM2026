@@ -3,7 +3,7 @@
 *.mat
 *.gif
 *.mp4
-
+.DS_Store
 input/
 output/
 
