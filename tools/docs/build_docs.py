@@ -66,6 +66,16 @@ EQ_ARRAY_PLAIN = re.compile(
     re.DOTALL,
 )
 
+# Trailing whitespace at the end of a math body, including the LaTeX escaped space
+# ("\ ") pandoc writes for a trailing space run in the Word equation.  Plain .strip()
+# takes the space but leaves its backslash behind, and that orphan then binds to
+# whatever is appended next: "...\right)}\" + "\tag{13}" becomes "\\tag{13}", which
+# MathJax reads as a line break followed by the literal text "tag13".
+#
+# Only a backslash that stands immediately before whitespace or the end of the body
+# is dropped, so real macros ("\,", "\}") are left alone.
+TRAILING_MATH_SPACE = re.compile(r"(?:\s+|\\(?=\s|$))+$")
+
 # A paragraph that is entirely bold and starts with a section number, e.g.
 # "**2. Implementation**" or "**1. Derivation** (adapted from J. Gao, 2018)".
 #
@@ -97,6 +107,16 @@ ALT_NOISE = re.compile(r"AI-generated content may be incorrect", re.IGNORECASE)
 # verbatim.  Map them to HTML the browser understands.
 SPAN_CLASSES = {"underline": "u", "mark": "mark"}
 BRACKETED_SPAN = re.compile(r"\[([^\]]*)\]\{\.(" + "|".join(SPAN_CLASSES) + r")\}")
+
+# Where an inline equation is followed directly by a digit, pandoc separates the two
+# with an empty raw-HTML comment so the markdown cannot be reparsed as one token:
+#
+#   $...\right| = $`<!-- -->`{=html}64, 50, 34 kts
+#
+# kramdown has no raw_html attribute syntax, so it prints the backticks, the comment
+# and the "{=html}" verbatim.  restore_math_delimiters() already reinstates the space
+# that made the separator necessary, so drop it.
+RAW_HTML_SEPARATOR = re.compile(r"`<!--\s*-->`\{=html\}")
 
 
 def fail(message: str) -> None:
@@ -141,6 +161,59 @@ def front_matter(entry: dict) -> str:
     lines.append("---")
     lines.append("")
     return "\n".join(lines)
+
+
+def trim_math_body(body: str) -> str:
+    """Strip trailing whitespace and its leftover LaTeX spacing backslash."""
+    return TRAILING_MATH_SPACE.sub("", body.strip())
+
+
+def restore_math_delimiters(text: str) -> str:
+    r"""Un-escape the closing "$" of an inline equation that ends in a space.
+
+    Word equations frequently end with a space run.  Pandoc writes that as the LaTeX
+    escaped space ``\ ``, then drops the space itself because it sits against the
+    closing delimiter -- leaving the delimiter escaped::
+
+        $B_{g} \rightarrow B\ \ as\ R_{o} \rightarrow \infty\ \$
+
+    MathJax is configured with ``processEscapes``, so it reads the ``\$`` as a literal
+    dollar sign, never closes the expression, and swallows every following paragraph
+    up to the next ``$`` on the page.
+
+    Rewrite those to a plain ``$`` and put the space back outside the math, where Word
+    meant it ("for different $B$ values", not "for different $B$values").  A ``\$``
+    encountered outside math is a real escaped dollar in the prose and is left alone,
+    so the state of the scan has to be tracked rather than pattern-matched.
+    """
+    out: list[str] = []
+    index = 0
+    in_math = False
+    while index < len(text):
+        if text.startswith("\\$", index):
+            if not in_math:
+                out.append("\\$")
+                index += 2
+                continue
+            out.append("$")
+            in_math = False
+            index += 2
+            if index < len(text) and not text[index].isspace():
+                out.append(" ")
+            continue
+        if text.startswith("$$", index):
+            out.append("$$")
+            in_math = not in_math
+            index += 2
+            continue
+        if text[index] == "$":
+            out.append("$")
+            in_math = not in_math
+            index += 1
+            continue
+        out.append(text[index])
+        index += 1
+    return "".join(out)
 
 
 def promote_headings(text: str) -> str:
@@ -242,9 +315,11 @@ def convert(entry: dict, pandoc: str) -> Path:
 
     text = output.read_text(encoding="utf-8")
     text = EQ_ARRAY_TAG.sub(
-        lambda m: f"$${m.group(2).strip()}\\tag{{{m.group(3)}}}$$", text
+        lambda m: f"$${trim_math_body(m.group(2))}\\tag{{{m.group(3)}}}$$", text
     )
-    text = EQ_ARRAY_PLAIN.sub(lambda m: f"$${m.group(2).strip()}$$", text)
+    text = EQ_ARRAY_PLAIN.sub(lambda m: f"$${trim_math_body(m.group(2))}$$", text)
+    text = restore_math_delimiters(text)
+    text = RAW_HTML_SEPARATOR.sub("", text)
     text = text.replace("\\#", "")
     text = BRACKETED_SPAN.sub(
         lambda m: f"<{SPAN_CLASSES[m.group(2)]}>{m.group(1)}</{SPAN_CLASSES[m.group(2)]}>",
