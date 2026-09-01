@@ -277,7 +277,7 @@ for itime = 1:nBTtime
 
         % save track information
 
-        Trackdata(i).datetime = datetimeint(i,:);
+        Trackdata(i).datetime = datetimeint(i,:); %#ok<*AGROW>
         Trackdata(i).Lat = LatNS(i);
         Trackdata(i).Lon = LonEW(i);
         Trackdata(i).RQuad_t1(1:4,1:3) = GAHM_t1.RQuad(1:4,1:3);
@@ -304,7 +304,7 @@ LatNS = LatNS(1:i);
 LonEW = LonEW(1:i);
 datetimeint = datetimeint(1:i, :);
 
-logMsg(fid, "INFO", "Completed calculations on radial grid. Preparing output");
+logMsg(fid, "INFO", "Completed calculations on radial grid. Preparing output ...");
 if debug, logMsg(fid, "DEBUG", "Master time loop complete: %d output time steps produced", i); end
 
 itot = i;
