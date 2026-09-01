@@ -1,8 +1,8 @@
 # GAHM2026 — Generalized Asymmetric Holland Model <img width="70" height="70" alt="gahm" src="documentation/image4.png"	/>
 
-MATLAB codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). The process reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with large-scale gridded environmental fields, and writes output to NetCDF.
+MATLAB model / codebase for computing hurricane wind and pressure fields using the Generalized Asymmetric Holland Model (GAHM). The model reads tropical cyclone track data, computes GAHM parameters, generates radial wind/pressure profiles, optionally blends with large-scale gridded environmental fields, and writes output to NetCDF files.
 
-When using gridded environmental fields (`env_info.type = 3`), **SeparateEnvHur** separates storm-scale features from ERA5 reanalysis data to produce the required environmental input. One configuration file specifies the complete pipeline. 
+When using gridded environmental fields (`env_info.type = 3`), **SeparateEnvHur** separates storm-scale features from the large-scale model fields (e.g., ECMWF's ERA5 reanalysis, https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview) to compute the required environmental input. One configuration file specifies the complete pipeline. 
 
 Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 
@@ -12,13 +12,26 @@ V1.5, Aug 2026
 
 ### Quick Start
 
-```matlab
+Clone this repo into a suitable location on your local computer.  E.g., "$HOME/GitHub/GAHM2026". 
+Add the following to your startup.m script: 
+``` matlab
 addpath('/path/to/GAHM2026')
-initGAHM                                   % sets up GAHM2026 paths, once per session
+initGAHM  % sets up GAHM2026 paths, once per session
+```
+
+Then, in a working directory (e.g., myGahmStuff, and definitely not the main repo location), create 3 directories called `input`, `output`, and `config`.  GAHM2026 looks for these directories in the working directory.  Copy a config file from the repo to the newly created config directory.  E.g., 
+
+```bash
+mkdir -p /path/to/myGahmStuff/{input/output,config}
+cd /path/to/myGahmStuff/
+cp $HOME/GitHub/GAHM2026/config/config_GAHM2026_default.m config/
+```
+
+Then, in MATLAB, execute `run_GAHM2026`: 
+```matlab                                % sets up GAHM2026 paths, once per session
 R = run_GAHM2026;                          % uses default config/config_GAHM2026_default.m
 R = run_GAHM2026('config_Florence');       % uses config/config_Florence.m
 ```
-
 `run_GAHM2026` returns a `Result` struct containing all output fields (see [Output](#output) below). If the SeparateEnvHur `.mat` file does not exist (e.g., `output/FLORENCE_2018_AL06.mat`), it will automatically run SeparateEnvHur to generate it before proceeding.
 
 ### Plotting
