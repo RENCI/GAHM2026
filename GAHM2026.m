@@ -512,6 +512,8 @@ function [Reggrid_out, Reggrid_TC_out, Reggrid_Env_out, Reggrid_VVor_invtapHur_o
         LonEW, LatNS, datetimeint, ...
         WAF_data, WAF_metadata, fid)
 
+warning('off','MATLAB:griddedInterpolant:MeshgridEval2DWarnId')
+
 for i = 1:itot
     if output_info.type == "grid"
         logMsg(-1, "INFO", "Interpolating to regular grid %s", datetimeint(i))

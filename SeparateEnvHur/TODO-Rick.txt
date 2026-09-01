@@ -1,0 +1,1 @@
+Consider implementing an upper limit on smoothing in smoothCutline.m

@@ -126,7 +126,7 @@ Tolerances are 1e-10 for velocity, pressure and GAHM parameters, 1e-6 m for dist
 > Baselines are `.mat` files and `.gitignore` excludes `*.mat`, so a fresh clone has none.
 > `compare_to_baseline` does nothing until `generate_baseline` has been run locally.
 
-## Gotchas
+## Notes
 
 - **The output NetCDF must not already exist.** `run_GAHM2026` asserts this before doing any work
   (for `output_info.type = "grid"`). Delete or rename `output/<name>.nc` before rerunning the same

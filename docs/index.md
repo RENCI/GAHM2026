@@ -52,7 +52,7 @@ Developed by Rick Luettich (UNC/IMS/CNHR/EMES) and Brian Blanton (UNC/RENCI).
 
 ---
 
-## The model in one equation
+## The GAHM model 
 
 GAHM extends the classic Holland (1980) pressure profile by carrying the Coriolis effect through
 the gradient wind balance and letting the shape parameter $B_g$ vary by quadrant. The gradient
@@ -73,7 +73,7 @@ wind adjustment factor, is on the [Derivation of GAHM2026]({{ site.baseurl }}/de
 
 ---
 
-## Pipeline
+## Workflow
 
 ```mermaid
 flowchart TB
