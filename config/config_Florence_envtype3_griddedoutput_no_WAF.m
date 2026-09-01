@@ -80,7 +80,7 @@ env_info.type = 3;
 %                      it will be automatically created by SeperateEnvHur.m. 
 %                      The default env_info.file_name is derived from the storm
 %                      identity, e.g. 'input/FLORENCE_AL06_2018_env'
-env_info.file_name = fullfile('input', sprintf('%s_%s_%s_env', storm_name, ...
+env_info.file_name = fullfile('output', sprintf('%s_%s_%s_env', storm_name, ...
                                   storm_designation, num2str(storm_year)));
 
 %   parameters that control the taper function used to blend GAHM with the 
