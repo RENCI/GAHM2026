@@ -29,7 +29,17 @@ aux_links:
     - https://github.com/RENCI/GAHM2026
 aux_links_new_tab: true
 
+# Extra entries in the main navigation.  just-the-docs builds the nav from page front
+# matter, so a link to a section *inside* a page has to be listed here.  The theme
+# renders these through `absolute_url`, which prepends the baseurl -- the WAF link
+# therefore resolves both under the /GAHM2026 project prefix and in a local preview
+# served from the site root.  `hide_icon` drops the external-link arrow, which would
+# be misleading on a link that stays on the site.
 nav_external_links:
+  - title: Wind Adjustment Factor (WAF)
+    url: /derivation/#5-wind-adjustment-factor-waf
+    hide_icon: true
+    opens_in_new_tab: false
   - title: IBTrACS (NCEI)
     url: https://www.ncei.noaa.gov/products/international-best-track-archive
 
