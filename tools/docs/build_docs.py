@@ -118,6 +118,42 @@ BRACKETED_SPAN = re.compile(r"\[([^\]]*)\]\{\.(" + "|".join(SPAN_CLASSES) + r")\
 # that made the separator necessary, so drop it.
 RAW_HTML_SEPARATOR = re.compile(r"`<!--\s*-->`\{=html\}")
 
+# Pandoc writes inline math in single dollars.  kramdown has no notion of that
+# delimiter, so it runs ordinary markdown span rules straight through the expression.
+# Three collisions matter:
+#
+#   \_   A LaTeX literal underscore looks like a backslash escape, so kramdown eats
+#        the backslash: "V_{\max\_ vor\_ tbl}" becomes "V_{\max_ vor_ tbl}", and
+#        MathJax then reports "Double subscripts: use braces to clarify".
+#   _ *  Two of either in one expression become <em>...</em>, which cuts the
+#        expression in half and drops the "\ " spacing runs in between.
+#   |    kramdown reads a line containing pipes as a table row, so a paragraph built
+#        around "\left| ... \right|" is shattered into <td> cells.
+#
+# kramdown does understand "$$...$$", at span level as well as block level, and passes
+# the contents through untouched -- so promote inline math to the doubled delimiter.
+# Table detection is block level and still runs first, so the pipes have to go as well;
+# "\vert" typesets identically and means nothing to the table parser.
+#
+# kramdown also strips the whitespace off a math body before wrapping it in \(..\) or
+# \[..\], which turns a body ending in "\ " into one ending in a bare backslash that
+# then binds to the delimiter: "...\right\vert \]" becomes "...\right\vert\\]".  So
+# every expression is passed through trim_math_body() on the way out, not just the
+# numbered ones rebuilt from a \begin{array} wrapper.
+#
+# Every display equation occupies a line of its own by the time this runs, so inline
+# math can be matched a line at a time.
+INLINE_MATH = re.compile(r"(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)")
+MATH_PIPE = re.compile(r"\|")
+MATH_VERT_RUN = re.compile(r"\\vert +")
+
+# Word numbers the two steps of section 2 as a real list, but they are far apart and
+# each ends up its own single-item <ol>.  kramdown discards the number it was written
+# with and restarts at 1, so both steps render as "1.".  An inline attribute list puts
+# it back.  Only a list that is a single item on its own -- blank line either side --
+# is annotated, so a genuine multi-item list is never cut in half.
+ORDERED_ITEM = re.compile(r"^\s{0,3}(\d+)\.\s")
+
 
 def fail(message: str) -> None:
     print(f"build_docs: error: {message}", file=sys.stderr)
@@ -214,6 +250,39 @@ def restore_math_delimiters(text: str) -> str:
         out.append(text[index])
         index += 1
     return "".join(out)
+
+
+def isolate_math_from_kramdown(text: str) -> str:
+    r"""Hand every expression to kramdown as ``$$...$$`` with no pipes in it."""
+
+    def clean(expr: str) -> str:
+        expr = MATH_VERT_RUN.sub(r"\\vert ", MATH_PIPE.sub(r"\\vert ", expr))
+        return "$$" + trim_math_body(expr) + "$$"
+
+    out = []
+    for line in text.split("\n"):
+        if line.startswith("$$") and line.endswith("$$") and line.count("$$") == 2:
+            out.append(clean(line[2:-2]))
+            continue
+        out.append(INLINE_MATH.sub(lambda m: clean(m.group(1)), line))
+    return "\n".join(out)
+
+
+def restore_list_numbering(text: str) -> str:
+    """Re-attach the written number to an ordered list item kramdown would renumber."""
+    lines = text.split("\n")
+    out = []
+    for index, line in enumerate(lines):
+        out.append(line)
+        match = ORDERED_ITEM.match(line)
+        if not match or match.group(1) == "1":
+            continue
+        alone = (index == 0 or not lines[index - 1].strip()) and (
+            index + 1 >= len(lines) or not lines[index + 1].strip()
+        )
+        if alone:
+            out.append(f'{{: start="{match.group(1)}"}}')
+    return "\n".join(out)
 
 
 def promote_headings(text: str) -> str:
@@ -321,6 +390,8 @@ def convert(entry: dict, pandoc: str) -> Path:
     text = restore_math_delimiters(text)
     text = RAW_HTML_SEPARATOR.sub("", text)
     text = text.replace("\\#", "")
+    text = isolate_math_from_kramdown(text)
+    text = restore_list_numbering(text)
     text = BRACKETED_SPAN.sub(
         lambda m: f"<{SPAN_CLASSES[m.group(2)]}>{m.group(1)}</{SPAN_CLASSES[m.group(2)]}>",
         text,
