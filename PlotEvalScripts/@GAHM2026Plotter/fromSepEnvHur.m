@@ -54,7 +54,7 @@ function obj = fromSepEnvHur(sepfile, opts)
         Reggrid_out(i).Lon = squeeze(ev.Lo(i,:,:));
         Reggrid_out(i).Lat = squeeze(ev.La(i,:,:));
         Reggrid_out(i).MaskInner = squeeze(ev.Vortex_mask_inner(i,:,:));
-        Reggrid_out(i).MaskOuter = squeeze(ev.Vortex_mask(i,:,:));
+        Reggrid_out(i).MaskOuter = squeeze(ev.Vortex_mask_outer(i,:,:));
 
         % Combined env + hur (total ERA5)
         Reggrid_TC_out(i).datetime = ev.Time(i);
