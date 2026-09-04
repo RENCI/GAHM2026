@@ -74,13 +74,14 @@ classdef GAHM2026Plotter < handle
         Source      % 'gahm' or 'sepenvhur'
     end
 
-    properties (Dependent, SetAccess = private)
+    properties (Dependent, SetAccess = public)
         PlotData    % default gridded TC fields (Reggrid_TC_out)
         DataGrid    % grid coordinates (Reggrid_out)
         Trackdata   % track data
         RadialGrid  % radial grid data (empty for sepenvhur source)
         EnvData     % environmental fields (Reggrid_Env_out)
         HurData     % hurricane-only fields (Reggrid_Hur_out, sepenvhur only)
+        ERA5Data    % EnvData + HurData
         HasRadialGrid % true if radial grid data is available
     end
 
@@ -140,6 +141,14 @@ classdef GAHM2026Plotter < handle
         function val = get.HurData(obj)
             if isfield(obj.Result, 'Reggrid_Hur_out')
                 val = obj.Result.Reggrid_Hur_out;
+            else
+                val = [];
+            end
+        end
+
+        function val = get.ERA5Data(obj)
+            if isfield(obj.Result, 'Reggrid_TC_out')
+                val = obj.Result.Reggrid_TC_out;
             else
                 val = [];
             end

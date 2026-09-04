@@ -45,7 +45,11 @@ function fig = contourMap(obj, plotType, figNum, time, plotdata)
 
     isWindPlot = plotType == "velcon" || plotType == "mvelcon";
     isPresPlot = plotType == "precon" || plotType == "mprecon" || plotType == "prequiv";
-    showMask = plotType == "mvelcon" || plotType == "mprecon";
+    if plotType == "mvelcon" || plotType == "mprecon"
+        showMask = true;
+    else
+        showMask = opts.mask.show;
+    end
     showQuiv = plotType == "velcon" || plotType == "prequiv";
 
     [minX, maxX, minY, maxY] = getDomain(obj, datagrid, tidx);

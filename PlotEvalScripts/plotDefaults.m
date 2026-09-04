@@ -17,17 +17,17 @@ opts.domain.fixedLimits = [];
 
 %% Wind velocity contour plots
 opts.wind.clims = [0 80];          % color limits (kts)
-opts.wind.alpha = 0.8;             % transparency
+opts.wind.alpha = 1;             % transparency
 opts.wind.colormap = "burd";        % colormap name
 
 %% Pressure contour plots
 opts.pres.clims = [980 1020];      % color limits (mb)
-opts.pres.alpha = 0.8;             % transparency
+opts.pres.alpha = 1;             % transparency
 opts.pres.colormap = "rdbu";        % colormap name
 
 %% Quiver (vector arrows)
 opts.quiver.stride = 10;           % plot every Nth vector
-opts.quiver.scale = 2;             % quiver scale factor
+opts.quiver.scale = 1;             % quiver scale factor
 opts.quiver.color = 'k';           % arrow color
 
 %% Coastline
@@ -56,7 +56,7 @@ opts.radial.one2ten = 0.89;        % 1-min to 10-min conversion
 opts.radial.layout = [6 4];        % subplot layout [rows cols]
 
 %% Masks
-opts.mask.show = false;            % overlay mask contours
+opts.mask.show = false;            % overlay mask contours, ignored for plotypes = mvelcon or mprecon
 opts.mask.color = 'm';
 opts.mask.linewidth = 2;
 

@@ -5,6 +5,7 @@
 %
 %                Rick Luettich 2/25/2026
 %                Brian Blanton 3/ 7/2026
+%                           RL 9/1/2026
 %
 % Load the data from the .mat file
 %   S = prep_separated_fields_4_conplot_GAHM2026(sepfile);
@@ -122,7 +123,7 @@ function S = prep_separated_fields_4_conplot_GAHM2026(sepfile)
         S.datagrid(i).Lon=squeeze(D.Lo(i,:,:));
         S.datagrid(i).Lat=squeeze(D.La(i,:,:));
         S.datagrid(i).Mask1=squeeze(D.Vortex_mask_inner(i,:,:));
-        S.datagrid(i).Mask2=squeeze(D.Vortex_mask(i,:,:));
+        S.datagrid(i).Mask2=squeeze(D.Vortex_mask_outer(i,:,:));
         S.plotdata_env(i).Press=squeeze(D.env_msl(i,:,:));    
         S.plotdata_env(i).VelU=squeeze(D.env_u10(i,:,:));
         S.plotdata_env(i).VelV=squeeze(D.env_v10(i,:,:));
